@@ -1,0 +1,33 @@
+# R IDE artifacts
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# Generated website content
+*.html
+docs/
+
+# Parquet files — test/seed data (generated via GENERATE_test_data.R)
+*.parquet
+
+# Keep inst/ directory structure in git
+!/inst/.gitkeep
+
+# Build artifacts (regenerated on R CMD check)
+/opus.Rcheck/
+/opus_*.tar.gz
+
+# Quarto/vignette build cache (regenerated on render)
+/vignettes/.quarto/
+
+# Generated HTML assets from Quarto processing
+/data-raw/DATRAS-data-dict_files/
+
+# Development seed data (upstream sources)
+data-raw/seed/
+
+# Incomplete work and scratch files
+/imbus-interim-note-mockup.qmd
+/tmp
+contract.md

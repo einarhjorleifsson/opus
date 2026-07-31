@@ -1,0 +1,132 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  fig.path = "man/figures/README-",
+  out.width = "100%"
+)
+```
+
+# opus
+
+ICES DATRAS Data Dictionary and Known-Issues Registry
+
+## Focus: The YAML
+
+**opus** produces two machine-readable YAML specifications that document ICES DATRAS as it actually is:
+
+1. **`DATRAS-data-dict.yaml`** — Complete specification of Tier 1 exchange tables (HH, HL, CA, LT): field names, types, units, ranges, constraints, relationships, and domain glossary. Conforms to [data-dict.yaml v0.1.0](https://data-dict.tidyverse.org/).
+
+2. **`DATRAS-known-issues.yaml`** — Registry of metadata gaps between official ICES specs and real submission patterns. Documents type mismatches, undocumented codes, incomplete vocabularies, and their escalation status.
+
+The R package is **thin tooling** around these YAML files:
+- Validation functions for pre-submission checks
+- Generation scripts (seed from WSDL → curate against real data)
+- Articles and documentation
+
+## Why this approach
+
+- **Portability**: YAML specs are language-agnostic; not locked into R.
+- **Minimal maintenance**: No computational code to break or update.
+- **Clarity**: YAML-first signals "this is a reference specification," not a convenience library.
+- **Upstream focus**: Schema problems are escalated to ICES, not hidden in downstream workarounds.
+- **Auditable**: Every field spec, correction, and issue traces back to real evidence (WSDL, data, or explicit review notes).
+
+## Quick start
+
+### Install
+
+```r
+remotes::install_github("einarhjorleifsson/opus")
+```
+
+### Load dictionaries
+
+```r
+library(yaml)
+
+# Data dictionary
+dict_path <- system.file("DATRAS-data-dict.yaml", package = "opus")
+dict <- yaml::read_yaml(dict_path)
+
+# Known-issues registry
+issues_path <- system.file("DATRAS-known-issues.yaml", package = "opus")
+issues <- yaml::read_yaml(issues_path)
+```
+
+See `vignettes/using-opus.Rmd` for detailed examples.
+
+### Validate your submission data
+
+```r
+library(opus)
+
+# Validate DATRAS HH table against spec
+result <- op_validate_data(
+  data_path = "my_submission.parquet",
+  table = "HH",
+  dict_path = system.file("DATRAS-data-dict.yaml", package = "opus")
+)
+
+# Check results
+result$valid  # TRUE if all values conform
+result$data_result  # Detailed validation report
+```
+
+Available functions:
+
+- `op_validate_spec(dict_path)` — Check YAML spec conformation
+- `op_validate_meta(data_path, table, dict_path)` — Validate column names/types
+- `op_validate_data(data_path, table, dict_path)` — Validate values against constraints
+- `op_validate_full(data_path, table, dict_path)` — Run all three checks
+- `op_inspect_parquet(parquet_path)` — See data-dict CLI's view of your parquet schema
+
+## File reference
+
+**`inst/DATRAS-data-dict.yaml`**:
+- Field definitions (type, range, units, enums, constraints)
+- Source: ICES WSDL + icesVocab, curated against real archive submissions
+- Use when: "Is this value valid?" or "What does this field mean?"
+
+**`inst/DATRAS-known-issues.yaml`**:
+- Metadata issues in ICES specs (incomplete vocabularies, type mismatches, undocumented codes)
+- This is **not** a data-quality QC log (that's downstream in obus/imbus)
+- Use when: "Why did validation fail?" to determine if it's a spec problem or submission error
+
+## About the project
+
+opus serves three consumers:
+
+- **obus** — Downstream validation and submission-tracking package (depends on opus specs)
+- **imbus** — EU research project; uses opus to track metadata issues with ICES
+- **icesDatras** — R-native exploration tool; shares seeding methodology with opus
+
+For implementation details and working principles, see `AGENTS.md` and vignettes.
+
+## Recent updates (v0.2.0)
+
+- Tier 1 dictionaries (HH, HL, CA, LT) finalized after full archive validation
+- 5 metadata issues found and documented in known-issues registry
+- R validation functions (`op_*`) added for development/curation loop
+- All specs conform to data-dict.yaml v0.1.0
+
+## Development notes
+
+- **Never edit `.yaml` files by hand** — they're derived from `data-raw/` scripts
+- Scripts in `data-raw/` are the source of truth (seeding, curation, validation)
+- Requires `data-dict` CLI for full validation (see `data-raw/validate.R`)
+- Versioning: patch (0.1.1) for typos; minor (0.2.0) for new content; major (1.0.0) when stable
+
+## License
+
+CC0 (public domain)
+
+## Contact
+
+Einar Hjörleifsson (einar.hjorleifsson@hafogvatn.is)

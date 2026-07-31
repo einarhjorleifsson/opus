@@ -8,8 +8,8 @@
 *.html
 docs/
 
-# Parquet files — test/seed data (generated via GENERATE_test_data.R)
-*.parquet
+# Parquet files — test/seed data (tracked via Git LFS)
+# Tracked with git lfs track "*.parquet"
 
 # Keep inst/ directory structure in git
 !/inst/.gitkeep

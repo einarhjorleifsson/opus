@@ -1,0 +1,2288 @@
+$version: 0.1.0
+$learn_more: http://data-dict.tidyverse.org/
+name: datras_exchange
+label: ICES DATRAS Exchange Data (Tier 1 -- raw haul-grain submissions)
+description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),
+  CA (age), LT (litter). Curated from data-raw/seed/DATRAS-exchange-dict-seed.yaml
+  -- see data-raw/DATASET_curate_dict.R for the corrections and field-spec fills applied
+  and why.'
+origin: data-raw/DATASET_seed_dict.R <U+2192> data-raw/DATASET_curate_dict.R
+version:
+  date: '2026-07-30'
+tables:
+- name: HH
+  columns:
+  - name: RecordHeader
+    type: enum
+    description: Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    values:
+      HH: Haul Information
+    label: Record Type
+  - name: Survey
+    type: string
+    examples:
+    - NS-IBTS
+    - BTS
+    - BITS
+    - DYFS
+    - Can-Mar
+    details: '29 distinct values in HH''s archive (verified 2026-07-29); ICES DATRAS
+      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a ''Survey''
+      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it''s a false
+      lead, not this field''s source: its 133 codes are ICES''s own cross-domain internal
+      survey IDs (e.g. ''A1012''), a completely different scheme from DATRAS''s own
+      short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.'
+  - name: Quarter
+    type: enum
+    description: Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: Country
+    type: string
+    description: ISO 3166 country codes and region codes used by ICES
+    examples:
+    - NL
+    - DE
+    - GB
+    - DK
+    - GB-SCT
+    details: '22 distinct values in HH''s archive (verified 2026-07-29); ''GB-SCT''
+      illustrates that this is ISO 3166 codes PLUS ICES''s own sub-national region
+      codes (per the field''s own description), not plain ISO 3166 alone. icesVocab
+      DOES resolve a ''TS_Country'' key by name (checked 2026-07-29) but it''s a false
+      lead too, same as Survey above: its 25 codes are 3-letter (e.g. ''BEL'', ''DEN'',
+      ''ENG''), a different scheme entirely from this field''s own 2-letter-plus-region
+      codes -- confirmed by checking real codes against it directly. Not used.'
+  - name: Platform
+    type: string
+    description: SeaDataNet Ship and Platform Codes
+    examples:
+    - 74E9
+    - 26D4
+    - 748S
+    - 64SS
+    - 18NE
+    details: 110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
+      ship/platform codes, an open list, not a fixed enum.
+  - name: Gear
+    type: string
+    description: Gear type code
+    examples:
+    - GOV
+    - BT3
+    - W2A
+    - TVL
+    - BT6
+    details: '55 of 99 official codes observed in HH''s archive (verified 2026-07-29).
+      icesVocab''s Gear list confirms all five real examples used here (checked 2026-07-29,
+      data-raw/datras_vocabulary.R): GOV=''GOV Trawl'', BT3=''Beam trawl 3 meters'',
+      BT6=''Beam trawl 6 meters'', TVL=''Large TV trawl'', W2A=''Western IIA''. Not
+      retyped enum: 99 codes is far past the seed''s VOCAB_CODE_LIMIT of 20.'
+  - name: SweepLength
+    type: number(quantity)
+    description: Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    units: m
+    range:
+    - 0.0
+    - 850.0
+  - name: GearExceptions
+    type: enum
+    description: Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+  - name: DoorType
+    type: enum
+    description: Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+  - name: StationName
+    type: string
+    description: Station number. National coding system, not defined by ICES.
+    examples:
+    - '1'
+    - '2'
+    - '22'
+    - '9'
+    - '17'
+    details: Field's own description says this is a national coding system, not defined
+      by ICES -- examples show the common shape (short numeric-looking strings), not
+      an exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
+      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows unpopulated.
+  - name: HaulNumber
+    type: number(ordinal)
+    description: Sequential numbering of hauls during cruise.
+    range:
+    - 0.0
+    - 82483.0
+    constraints:
+    - required
+    details: Sequential per-cruise numbering, but countries vary in whether it resets
+      each cruise or runs continuously -- the archive-wide range spans many cruises'
+      own counts pooled together, not one cruise's own haul tally.
+  - name: Year
+    type: number(ordinal)
+    description: Cruise year (YYYY)
+    range:
+    - 1965.0
+    - 2026.0
+    constraints:
+    - required
+  - name: Month
+    type: enum
+    description: Sampling month, as part of the calendar date.
+    values:
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+  - name: Day
+    type: number(ordinal)
+    description: Sampling day, as part of the calendar date
+    range:
+    - 1.0
+    - 31.0
+    constraints:
+    - required
+  - name: StartTime
+    type: string
+    description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
+    examples:
+    - '730'
+    - '715'
+    - '1300'
+    - '900'
+    - '700'
+    details: 1,440 distinct values in HH's archive (verified 2026-07-29), always populated
+      (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
+      10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
+      documented here rather than silently assumed. Only present in HH and LT (confirmed
+      2026-07-29), same as StatisticalRectangle above.
+  - name: DepthStratum
+    type: string
+    description: Depth stratum in classes. Depth strata are survey specific, see survey
+      manuals for details.
+    examples:
+    - D2
+    - '10'
+    - '9'
+    - '11'
+    - D1
+    details: 'Field''s own description says depth strata are survey-specific, not
+      an ICES-wide vocabulary -- examples illustrate the shape seen in practice (mix
+      of letter-prefixed and bare-number codes), not an exhaustive domain. Verified
+      2026-07-29 against the full HH archive: 194 distinct values, only 75,753 of
+      150,262 rows populated (roughly half of surveys don''t report it).'
+    label: Depth Stratum
+  - name: HaulDuration
+    type: number(quantity)
+    description: Haul duration in minutes. Start time is the moment when the gear
+      settles at the bottom at the stated towing speed. Stop is defined as the start
+      of hauling of the gear.
+    units: min
+    range:
+    - 1.0
+    - 120.0
+    details: 'A haul cannot take zero or negative time; 217 rows recorded as exactly
+      0 and 2 as negative (-514, -238) are excluded, most likely unrecorded/placeholder
+      rather than a genuine instantaneous haul. Upper bound set at 2 hours: DATRAS
+      carries no passive/soak gear, so a longer tow is highly suspect -- observed
+      values run as high as 1470 min with no repeating marker pattern (i.e. not a
+      clean sentinel, just unreliable). Verified 2026-07-29 against the full archive.'
+    label: Haul Duration (minutes)
+  - name: DayNight
+    type: enum
+    description: 'Timing of sampling: at daytime or at night. See survey manuals for
+      further details'
+    values:
+    - D
+    - 'N'
+  - name: ShootLatitude
+    type: number(quantity)
+    description: Decimal latitude position on the shooting location
+    units: decimal degrees
+    range:
+    - 36.0013
+    - 76.2117
+  - name: ShootLongitude
+    type: number(quantity)
+    description: Decimal longitude position on the shooting location
+    units: decimal degrees
+    range:
+    - -67.7115
+    - 24.4333
+    details: 'A genuine value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS
+      longitude off Ireland/Iberia) would be indistinguishable from missing here:
+      icesDatras''s fetch pipeline scrubs literal -9 to NA for every numeric column,
+      not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R''s
+      header.'
+  - name: HaulLatitude
+    type: number(quantity)
+    description: Decimal latitude position on the hauling location
+    units: decimal degrees
+    range:
+    - 36.0013
+    - 65.0
+    details: 3 rows record exactly 0 degrees (the equator), categorically outside
+      any DATRAS survey area -- excluded; the lower bound instead matches ShootLatitude's
+      own clean minimum for the same archive.
+  - name: HaulLongitude
+    type: number(quantity)
+    description: Decimal longitude position on the hauling location
+    units: decimal degrees
+    range:
+    - -67.6762
+    - 45.8753
+    details: Same -9-as-missing caveat as ShootLongitude above (0 degrees, the Prime
+      Meridian, is a genuine North Sea value here and is kept).
+  - name: StatisticalRectangle
+    type: string
+    description: Intended ICES statistical area rectangle (0.5 degrees latitude, 1
+      degree longitude)
+    examples:
+    - 37F8
+    - 35F5
+    - 36F7
+    - 32F3
+    - 36F6
+    details: 701 distinct values in HH's archive (verified 2026-07-29); real ICES
+      statistical rectangle codes (0.5 deg lat x 1 deg lon grid), not a fixed enum
+      given the size of the grid. 12,235 of 150,262 HH rows unpopulated. Only present
+      in HH and LT (confirmed 2026-07-29) -- consistent with the Open items note that
+      LT's assessment output joins in a set of HH-style columns.
+  - name: BottomDepth
+    type: number(quantity)
+    description: Sampling depth in metres, measured from the water surface.
+    units: m
+    range:
+    - 1.0
+    - 3098.0
+  - name: HaulValidity
+    type: enum
+    description: Haul validity code
+    values:
+    - A
+    - C
+    - I
+    - M
+    - 'N'
+    - S
+    - V
+  - name: HydrographicStationID
+    type: string
+    description: The national hydrographic station number. If possible, align with
+      information submitted to ocean.ices.dk
+    examples:
+    - 74SC0000
+    - '88888888'
+    - '1'
+    - '0'
+    - '3'
+    details: National station numbering (field's own description), so examples are
+      illustrative only, not an exhaustive domain -- 18,373 distinct values, only
+      79,371 of 150,262 rows populated. '88888888' recurs 1,635 times and reads like
+      an undocumented all-8s placeholder/sentinel (the same kind of pattern seen elsewhere
+      in HH, e.g. HaulDuration's zeros) rather than a real station ID, but is kept
+      in `examples` (unlike a `range` exclusion, `examples` isn't a validity gate)
+      since a reader should know it's a real recurring value. Verified 2026-07-29
+      against the full archive.
+  - name: StandardSpeciesCode
+    type: enum
+    description: Information on the whether standard species have been recorded. Standard
+      species depend on survey, see survey manuals for details.
+    values:
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: BycatchSpeciesCode
+    type: enum
+    description: Information on which bycatch species have been recorded.
+    values:
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+  - name: DataType
+    type: enum
+    description: 'Specification of the data aggregation in the HL record. C: CPUE
+      (per hour) data; TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw),
+      S (subsample of the entire catch): data as recorded during the cruise, and P
+      (pseudocategory sampling, only used by Scotland).'
+    values:
+    - '-9'
+    - C
+    - P
+    - R
+    - S
+  - name: NetOpening
+    type: number(quantity)
+    description: Mean value in metres of vertical net opening measurements. For details
+      see the survey manual.
+    units: m
+    range:
+    - 0.0
+    - 76.0
+  - name: Rigging
+    type: enum
+    description: The way the gear is rigged. Rigging depends on survey, see survey
+      manuals for further details.
+    values:
+    - '-9'
+    - BC
+    - BM
+    - BN
+    - D
+    - F
+    - FB
+    - FM
+    - FT
+    - FW
+    - M
+    - S
+    - T
+    - TS
+    - TT
+  - name: Tickler
+    type: number(quantity)
+    description: Amount of ticklers connected to the gear.
+    range:
+    - 0.0
+    - 27.0
+  - name: Distance
+    type: number(quantity)
+    description: Distance in metres between haul start and haul end point.
+    units: m
+    range:
+    - 0.0
+    - 59995.0
+  - name: WarpLength
+    type: number(quantity)
+    description: Length of warp in metres. Defined by fishing depth. Warp/depth ratio
+      is depends on survey, for further details see survey manuals.
+    units: m
+    range:
+    - 0.0
+    - 4065.0
+  - name: WarpDiameter
+    type: number(quantity)
+    description: Warp diametre in millimetres.
+    units: mm
+    range:
+    - 16.0
+    - 30.0
+    details: A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
+      values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
+      from it with no comparable support and are treated as data-entry errors, excluded
+      here.
+  - name: WarpDensity
+    type: number(quantity)
+    description: Warp weight in kg per linear meter of warp. See survey manuals for
+      more information.
+    units: kg/m
+    range:
+    - 0.0
+    - 26.0
+  - name: DoorSurface
+    type: number(quantity)
+    description: Door surface area in square metres.
+    units: m2
+    range:
+    - 0.0
+    - 20.2
+  - name: DoorWeight
+    type: number(quantity)
+    description: Door weight in kilograms.
+    units: kg
+    range:
+    - 0.0
+    - 1720.0
+  - name: DoorSpread
+    type: number(quantity)
+    description: Mean value in metres of door spread measurements.
+    units: m
+    range:
+    - 1.0
+    - 250.0
+    details: 0m (9 rows) is excluded as a placeholder -- a rigged, towing trawl cannot
+      have zero door spread. Three single-occurrence values (762, 767, 778m) sit far
+      above everything else in the archive (next highest is 250m) and are treated
+      as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
+      likely a fixed beam-trawl spread) is kept.
+  - name: WingSpread
+    type: number(quantity)
+    description: Mean value in metres of wing spread measurements. For more details
+      see the manual.
+    units: m
+    range:
+    - 4.0
+    - 50.0
+    details: 0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value
+      with real support -- a well-populated cluster starts at 4m (1074 rows, likely
+      a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
+      value (50m) and is treated as a data-entry error, excluded.
+  - name: Buoyancy
+    type: number(quantity)
+    description: Total buoyancy of the net floats in kilograms. Recommended values
+      depend on survey, see survey manuals for further details.
+    units: kg
+    range:
+    - 0.0
+    - 398.0
+  - name: KiteArea
+    type: number(quantity)
+    description: Kite area in square metres.
+    units: m2
+    range:
+    - 0.0
+    - 1.0
+    details: Coarse, equipment-spec values (0, 0.5, 0.7, 0.72, 0.8, 1) rather than
+      a continuously measured quantity -- only 6 distinct values across 30,116 rows.
+  - name: GroundRopeWeight
+    type: number(quantity)
+    description: Total weight of the ground rope in kilograms. Recommended weight
+      depends on survey, see survey manuals for further details.
+    units: kg
+    range:
+    - 0.0
+    - 2212.0
+  - name: TowDirection
+    type: number(quantity)
+    description: Direction of towing in degrees. 360=direction from south to north.
+    units: degrees
+    range:
+    - 0.0
+    - 360.0
+    details: 999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker,
+      the same pattern confirmed for WindDirection below. A further cluster -- 450
+      deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by
+      10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg);
+      plausible but not investigated further (would need correlating with Country/Survey).
+      Both groups are outside the documented 0-360 domain and excluded here.
+  - name: SpeedGround
+    type: number(quantity)
+    description: Ground speed of towing in knots. Recommended speed depends on survey,
+      see survey manuals for more details
+    units: knots
+    range:
+    - 0.0
+    - 10.0
+    details: Ceiling is a domain judgment (real trawling ground speed), not an observed
+      cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
+      gap, all excluded.
+  - name: SpeedWater
+    type: number(quantity)
+    description: Trawl speed on water in knots.
+    units: knots
+    range:
+    - 0.0
+    - 22.0
+  - name: SurfaceCurrentDirection
+    type: number(quantity)
+    description: Surface current direction in degrees. No movement = 0, 360=direction
+      from south to north.
+    units: degrees
+    range:
+    - 0.0
+    - 360.0
+    details: Two single-occurrence values just above 360 (392, 390) excluded; the
+      rest of the archive is densely populated right up to 360.
+  - name: SurfaceCurrentSpeed
+    type: number(quantity)
+    description: Surface current speed in m/sec.
+    units: m/s
+    range:
+    - 0.0
+    - 9.3
+    details: 99 (marker) and 46.3 and 16 (each a single, isolated occurrence with
+      no support nearby) excluded; a smoother, better-populated tail resumes at 9.3
+      (3 rows) and below.
+  - name: BottomCurrentDirection
+    type: number(quantity)
+    description: Bottom current direction in degrees. No movement = 0, 360=direction
+      from south to north.
+    units: degrees
+    range:
+    - 0.0
+    - 359.0
+  - name: BottomCurrentSpeed
+    type: number(quantity)
+    description: Bottom current speed in metres/sec.
+    units: m/s
+    range:
+    - 0.0
+    - 9.9
+    details: 9.9 (1 row) is unusually high for a bottom current and resembles the
+      '9-family' marker pattern seen elsewhere in HH, but a genuinely fast tidal-race
+      reading can't be ruled out -- kept in range rather than excluded, unlike the
+      more clear-cut cases above.
+  - name: WindDirection
+    type: number(quantity)
+    description: Direction of wind in degrees. Calm = 0,  direction from north to
+      south = 360, varying direction = -1
+    units: degrees
+    range:
+    - -1.0
+    - 360.0
+    details: -1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented
+      out-of-domain 'not recorded' marker; a handful of further single-occurrence
+      values just above 360 (711, 504, 420, 365, 361) are also excluded.
+  - name: WindSpeed
+    type: number(quantity)
+    description: Speed of wind in metres/sec.
+    units: m/s
+    range:
+    - 0.0
+    - 28.0
+    details: Ceiling follows the Beaufort 10 upper bound (28.4 m/s, storm force) --
+      no vessel would be actively trawling above this. 1,641 of 109,012 populated
+      rows (~1.5%) exceed it, tailing off smoothly with no clean gap up to 342 m/s;
+      the count jumps from a thin 1-7-row-per-value tail above 28 to 357 rows right
+      at 28, consistent with a real distribution below and noise above.
+  - name: SwellDirection
+    type: number(quantity)
+    description: Direction of swell in degrees. No movement=0, direction from south
+      to north = 360, varying direction = -1
+    units: degrees
+    range:
+    - 0.0
+    - 360.0
+  - name: SwellHeight
+    type: number(quantity)
+    description: Height of (swell) waves, in metres
+    units: m
+    range:
+    - 0.0
+    - 3.0
+    details: 'See known issue swell_height_type_mismatch (DATRAS-known-issues.yaml,
+      not yet filed): icesVocab declares this an enum (codes H/L/M/N/NR/VH for height
+      classes). Real HH archive data (verified 2026-07-30) contains continuous numeric
+      values (0.0-2.0+ metres), not categorical codes. Archive and ICES specification
+      disagree on whether this is a measured quantity or a categorized class. Candidate
+      for DATRAS-known-issues.yaml formal escalation to imbus/ICES.'
+  - name: SurfaceTemperature
+    type: number(quantity)
+    description: Temperature at the surface water layer in Celsius degrees.
+    units: degC
+    range:
+    - -1.5
+    - 36.0
+  - name: BottomTemperature
+    type: number(quantity)
+    description: Temperature at the bottom water layer in degrees Celsius
+    units: degC
+    range:
+    - -1.0
+    - 35.4
+  - name: SurfaceSalinity
+    type: number(quantity)
+    description: Salinity at the surface water layer in Practical Salinity Units (PSU).
+    units: PSU
+    range:
+    - 0.0
+    - 38.52
+  - name: BottomSalinity
+    type: number(quantity)
+    description: Salinity at the bottom water layer in Practical Salinity Units (PSU).
+    units: PSU
+    range:
+    - 3.13
+    - 39.93
+  - name: ThermoCline
+    type: enum
+    description: Indication whether thermocline (min. 2 degrees temperature changes
+      over 10 metres depth) was observed
+    values:
+      'N': No thermocline
+  - name: ThermoClineDepth
+    type: number(quantity)
+    description: Depth (metres, measured from water surface) at which the thermocline
+      was found. Requires Y in Thermocline field.
+    units: m
+    range:
+    - 0.0
+    - 90.0
+  - name: CodendMesh
+    type: number(quantity)
+    description: Codend mesh size in mm
+    units: mm
+    range:
+    - 9.0
+    - 100.0
+    details: 0mm (202 rows) excluded as a placeholder -- a codend by definition has
+      some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
+      644 rows) and is treated as a data-entry error, excluded.
+  - name: SecchiDepth
+    type: number(quantity)
+    description: Secchi depth in metres
+    units: m
+    range:
+    - 0.0
+    - 9.0
+  - name: Turbidity
+    type: number(quantity)
+    description: Turbidity in NTU
+    units: NTU
+    range:
+    - 0.0
+    - 0.0
+    details: Only 202 of 150,262 hauls carry a value at all, and every one of them
+      is exactly 0 -- too sparse to characterize a real range; this reflects what
+      was actually observed, not a claim that Turbidity never varies.
+  - name: TidePhase
+    type: number(quantity)
+    description: Tidal phase in minutes before the next high tide
+    units: min
+    range:
+    - -540.0
+    - 780.0
+    details: 'Strong clustering at exact-hour multiples (e.g. 660 min: 1095 rows,
+      600 min: 1093, 540 min: 949) versus sparse off-hour values reads as providers
+      rounding to the nearest hour, not an error. Separately: a genuine reading of
+      exactly -9 minutes (9 minutes before high tide) would be indistinguishable from
+      missing, since icesDatras''s fetch pipeline scrubs literal -9 to NA for every
+      numeric column regardless of whether -9 is that field''s own sentinel -- see
+      data-raw/tier1_field_stats.R''s header.'
+  - name: TideSpeed
+    type: number(quantity)
+    description: Speed of tide in m/s
+    units: m/s
+    range:
+    - 0.0
+    - 7.0
+  - name: PelagicSamplingType
+    type: enum
+    description: Pelagic trawl sampling type
+    values:
+    - '-9'
+    - '1'
+    - '2'
+    - '3'
+  - name: MinTrawlDepth
+    type: number(quantity)
+    description: Highest point of the pelagic trawling
+    units: m
+    range:
+    - 0.0
+    - 699.0
+    details: Unit is inferred, not stated in ICES's own field description ('Highest
+      point of the pelagic trawling') -- assumed metres by convention with the rest
+      of HH's depth fields.
+  - name: MaxTrawlDepth
+    type: number(quantity)
+    description: Lowest point of the pelagic trawling
+    units: m
+    range:
+    - 0.0
+    - 712.0
+    details: Same inferred-unit caveat as MinTrawlDepth above.
+  - name: DateofCalculation
+    type: number(ordinal)
+    range:
+    - 20120419
+    - .inf
+    details: '8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
+      across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing
+      ICES Datacenter ''last recalculated'' stamp, not submitted by data providers,
+      so a fixed max would go stale immediately. Lower bound is this table''s own
+      verified minimum -- NOT forced identical across tables the way SweepLength/HaulNumber/Year
+      are, since a genuine table-specific difference is plausible here (confirmed:
+      LT''s own minimum is years later).'
+  label: Haul Information
+  description: 'Each row is one haul (trawl deployment). Contains haul-level metadata:
+    geography, timing, gear deployment, environmental conditions, and performance
+    flags.'
+  details: 'Grain: each row represents one discrete haul deployment (one trawl operation).
+    Population: all hauls submitted to ICES DATRAS within the covered survey/region/timeframe.
+    Join key: HL, CA, and LT tables reference haul-level data via a composite identifier
+    constructed from eight fields: Survey, Year, Quarter, Country, {Platform or Ship},
+    Gear, {StationName or StNo}, and HaulNumber. The naming convention differs by
+    era: newer submissions use Platform/StationName/HaulNumber (new style); older
+    submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a
+    valid join key <U+2014> it is nullable (305,276 nulls found in CA, ~5.12% of data) and
+    must be paired with all seven other fields to uniquely identify a haul across
+    the full dataset. See obus::dr_add_id for the composite ID construction logic.'
+  origin: data-raw/DATASET_curate_dict.R
+  source:
+    parquet: HH.parquet
+- name: HL
+  columns:
+  - name: RecordHeader
+    type: enum
+    description: Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    values:
+      HL: Length Frequency Distribution
+    label: Record Type
+  - name: Survey
+    type: string
+    examples:
+    - NS-IBTS
+    - BTS
+    - BITS
+    - DYFS
+    - Can-Mar
+    details: '29 distinct values in HH''s archive (verified 2026-07-29); ICES DATRAS
+      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a ''Survey''
+      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it''s a false
+      lead, not this field''s source: its 133 codes are ICES''s own cross-domain internal
+      survey IDs (e.g. ''A1012''), a completely different scheme from DATRAS''s own
+      short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.'
+  - name: Quarter
+    type: enum
+    description: Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: Country
+    type: string
+    description: ISO 3166 country codes and region codes used by ICES
+    examples:
+    - NL
+    - DE
+    - GB
+    - DK
+    - GB-SCT
+    details: '22 distinct values in HH''s archive (verified 2026-07-29); ''GB-SCT''
+      illustrates that this is ISO 3166 codes PLUS ICES''s own sub-national region
+      codes (per the field''s own description), not plain ISO 3166 alone. icesVocab
+      DOES resolve a ''TS_Country'' key by name (checked 2026-07-29) but it''s a false
+      lead too, same as Survey above: its 25 codes are 3-letter (e.g. ''BEL'', ''DEN'',
+      ''ENG''), a different scheme entirely from this field''s own 2-letter-plus-region
+      codes -- confirmed by checking real codes against it directly. Not used.'
+  - name: Platform
+    type: string
+    description: SeaDataNet Ship and Platform Codes
+    examples:
+    - 74E9
+    - 26D4
+    - 748S
+    - 64SS
+    - 18NE
+    details: 110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
+      ship/platform codes, an open list, not a fixed enum.
+  - name: Gear
+    type: string
+    description: Gear type code
+    examples:
+    - GOV
+    - BT3
+    - W2A
+    - TVL
+    - BT6
+    details: '55 of 99 official codes observed in HH''s archive (verified 2026-07-29).
+      icesVocab''s Gear list confirms all five real examples used here (checked 2026-07-29,
+      data-raw/datras_vocabulary.R): GOV=''GOV Trawl'', BT3=''Beam trawl 3 meters'',
+      BT6=''Beam trawl 6 meters'', TVL=''Large TV trawl'', W2A=''Western IIA''. Not
+      retyped enum: 99 codes is far past the seed''s VOCAB_CODE_LIMIT of 20.'
+  - name: SweepLength
+    type: number(quantity)
+    description: Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    units: m
+    range:
+    - 0.0
+    - 850.0
+  - name: GearExceptions
+    type: enum
+    description: Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+  - name: DoorType
+    type: enum
+    description: Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+  - name: StationName
+    type: string
+    description: Station number. National coding system, not defined by ICES.
+    examples:
+    - '1'
+    - '2'
+    - '22'
+    - '9'
+    - '17'
+    details: Field's own description says this is a national coding system, not defined
+      by ICES -- examples show the common shape (short numeric-looking strings), not
+      an exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
+      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows unpopulated.
+  - name: HaulNumber
+    type: number(ordinal)
+    description: Sequential numbering of hauls during cruise.
+    range:
+    - 0.0
+    - 82483.0
+    constraints:
+    - required
+    details: Sequential per-cruise numbering, but countries vary in whether it resets
+      each cruise or runs continuously -- the archive-wide range spans many cruises'
+      own counts pooled together, not one cruise's own haul tally.
+  - name: Year
+    type: number(ordinal)
+    description: Cruise year (YYYY)
+    range:
+    - 1965.0
+    - 2026.0
+    constraints:
+    - required
+  - name: SpeciesCodeType
+    type: enum
+    description: Type of species code used for species definition at the record. Use
+      'W' for WoRMS AphiaID
+    values:
+    - T
+    - W
+  - name: SpeciesCode
+    type: number(id)
+    description: Official WoRMS AphiaID code of species reported at the record.
+    examples:
+    - 55
+    - 122388
+    - 127196
+    - 159048
+    - 1789435
+    constraints:
+    - required
+    details: Official WoRMS AphiaID as submitted by the data provider -- contrast
+      with Valid_Aphia, the ICES Datacenter's own validated/corrected version of the
+      same concept, inserted server-side (see Valid_Aphia's own details below).
+    label: Species (WoRMS AphiaID)
+  - name: SpeciesValidity
+    type: enum
+    description: Validity of species records, e.g. to specify if species has only
+      been counted, measured, weighed, etc.
+    values:
+    - '0'
+    - '1'
+    - '10'
+    - '2'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+  - name: SpeciesSex
+    type: enum
+    description: Gender of the described species category. In CA-records should be
+      defined by dissection. If no determination was performed, report '-9'. If determination
+      failed, report 'U'.
+    values:
+    - '-9'
+    - B
+    - F
+    - M
+    - 'N'
+    - T
+    - U
+  - name: TotalNumber
+    type: number(quantity)
+    description: Total number of specimens per category (unique combination of cruise
+      haul, species, sex, devstage and subsampling category identifier). For data
+      type C, values should be standardised to 60 minutes. TotalNo=SUM(HLNoAtLngt).
+    range:
+    - 0.0
+    - 3581592.0
+    details: Per the field's own description, TotalNo=SUM(HLNoAtLngt); values in the
+      hundreds of thousands and non-integer values (7.7% of populated rows) both trace
+      to the same documented mechanism -- DataType C records are standardised to 60
+      minutes, which can inflate very abundant small-bodied catches to large, non-integer
+      counts. Top values all have real support (9-30 occurrences each, a smooth tail),
+      not isolated errors.
+  - name: SpeciesCategory
+    type: number(id)
+    description: Subsampling category by size for same species in the haul. If DataType
+      is C, CatIdentifier is always 1. Further details on survey specific subsampling
+      categories are available in the survey manuals.
+    examples:
+    - 1
+    - 4
+    - 12
+    - 21
+    - 31
+    details: Real values are {1-5, 11-14, 21-23, 31} -- a coded scheme (verified 2026-07-29
+      against the full archive), not a sequence, despite 'category' sounding ordinal.
+    label: Species Category
+  - name: SubsampledNumber
+    type: number(quantity)
+    description: |-
+      Number of measured specimens per category (unique combination of cruise haul, species, sex, and subsampling category identifier and devstage). For data type C, values should be standardised to 60 minutes.
+      NoMeas=Sum(HLNoAtLngt).
+    range:
+    - 0.0
+    - 578731.0
+    details: Same DataType C standardisation basis as TotalNumber above; top values
+      are all well-supported (4-10 occurrences each), not isolated errors.
+  - name: SubsamplingFactor
+    type: number(quantity)
+    description: Sub-sampling factor. If 1/6 of the catch was measured, report 6.
+      If DataType is C, it should be reported as 1. If DataType is S, it is always
+      >1. If DataType is R, the SubFactor is = 1 or >1 for different species depending
+      on whether they were subsampled.
+    range:
+    - 1.0
+    - 10997.1834
+    details: '356 of 14,256,091 rows (0.0025%) show values below 1, contradicting
+      the field''s own description (documented as always >=1, for every DataType)
+      -- excluded. The high end is genuine, not an error: top values cluster at power-of-2-like
+      numbers (4096 recurs 133 times; 8192, 5120, 6144 also recur with real support),
+      consistent with repeatedly halving a very abundant catch to reach a manageable
+      subsample.'
+  - name: SubsampleWeight
+    type: number(quantity)
+    description: Weight of the subsample in grams.
+    units: g
+    range:
+    - 0.0
+    - 3519200.0
+  - name: SpeciesCategoryWeight
+    type: number(quantity)
+    description: 'For datatype R or S: Catch weight in grams per category (for the
+      unique combination of cruise haul, species, sex, devstage and subsampling category
+      identifier). For datatype C, values should be standardised to 60 minutes.'
+    units: g
+    range:
+    - 0.0
+    - 3.5568e+07
+    details: '-900 (2562 rows) and -100 (1 row) are excluded as a ''not weighed''
+      placeholder, the same pattern seen in several HH fields. The high end is genuine:
+      top values all have real support (3-18 occurrences each).'
+  - name: LengthCode
+    type: enum
+    description: 'Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm).
+      Survey and species specific, see survey manuals for further details. When measured
+      to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
+      cm in LngtClass'
+    values:
+    - '-9'
+    - '.'
+    - '0'
+    - '1'
+    - '2'
+    - '5'
+    - '9'
+  - name: LengthClass
+    type: number(quantity)
+    description: Lower length boundary of the Length class. In cm or mm depending
+      on the LngtCode. E.g. 10-11 cm=10
+    range:
+    - 0.0
+    - 4500.0
+    details: 'Unit varies by the sibling LengthCode field (mm or cm; see LengthCode''s
+      own values map), so no fixed units here. Two isolated outliers excluded, 2026-07-29:
+      11930 (LengthCode ''.'', i.e. 11.93m) and 900 (LengthCode ''1'', i.e. 9m) --
+      each a lone occurrence far above the next-highest real value. Everything else,
+      including a cluster around 420-460 under LengthCode ''1'' (4.2-4.6m -- large
+      but not implausible for occasional large elasmobranch/tuna bycatch), is kept
+      as-is: this is a first curation pass from data patterns alone, not a domain-expert
+      review, and a tighter bound wasn''t asserted without one. CA''s own LengthClass
+      is curated separately (a different sampling population, not assumed identical
+      -- see CA''s own pass).'
+    label: Length Class (cm)
+  - name: NumberAtLength
+    type: number(quantity)
+    description: Number of measured fish for the length class per category (unique
+      combination of cruise haul, species, sex, devstage and category identifier).
+      For data type C, values should be standardised to 60 minutes.
+    range:
+    - 0.0
+    - 940339.35
+    details: Same DataType C standardisation basis as TotalNumber above. Top values
+      are each a unique one-off but decline smoothly with no marker/gap pattern, consistent
+      with genuine (if rare) very large hauls of abundant small-bodied species. CA's
+      own NumberAtLength is curated separately (a different sampling population --
+      aged individuals only, not the whole catch -- so not assumed identical).
+    label: Count at Length
+  - name: DevelopmentStage
+    type: enum
+    description: Development or maturity stage defined by non-invasive observations
+    values:
+    - '-9'
+    - B
+    - E
+    - J
+  - name: LengthType
+    type: enum
+    description: Type of length measurement
+    values:
+    - '-9'
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '13'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+  - name: DateofCalculation
+    type: number(ordinal)
+    range:
+    - 20120419
+    - .inf
+    details: '8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
+      across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing
+      ICES Datacenter ''last recalculated'' stamp, not submitted by data providers,
+      so a fixed max would go stale immediately. Lower bound is this table''s own
+      verified minimum -- NOT forced identical across tables the way SweepLength/HaulNumber/Year
+      are, since a genuine table-specific difference is plausible here (confirmed:
+      LT''s own minimum is years later).'
+  - name: Valid_Aphia
+    type: number(id)
+    details: 'See known issue valid_aphia_type_mismatch (DATRAS-known-issues.yaml,
+      not yet filed): ICES''s WSDL declares this field character, but the live service
+      always returns it numeric -- it''s a WoRMS AphiaID (an identifier, hence number(id),
+      not a quantity).'
+    examples:
+    - 55
+    - 117258
+    - 126757
+    - 140474
+    - 1895010
+  label: Length Frequency Distribution
+  description: Each row is a length class within a haul's catch. Contains the count
+    of fish in each length bin, without individual-level age/sex data; the length-aggregated
+    summary layer of Tier 1.
+  details: 'Grain: each row is a (haul, species, length class) combination with a
+    count of fish in that length bin. Population: length-frequency summaries for all
+    species caught in surveyed hauls, aggregated by length class. Linked to HH via
+    the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship
+    + Gear + StationName/StNo + HaulNumber). Note: HaulNumber is nullable in the CA
+    table (see HH table details); the full 8-field composite key is required for correct
+    joins.'
+  origin: data-raw/DATASET_curate_dict.R
+  source:
+    parquet: HL.parquet
+- name: CA
+  columns:
+  - name: RecordHeader
+    type: enum
+    description: Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    values:
+      CA: individual fish recordings with biological information
+    label: Record Type
+  - name: Survey
+    type: string
+    examples:
+    - NS-IBTS
+    - BTS
+    - BITS
+    - DYFS
+    - Can-Mar
+    details: '29 distinct values in HH''s archive (verified 2026-07-29); ICES DATRAS
+      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a ''Survey''
+      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it''s a false
+      lead, not this field''s source: its 133 codes are ICES''s own cross-domain internal
+      survey IDs (e.g. ''A1012''), a completely different scheme from DATRAS''s own
+      short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.'
+  - name: Quarter
+    type: enum
+    description: Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: Country
+    type: string
+    description: ISO 3166 country codes and region codes used by ICES
+    examples:
+    - NL
+    - DE
+    - GB
+    - DK
+    - GB-SCT
+    details: '22 distinct values in HH''s archive (verified 2026-07-29); ''GB-SCT''
+      illustrates that this is ISO 3166 codes PLUS ICES''s own sub-national region
+      codes (per the field''s own description), not plain ISO 3166 alone. icesVocab
+      DOES resolve a ''TS_Country'' key by name (checked 2026-07-29) but it''s a false
+      lead too, same as Survey above: its 25 codes are 3-letter (e.g. ''BEL'', ''DEN'',
+      ''ENG''), a different scheme entirely from this field''s own 2-letter-plus-region
+      codes -- confirmed by checking real codes against it directly. Not used.'
+  - name: Platform
+    type: string
+    description: SeaDataNet Ship and Platform Codes
+    examples:
+    - 74E9
+    - 26D4
+    - 748S
+    - 64SS
+    - 18NE
+    details: 110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
+      ship/platform codes, an open list, not a fixed enum.
+  - name: Gear
+    type: string
+    description: Gear type code
+    examples:
+    - GOV
+    - BT3
+    - W2A
+    - TVL
+    - BT6
+    details: '55 of 99 official codes observed in HH''s archive (verified 2026-07-29).
+      icesVocab''s Gear list confirms all five real examples used here (checked 2026-07-29,
+      data-raw/datras_vocabulary.R): GOV=''GOV Trawl'', BT3=''Beam trawl 3 meters'',
+      BT6=''Beam trawl 6 meters'', TVL=''Large TV trawl'', W2A=''Western IIA''. Not
+      retyped enum: 99 codes is far past the seed''s VOCAB_CODE_LIMIT of 20.'
+  - name: SweepLength
+    type: number(quantity)
+    description: Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    units: m
+    range:
+    - 0.0
+    - 850.0
+  - name: GearExceptions
+    type: enum
+    description: Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+  - name: DoorType
+    type: enum
+    description: Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+  - name: StationName
+    type: string
+    description: Station number. National coding system, not defined by ICES.
+    examples:
+    - '1'
+    - '2'
+    - '22'
+    - '9'
+    - '17'
+    details: Field's own description says this is a national coding system, not defined
+      by ICES -- examples show the common shape (short numeric-looking strings), not
+      an exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
+      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows unpopulated.
+  - name: HaulNumber
+    type: number(ordinal)
+    description: Sequential numbering of hauls during cruise.
+    range:
+    - 0.0
+    - 82483.0
+    constraints:
+    - required
+    details: Sequential per-cruise numbering, but countries vary in whether it resets
+      each cruise or runs continuously -- the archive-wide range spans many cruises'
+      own counts pooled together, not one cruise's own haul tally.
+  - name: Year
+    type: number(ordinal)
+    description: Cruise year (YYYY)
+    range:
+    - 1965.0
+    - 2026.0
+    constraints:
+    - required
+  - name: SpeciesCodeType
+    type: enum
+    description: Type of species code used for species definition at the record. Use
+      'W' for WoRMS AphiaID
+    values:
+    - T
+    - W
+  - name: SpeciesCode
+    type: number(id)
+    description: Official WoRMS AphiaID code of species reported at the record.
+    examples:
+    - 213
+    - 126326
+    - 127118
+    - 158513
+    - 1667212
+    constraints:
+    - required
+    details: Official WoRMS AphiaID as submitted by the data provider -- contrast
+      with Valid_Aphia, the ICES Datacenter's own validated/corrected version of the
+      same concept, inserted server-side (see Valid_Aphia's own details below).
+    label: Species (WoRMS AphiaID)
+  - name: AreaType
+    type: string
+    description: Age sampling aggregation level
+    examples:
+    - '0'
+    - '13'
+    - '2'
+    - '12'
+    - '6'
+    details: 'Field''s own description (''Age sampling aggregation level'') doesn''t
+      explain what the codes themselves mean, but icesVocab''s TS_AreaType resolves
+      them (checked 2026-07-29, data-raw/datras_vocabulary.R): ''0''=ICES Statistical
+      Rectangles, ''2''=Standard NS Roundfish Areas, ''6''=EVHOE areas, ''12''=Spanish
+      North Areas, ''13''=ICES Divisions. Not retyped enum because TS_AreaType has
+      27 official codes total, over the seed''s own VOCAB_CODE_LIMIT (20, data-raw/DATASET_seed_dict.R)
+      for a usable `values` map -- and confirms the true domain genuinely is wider
+      than what''s observed here (17 of 27 codes appear in this archive). Verified
+      2026-07-29 against the full CA archive.'
+  - name: AreaCode
+    type: string
+    description: Area coding according to AreaType
+    examples:
+    - VIa
+    - 38G3
+    - 43G1
+    - 37G1
+    - 44G0
+    details: Field's own description says coding is 'according to AreaType' (its sibling
+      field) -- meaning depends on that field's own value, same pattern as LengthClass/LengthCode.
+      Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). 635 distinct
+      values, 1,898,151 of 5,966,950 rows unpopulated. Verified 2026-07-29 against
+      the full CA archive.
+  - name: LengthCode
+    type: enum
+    description: 'Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm).
+      Survey and species specific, see survey manuals for further details. When measured
+      to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
+      cm in LngtClass'
+    values:
+    - '-9'
+    - '.'
+    - '0'
+    - '1'
+    - '2'
+    - '5'
+    - '9'
+  - name: LengthClass
+    type: number(quantity)
+    description: Lower length boundary of the Length class. In cm or mm depending
+      on the LngtCode. E.g. 10-11 cm=10
+    range:
+    - 0.0
+    - 5630.0
+    details: 'Unit varies by the sibling LengthCode field (mm or cm; see LengthCode''s
+      own values map), so no fixed units here. One isolated outlier excluded, 2026-07-29:
+      932 (LengthCode ''1'', i.e. 9.32m) -- a lone occurrence with a 2.3x gap to the
+      next-highest value (405). Curated separately from HL''s own LengthClass: CA''s
+      population is aged individuals only, a different (and differently distributed)
+      subset from HL''s whole-catch length-frequency tally, so the two are not assumed
+      identical (Working principles, rule 12).'
+    label: Length Class (cm)
+  - name: IndividualSex
+    type: enum
+    description: Gender of the described species category. In CA-records should be
+      defined by dissection. If no determination was performed, report '-9'. If determination
+      failed, report 'U'.
+    values:
+    - '-9'
+    - B
+    - F
+    - M
+    - 'N'
+    - T
+    - U
+  - name: IndividualMaturity
+    type: string
+    description: Sexual maturation of the individual(s) measured. Often needs dissection,
+      but not for e.g. male elasmobranchs. MaturityScale should be filled in when
+      filling in Maturity.
+    examples:
+    - '61'
+    - '62'
+    - '1'
+    - '2'
+    - B
+    details: Field's own description says the scheme depends on the sibling MaturityScale
+      field ('MaturityScale should be filled in when...') -- explains the observed
+      mix of numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales
+      using different code sets, not an inconsistency. 48 distinct values, 3,173,580
+      of 5,966,950 rows unpopulated. Verified 2026-07-29 against the full CA archive.
+  - name: AgePlusGroup
+    type: enum
+    description: Records with high age categories can be grouped into the Plus group.
+      If the plus group age is specified, no higher ages can be reported for the species
+      in the haul.
+    values:
+    - +
+    - '-9'
+  - name: IndividualAge
+    type: number(quantity)
+    description: Age of specimen in years
+    units: years
+    range:
+    - 0.0
+    - 99.0
+    details: '-1 (1757 rows) reads as a systematic, undocumented ''not determined''
+      sentinel; -5 and -95 (1 row each) are isolated anomalies -- all three excluded.
+      99 (54 rows) is kept: real, repeated support, not a fluke -- reads like a plus-group/max-age
+      reporting convention, though that mechanism isn''t confirmed here, just noted
+      as an observation.'
+  - name: NumberAtLength
+    type: number(quantity)
+    description: Amount of fish at the given category (per haul, species, length class,
+      sex, maturity, age).
+    range:
+    - 1.0
+    - 218.0
+    details: 'Distinct population from HL''s own NumberAtLength: this counts aged
+      individuals only, not the whole catch, hence the much smaller scale -- not assumed
+      identical (Working principles, rule 12).'
+  - name: IndividualWeight
+    type: number(quantity)
+    description: Measured individual weight of the fish (grams)
+    units: g
+    range:
+    - 0.0
+    - 97000.0
+  - name: FishID
+    type: string
+    description: Fish identification number - running sampling number of the specimen
+    examples:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    details: Reads as a sequential per-sample identifier (dense run of small integers-as-strings),
+      open-ended and illustrative only, not an exhaustive domain -- 170,774 distinct
+      values, only 1,118,002 of 5,966,950 rows populated (~18.7%). Verified 2026-07-29
+      against the full CA archive.
+  - name: GeneticSamplingFlag
+    type: enum
+    description: Flag whether genetic sample was taken
+    values:
+    - 'Y'
+    - 'N'
+    details: 'Field''s own description (''Flag whether genetic sample was taken'')
+      confirms boolean intent; verified 100% clean two-value split against the full
+      archive, 2026-07-29 (N: 829,547 rows; Y: 13,793; zero other values across 843,340
+      non-null rows, 5,123,610 unpopulated).'
+  - name: StomachSamplingFlag
+    type: enum
+    description: Flag whether stomach sampling was performed
+    values:
+    - 'Y'
+    - 'N'
+    details: 'Field''s own description (''Flag whether stomach sampling was performed'')
+      confirms boolean intent; verified 100% clean two-value split against the full
+      archive, 2026-07-29 (N: 1,018,036 rows; Y: 39,403; zero other values across
+      1,057,439 non-null rows, 4,909,511 unpopulated).'
+  - name: AgeSource
+    type: enum
+    description: Biological sample type
+    values:
+      Otolith: Otolith
+      Scale: Scale
+      Operculum: Operculum
+      Vertebra: Vertebra
+      Finray: Finray
+    label: Age Determination Method
+  - name: AgePreparationMethod
+    type: enum
+    description: Preparation method of the sampled tissue
+    values:
+      Burnt: Burnt
+      Thin section: Thin section
+      Break and burn: Break and burn
+    label: Specimen Preparation for Aging
+  - name: OtolithGrading
+    type: enum
+    description: Grading of the otolith reading
+    values:
+    - '-9'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: ParasiteSamplingFlag
+    type: enum
+    description: Flag whether parasites sampling was performed
+    values:
+    - 'Y'
+    - 'N'
+    details: 'Field''s own description (''Flag whether parasites sampling was performed'')
+      confirms boolean intent; verified 100% clean two-value split against the full
+      archive, 2026-07-29 (N: 893,790 rows; Y: 76,620; zero other values across 970,410
+      non-null rows, 4,996,540 unpopulated).'
+  - name: MaturityScale
+    type: enum
+    description: Maturity scale type used in the Maturity field. From 2021 only M6
+      and SMSF will be accepted for new submissions.
+    values:
+    - '-9'
+    - M1
+    - M10
+    - M4
+    - M5
+    - M6
+    - MRF6
+    - R1
+    - R2
+    - S6
+    - SMSF
+  - name: DateofCalculation
+    type: number(ordinal)
+    range:
+    - 20120419
+    - .inf
+    details: '8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
+      across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing
+      ICES Datacenter ''last recalculated'' stamp, not submitted by data providers,
+      so a fixed max would go stale immediately. Lower bound is this table''s own
+      verified minimum -- NOT forced identical across tables the way SweepLength/HaulNumber/Year
+      are, since a genuine table-specific difference is plausible here (confirmed:
+      LT''s own minimum is years later).'
+  - name: Valid_Aphia
+    type: number(id)
+    details: 'See known issue valid_aphia_type_mismatch (DATRAS-known-issues.yaml,
+      not yet filed): ICES''s WSDL declares this field character, but the live service
+      always returns it numeric -- it''s a WoRMS AphiaID (an identifier, hence number(id),
+      not a quantity). CA''s own instance was missed when HL''s Valid_Aphia was originally
+      filled (found 2026-07-29 via validate-spec''s S07 check) -- same concept as
+      HL''s Valid_Aphia (ICES Datacenter''s validated AphiaID) but a different sampling
+      population (aged individuals only), so queried independently rather than assumed
+      identical (Working principles, rule 12). 667 distinct values, 0 unpopulated
+      (always present). Verified 2026-07-29 against the full CA archive.'
+    examples:
+    - 213
+    - 105872
+    - 126412
+    - 141452
+    - 1667212
+  label: Age Composition (Individual)
+  description: Each row is one aged fish specimen from a haul. Contains individual-level
+    biological measurements (length, weight, age, sex, maturity) on a subsample of
+    the catch; linked to HH via the composite haul identifier.
+  details: 'Grain: each row is one biological specimen (a single aged fish) from a
+    haul. Population: individual organisms sampled and measured from hauls within
+    covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the composite
+    haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo
+    + HaulNumber). Critical note: HaulNumber contains 305,276 null values (5.12% of
+    5.97M rows), violating the constraint marked in DATRAS-data-dict.yaml. This nullability
+    breaks assumptions about HaulNumber as a join key; the composite 8-field identifier
+    is required instead. See DATRAS-known-issues.yaml (issue: ca_haul_number_nullable)
+    for full details on the constraint violation and preprocessing caveat (icesDatras
+    converts literal -9 to NA).'
+  origin: data-raw/DATASET_curate_dict.R
+  source:
+    parquet: CA.parquet
+- name: LT
+  columns:
+  - name: Survey
+    type: string
+    examples:
+    - NS-IBTS
+    - BTS
+    - BITS
+    - DYFS
+    - Can-Mar
+    details: '29 distinct values in HH''s archive (verified 2026-07-29); ICES DATRAS
+      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a ''Survey''
+      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it''s a false
+      lead, not this field''s source: its 133 codes are ICES''s own cross-domain internal
+      survey IDs (e.g. ''A1012''), a completely different scheme from DATRAS''s own
+      short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.'
+  - name: Quarter
+    type: enum
+    description: Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+  - name: Year
+    type: number(ordinal)
+    description: Cruise year (YYYY)
+    range:
+    - 1965.0
+    - 2026.0
+    constraints:
+    - required
+  - name: Platform
+    type: string
+    description: SeaDataNet Ship and Platform Codes
+    examples:
+    - 74E9
+    - 26D4
+    - 748S
+    - 64SS
+    - 18NE
+    details: 110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
+      ship/platform codes, an open list, not a fixed enum.
+  - name: Gear
+    type: string
+    description: Gear type code
+    examples:
+    - GOV
+    - BT3
+    - W2A
+    - TVL
+    - BT6
+    details: '55 of 99 official codes observed in HH''s archive (verified 2026-07-29).
+      icesVocab''s Gear list confirms all five real examples used here (checked 2026-07-29,
+      data-raw/datras_vocabulary.R): GOV=''GOV Trawl'', BT3=''Beam trawl 3 meters'',
+      BT6=''Beam trawl 6 meters'', TVL=''Large TV trawl'', W2A=''Western IIA''. Not
+      retyped enum: 99 codes is far past the seed''s VOCAB_CODE_LIMIT of 20.'
+  - name: Country
+    type: string
+    description: ISO 3166 country codes and region codes used by ICES
+    examples:
+    - NL
+    - DE
+    - GB
+    - DK
+    - GB-SCT
+    details: '22 distinct values in HH''s archive (verified 2026-07-29); ''GB-SCT''
+      illustrates that this is ISO 3166 codes PLUS ICES''s own sub-national region
+      codes (per the field''s own description), not plain ISO 3166 alone. icesVocab
+      DOES resolve a ''TS_Country'' key by name (checked 2026-07-29) but it''s a false
+      lead too, same as Survey above: its 25 codes are 3-letter (e.g. ''BEL'', ''DEN'',
+      ''ENG''), a different scheme entirely from this field''s own 2-letter-plus-region
+      codes -- confirmed by checking real codes against it directly. Not used.'
+  - name: StationName
+    type: string
+    description: Station number. National coding system, not defined by ICES.
+    examples:
+    - '1'
+    - '2'
+    - '22'
+    - '9'
+    - '17'
+    details: Field's own description says this is a national coding system, not defined
+      by ICES -- examples show the common shape (short numeric-looking strings), not
+      an exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
+      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows unpopulated.
+  - name: HaulNumber
+    type: number(ordinal)
+    description: Sequential numbering of hauls during cruise.
+    range:
+    - 0.0
+    - 82483.0
+    constraints:
+    - required
+    details: Sequential per-cruise numbering, but countries vary in whether it resets
+      each cruise or runs continuously -- the archive-wide range spans many cruises'
+      own counts pooled together, not one cruise's own haul tally.
+  - name: ShootLatitude
+    type: number(quantity)
+    description: Decimal latitude position on the shooting location
+    units: decimal degrees
+    range:
+    - 36.0013
+    - 76.2117
+  - name: ShootLongitude
+    type: number(quantity)
+    description: Decimal longitude position on the shooting location
+    units: decimal degrees
+    range:
+    - -67.7115
+    - 24.4333
+    details: 'A genuine value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS
+      longitude off Ireland/Iberia) would be indistinguishable from missing here:
+      icesDatras''s fetch pipeline scrubs literal -9 to NA for every numeric column,
+      not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R''s
+      header.'
+  - name: HaulLatitude
+    type: number(quantity)
+    description: Decimal latitude position on the hauling location
+    units: decimal degrees
+    range:
+    - 36.0013
+    - 65.0
+    details: 3 rows record exactly 0 degrees (the equator), categorically outside
+      any DATRAS survey area -- excluded; the lower bound instead matches ShootLatitude's
+      own clean minimum for the same archive.
+  - name: HaulLongitude
+    type: number(quantity)
+    description: Decimal longitude position on the hauling location
+    units: decimal degrees
+    range:
+    - -67.6762
+    - 45.8753
+    details: Same -9-as-missing caveat as ShootLongitude above (0 degrees, the Prime
+      Meridian, is a genuine North Sea value here and is kept).
+  - name: OSPARArea
+    type: string
+    examples:
+    - II
+    - III
+    - IV
+    - V
+    details: OSPAR maritime area code (Roman-numeral regions); 4 distinct values observed,
+      14,498 of 79,451 rows unpopulated. No description present to confirm whether
+      this is the complete official OSPAR region set. Verified 2026-07-29 against
+      the full LT archive.
+  - name: MSFDArea
+    type: string
+    examples:
+    - North-east Atlantic Ocean
+    - Baltic Sea
+    details: Marine Strategy Framework Directive region name; only 2 distinct values
+      observed, 4,295 of 79,451 rows unpopulated. The EU MSFD framework has more than
+      two regions overall -- DATRAS's own survey coverage may simply never reach the
+      others, so not treated as a closed/exhaustive set. Verified 2026-07-29 against
+      the full LT archive.
+  - name: BottomDepth
+    type: number(quantity)
+    description: Sampling depth in metres, measured from the water surface.
+    units: m
+    range:
+    - 1.0
+    - 3098.0
+  - name: Distance
+    type: number(quantity)
+    description: Distance in metres between haul start and haul end point.
+    units: m
+    range:
+    - 0.0
+    - 59995.0
+  - name: DoorSpread
+    type: number(quantity)
+    description: Mean value in metres of door spread measurements.
+    units: m
+    range:
+    - 1.0
+    - 250.0
+    details: 0m (9 rows) is excluded as a placeholder -- a rigged, towing trawl cannot
+      have zero door spread. Three single-occurrence values (762, 767, 778m) sit far
+      above everything else in the archive (next highest is 250m) and are treated
+      as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
+      likely a fixed beam-trawl spread) is kept.
+  - name: WingSpread
+    type: number(quantity)
+    description: Mean value in metres of wing spread measurements. For more details
+      see the manual.
+    units: m
+    range:
+    - 4.0
+    - 50.0
+    details: 0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value
+      with real support -- a well-populated cluster starts at 4m (1074 rows, likely
+      a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
+      value (50m) and is treated as a data-entry error, excluded.
+  - name: LTREF
+    type: enum
+    description: Reference code of the list used for categorizing litter. See LTREF
+      in ICES vocabulary for options
+    values:
+    - C-TS
+    - C-TS-REV
+    - C-TS-REV2
+    - H01
+    - JCODELIST
+    - LT-FM
+    - MEDITS
+    - OSPAR-LT
+    - RECO-LT
+    - TSG-ML
+    - UNEP
+    - UNEP-RLC
+  - name: PARAM
+    type: string
+    examples:
+    - A2
+    - LT-TOT
+    - A5
+    - A7
+    - A14
+    details: 'Litter parameter/category code, no description present. icesVocab resolves
+      a PARAM list (checked 2026-07-29, data-raw/datras_vocabulary.R) -- ''LT-TOT''=''Litter
+      - total'' confirmed there among 1,938 total codes -- but ''A2''/''A3''/''A5''/''A6''/''A7''/''A14''
+      do NOT appear in it under any description, despite being common real values
+      here (checked directly, not just absent from a sample). A real discrepancy between
+      this archive''s own PARAM usage and icesVocab''s published list, not investigated
+      further -- candidate for DATRAS-known-issues.yaml once that registry exists
+      (see AGENTS.md). Not retyped enum regardless: 1,938 codes is far past the seed''s
+      VOCAB_CODE_LIMIT of 20. 50 distinct values, 2 of 79,451 rows unpopulated. Verified
+      2026-07-29 against the full LT archive.'
+  - name: LTSZC
+    type: string
+    examples:
+    - A
+    - B
+    - C
+    - D
+    - '13'
+    details: 'Litter size class code (mix of letter and numeric codes), no description
+      present. icesVocab''s LTSZC list confirms all five (checked 2026-07-29): ''A''=''squared
+      centimetre <5*5cm=25cm2'' through ''D''=''<50*50cm=2500cm2'' (area-based classes),
+      ''13''=''centimetre 15-49.99cm'' (a length-based class) -- two different measurement
+      bases coexisting under one code list. 23 of 41 official codes observed here;
+      not retyped enum since 41 exceeds the seed''s VOCAB_CODE_LIMIT of 20. 16,508
+      of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT archive.'
+  - name: UnitWeight
+    type: string
+    examples:
+    - kg/haul
+    - g/haul
+    details: Unit of the sibling LT_Weight field (see LT_Weight's own details below);
+      exactly 2 values observed across the full archive (48,758 kg/haul, 26,437 g/haul),
+      4,256 of 79,451 rows unpopulated. No description present to confirm this is
+      the complete valid unit set. Verified 2026-07-29 against the full LT archive.
+  - name: LT_Weight
+    type: number(quantity)
+    description: Weight of the litter category in units specified by the previous
+      field
+    range:
+    - 0.0
+    - 1600000.0
+    details: 'Unit varies by the sibling UnitWeight field (kg/haul for 46,673 rows,
+      g/haul for 24,383, unspecified for 276), so no fixed units here. Two exclusions,
+      2026-07-29: -99 (3 rows, kg/haul) as an isolated sentinel-like anomaly, and
+      46,318,000 (1 row, g/haul) as a lone outlier roughly 29x the next-highest real
+      value (1,600,000) -- an implausible ~46 tonnes of litter in one haul, almost
+      certainly a data-entry error. The rest of the g/haul group''s own large values
+      (up to 1,600,000g = 1.6 tonnes) are kept: rare, but large litter catches (e.g.
+      old fishing gear, major debris items) are plausible.'
+    label: Total Litter Weight (kg)
+  - name: UnitItem
+    type: string
+    examples:
+    - items/haul
+    details: Unit of the sibling LT_Items field (see LT_Items's own details below);
+      only one value ever observed (79,415 of 79,451 rows), 36 unpopulated -- a single
+      example, not five, because no second real value exists in the archive to show.
+      Verified 2026-07-29 against the full LT archive.
+  - name: LT_Items
+    type: number(quantity)
+    description: '"Number of items within the given litter category (by type, size,
+      and additional parameters) in units specified by the previous field"'
+    range:
+    - 0.0
+    - 2323.0
+    details: 'UnitItem is ''items/haul'' for all but 36 of 76,882 populated rows --
+      effectively a fixed count, no exclusions needed: no isolated outlier or repeating
+      marker pattern, just a smooth decline from the max.'
+    label: Total Item Count
+  - name: LTSRC
+    type: enum
+    description: If the source of litter origin is posible to identify, the appropriate
+      option should be reported here.
+    values:
+    - '-9'
+    - LB
+    - LBF
+    - LBI
+    - LBM
+    - LBS
+    - LBT
+    - OB
+    - RBI
+    - SBA
+    - SBF
+    - SBG
+    - SBMR
+    - SBR
+    - SBS
+    - SBT
+    - UNK
+  - name: TYPPL
+    type: string
+    examples:
+    - PE
+    - PP
+    - PET
+    - PS
+    - UPL
+    details: 'Litter (plastic) type code, no description present. icesVocab''s TYPPL
+      list confirms all five (checked 2026-07-29): PE=Polyethylene, PET=Polyethylene
+      terephthalate, PP=Polypropylene, PS=Polystyrene, UPL=Undefined plastic. 6 of
+      30 official codes observed here; not retyped enum since 30 exceeds the seed''s
+      VOCAB_CODE_LIMIT of 20. Very sparse: only 162 of 79,451 rows populated. Verified
+      2026-07-29 against the full LT archive.'
+  - name: LTPRP
+    type: string
+    description: Litter properties that may be deemed important for reporting. Reporting
+      of multiple codes in this field is allowed.
+    examples:
+    - AO
+    - CL1
+    - CL5
+    - CL2
+    - CL4
+    details: 'Litter property code, no description present. icesVocab''s LTPRP list
+      confirms all five as BASE codes (checked 2026-07-29): AO=Attached organisms,
+      CL1=Colour-None(clear), CL2=Colour-Black, CL4=Colour-Blue, CL5=Colour-White
+      -- only 22 official base codes, but composite codes like ''CL1~AO'' also appear
+      in real data (a colour code plus an attached-organisms flag, tilde-joined),
+      which is why 79 distinct values are observed here despite only 22 base codes
+      existing -- a combinable/multi-value scheme, not a flat single-select list,
+      confirming the earlier guess. Not retyped enum: even the 22-code base list is
+      past the seed''s VOCAB_CODE_LIMIT of 20, and the combinable form isn''t a plain
+      enum shape regardless. 58,349 of 79,451 rows unpopulated. Verified 2026-07-29
+      against the full LT archive.'
+  - name: SweepLength
+    type: number(quantity)
+    description: Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    units: m
+    range:
+    - 0.0
+    - 850.0
+  - name: GearEx
+    type: enum
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+  - name: DoorType
+    type: enum
+    description: Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+  - name: Month
+    type: enum
+    description: Sampling month, as part of the calendar date.
+    values:
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+  - name: Day
+    type: number(ordinal)
+    description: Sampling day, as part of the calendar date
+    range:
+    - 1.0
+    - 31.0
+    constraints:
+    - required
+  - name: StartTime
+    type: string
+    description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
+    examples:
+    - '730'
+    - '715'
+    - '1300'
+    - '900'
+    - '700'
+    details: 1,440 distinct values in HH's archive (verified 2026-07-29), always populated
+      (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
+      10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
+      documented here rather than silently assumed. Only present in HH and LT (confirmed
+      2026-07-29), same as StatisticalRectangle above.
+  - name: HaulDuration
+    type: number(quantity)
+    description: Haul duration in minutes. Start time is the moment when the gear
+      settles at the bottom at the stated towing speed. Stop is defined as the start
+      of hauling of the gear.
+    units: min
+    range:
+    - 1.0
+    - 120.0
+    details: 'A haul cannot take zero or negative time; 217 rows recorded as exactly
+      0 and 2 as negative (-514, -238) are excluded, most likely unrecorded/placeholder
+      rather than a genuine instantaneous haul. Upper bound set at 2 hours: DATRAS
+      carries no passive/soak gear, so a longer tow is highly suspect -- observed
+      values run as high as 1470 min with no repeating marker pattern (i.e. not a
+      clean sentinel, just unreliable). Verified 2026-07-29 against the full archive.'
+  - name: StatisticalRectangle
+    type: string
+    description: Intended ICES statistical area rectangle (0.5 degrees latitude, 1
+      degree longitude)
+    examples:
+    - 37F8
+    - 35F5
+    - 36F7
+    - 32F3
+    - 36F6
+    details: 701 distinct values in HH's archive (verified 2026-07-29); real ICES
+      statistical rectangle codes (0.5 deg lat x 1 deg lon grid), not a fixed enum
+      given the size of the grid. 12,235 of 150,262 HH rows unpopulated. Only present
+      in HH and LT (confirmed 2026-07-29) -- consistent with the Open items note that
+      LT's assessment output joins in a set of HH-style columns.
+  - name: Depth
+    type: number(quantity)
+    units: m
+    range:
+    - 1.0
+    - 3098.0
+    details: 'Confirmed 2026-07-29: byte-for-byte identical to this table''s own BottomDepth
+      across all 79,288 populated rows (0 differences, 0 one-sided nulls) -- a known
+      ICES-side redundancy (also documented in obus''s own download-stage comments),
+      not an opus/obus naming quirk. Given the same type/units/range as BottomDepth
+      here rather than re-derived independently, since it is BottomDepth.'
+  - name: HaulValidity
+    type: enum
+    description: Haul validity code
+    values:
+    - A
+    - C
+    - I
+    - M
+    - 'N'
+    - S
+    - V
+  - name: DataType
+    type: enum
+    description: 'Specification of the data aggregation in the HL record. C: CPUE
+      (per hour) data; TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw),
+      S (subsample of the entire catch): data as recorded during the cruise, and P
+      (pseudocategory sampling, only used by Scotland).'
+    values:
+    - '-9'
+    - C
+    - P
+    - R
+    - S
+  - name: NetOpening
+    type: number(quantity)
+    description: Mean value in metres of vertical net opening measurements. For details
+      see the survey manual.
+    units: m
+    range:
+    - 0.0
+    - 76.0
+  - name: Rigging
+    type: enum
+    description: The way the gear is rigged. Rigging depends on survey, see survey
+      manuals for further details.
+    values:
+    - '-9'
+    - BC
+    - BM
+    - BN
+    - D
+    - F
+    - FB
+    - FM
+    - FT
+    - FW
+    - M
+    - S
+    - T
+    - TS
+    - TT
+  - name: Tickler
+    type: number(quantity)
+    description: Amount of ticklers connected to the gear.
+    range:
+    - 0.0
+    - 27.0
+  - name: WarpLength
+    type: number(quantity)
+    description: Length of warp in metres. Defined by fishing depth. Warp/depth ratio
+      is depends on survey, for further details see survey manuals.
+    units: m
+    range:
+    - 0.0
+    - 4065.0
+  - name: WarpDiameter
+    type: number(quantity)
+    description: Warp diametre in millimetres.
+    units: mm
+    range:
+    - 16.0
+    - 30.0
+    details: A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
+      values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
+      from it with no comparable support and are treated as data-entry errors, excluded
+      here.
+  - name: WarpDensity
+    type: number(quantity)
+    description: Warp weight in kg per linear meter of warp. See survey manuals for
+      more information.
+    units: kg/m
+    range:
+    - 0.0
+    - 26.0
+  - name: DoorSurface
+    type: number(quantity)
+    description: Door surface area in square metres.
+    units: m2
+    range:
+    - 0.0
+    - 20.2
+  - name: DoorWeight
+    type: number(quantity)
+    description: Door weight in kilograms.
+    units: kg
+    range:
+    - 0.0
+    - 1720.0
+  - name: TowDirection
+    type: number(quantity)
+    description: Direction of towing in degrees. 360=direction from south to north.
+    units: degrees
+    range:
+    - 0.0
+    - 360.0
+    details: 999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker,
+      the same pattern confirmed for WindDirection below. A further cluster -- 450
+      deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by
+      10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg);
+      plausible but not investigated further (would need correlating with Country/Survey).
+      Both groups are outside the documented 0-360 domain and excluded here.
+  - name: SpeedGround
+    type: number(quantity)
+    description: Ground speed of towing in knots. Recommended speed depends on survey,
+      see survey manuals for more details
+    units: knots
+    range:
+    - 0.0
+    - 10.0
+    details: Ceiling is a domain judgment (real trawling ground speed), not an observed
+      cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
+      gap, all excluded.
+  - name: SpeedWater
+    type: number(quantity)
+    description: Trawl speed on water in knots.
+    units: knots
+    range:
+    - 0.0
+    - 22.0
+  - name: WindDirection
+    type: number(quantity)
+    description: Direction of wind in degrees. Calm = 0,  direction from north to
+      south = 360, varying direction = -1
+    units: degrees
+    range:
+    - -1.0
+    - 360.0
+    details: -1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented
+      out-of-domain 'not recorded' marker; a handful of further single-occurrence
+      values just above 360 (711, 504, 420, 365, 361) are also excluded.
+  - name: WindSpeed
+    type: number(quantity)
+    description: Speed of wind in metres/sec.
+    units: m/s
+    range:
+    - 0.0
+    - 28.0
+    details: Ceiling follows the Beaufort 10 upper bound (28.4 m/s, storm force) --
+      no vessel would be actively trawling above this. 1,641 of 109,012 populated
+      rows (~1.5%) exceed it, tailing off smoothly with no clean gap up to 342 m/s;
+      the count jumps from a thin 1-7-row-per-value tail above 28 to 357 rows right
+      at 28, consistent with a real distribution below and noise above.
+  - name: SwellDirection
+    type: number(quantity)
+    description: Direction of swell in degrees. No movement=0, direction from south
+      to north = 360, varying direction = -1
+    units: degrees
+    range:
+    - 0.0
+    - 360.0
+  - name: SwellHeight
+    type: enum
+    description: Height of (swell) waves, in metres
+    values:
+    - H
+    - L
+    - M
+    - 'N'
+    - NR
+    - VH
+  - name: CodendMesh
+    type: number(quantity)
+    description: Codend mesh size in mm
+    units: mm
+    range:
+    - 9.0
+    - 100.0
+    details: 0mm (202 rows) excluded as a placeholder -- a codend by definition has
+      some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
+      644 rows) and is treated as a data-entry error, excluded.
+  - name: EEZ
+    type: string
+    examples:
+    - United Kingdom Exclusive Economic Zone
+    - Danish Exclusive Economic Zone
+    - French Exclusive Economic Zone
+    - Spanish Exclusive Economic Zone
+    - Swedish Exclusive Economic Zone
+    details: Exclusive Economic Zone name, no description present. 20 distinct values,
+      162 of 79,451 rows unpopulated. Not treated as a closed set -- EEZ coverage
+      in a wider archive could plausibly include zones absent from this one. Verified
+      2026-07-29 against the full LT archive.
+  - name: NMArea
+    type: string
+    examples:
+    - United Kingdom 12 NM
+    - Swedish 12 NM
+    - Spanish 12 NM
+    - French 12 NM
+    - Danish 12 NM
+    details: National 12-nautical-mile zone name (sibling concept to EEZ above), no
+      description present. 18 distinct values, 53,303 of 79,451 rows unpopulated.
+      Not treated as a closed set, same reasoning as EEZ. Found 2026-07-29 only after
+      fixing the Y/N-enum crash above -- validate-spec had never actually reached
+      this field before, since it's the table's last column and everything upstream
+      of it kept dying first (ThermoCline, then the flag enums). Verified 2026-07-29
+      against the full LT archive.
+  - name: DateofCalculation
+    type: number(ordinal)
+    details: 'See known issue dateofcalculation_type_mismatch (DATRAS-known-issues.yaml,
+      not yet filed): ICES''s WSDL declares this field character for LT''s own retrieval
+      operation (getLitterAssessmentOutput), while HH/HL/CA''s own operations all
+      declare it int/decimal -- but real LT data (verified 2026-07-29) is the identical
+      8-digit YYYYMMDD stamp (e.g. "20260625"), just returned as a string by that
+      one operation. Digit order (month before day) confirmed consistent with HH/HL/CA.
+      Same open-upper-bound, ICES-Datacenter-inserted basis as HH/HL/CA''s DateofCalculation,
+      but this table''s OWN verified minimum (2015-11-27) is genuinely years later
+      than theirs (2012-04-19) -- consistent with LT/litter reporting being a newer
+      addition to DATRAS than the main haul/length/age exchange.'
+    range:
+    - 20151127
+    - .inf
+  label: Litter Assessment
+  description: Each row is one litter observation from a haul. Contains types and
+    counts of marine debris (plastics, fishing gear, natural/organic material) recorded
+    during the catch review; a separate thematic addition to the HH/HL/CA exchange.
+  details: 'Grain: each row is one litter assessment/observation recorded during a
+    haul''s catch review. Population: litter records from hauls in covered surveys;
+    a thematic addition to the HH/HL/CA core exchange tables with a separate collection
+    protocol and scope. Linked to HH via the composite haul identifier (Survey + Year
+    + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note:
+    like CA, LT''s own HaulNumber may be nullable; the full 8-field composite key
+    is required for correct joins.'
+  origin: data-raw/DATASET_curate_dict.R
+  source:
+    parquet: LT.parquet
+glossary:
+  Haul: 'A single deployment of a trawl net. The primary unit of observation in DATRAS:
+    one haul''s catch (HH record) is subsampled and analyzed into length frequencies
+    (HL) and aged individuals (CA).'
+  Length-stratified subsample: A subset of fish taken from a haul's catch, selected
+    across the full range of observed length classes. Used in CA for cost-efficient
+    age sampling without exhaustively aging every fish.
+  Valid_Aphia: The ICES Datacenter's server-inserted, validated WoRMS AphiaID for
+    each species. May differ from SpeciesCode (submitted value) due to ICES corrections
+    or updates to the WoRMS taxonomy.
+  DateofCalculation: The timestamp (YYYYMMDD) when the ICES Datacenter last recalculated
+    and reprocessed this record. Not submitted by data providers; inserted and updated
+    server-side as part of ICES's QC workflow.
+  Litter Assessment: A qualitative and quantitative survey of marine debris (plastics,
+    metal, rubber, natural materials, fishing gear) observed in the trawl catch. LT
+    records are a thematic extension beyond HH/HL/CA's focus on fishery target species.
+  Tier 1: 'The raw, per-haul exchange layer of ICES DATRAS: HH (haul), HL (length
+    frequency), CA (aged individuals), and LT (litter). The primary submission format
+    from national institutes to ICES.'
+  Survey: 'A coordinated research program that conducts regular sampling (e.g., NS-IBTS:
+    North Sea International Bottom Trawl Survey). DATRAS is the archive of submissions
+    from many regional surveys with different spatial/temporal coverage.'

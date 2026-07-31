@@ -1,0 +1,47 @@
+Package: opus
+Title: ICES DATRAS Data Dictionary and Known-Issues Registry
+Version: 0.2.0
+Date: 2026-07-29
+Authors@R:
+    c(person("Einar", "Hjörleifsson",
+             email = "einar.hjorleifsson@gmail.com",
+             role = c("aut", "cre")))
+Author: Einar Hjörleifsson
+Maintainer: Einar Hjörleifsson <einar.hjorleifsson@gmail.com>
+Description: Reference specifications package consolidating ICES DATRAS data dictionaries
+    and known-issues registry. Provides YAML definitions for field types, units, and
+    constraints across four Tier-1 exchange tables (HH, HL, CA, LT), plus structured
+    tracking of metadata issues for reporting to ICES.
+ .
+      Data-only package (no computational functions). YAML dictionaries conform to
+    the data-dict.yaml v0.1.0 specification. The known-issues registry documents
+    gaps and inconsistencies in ICES specifications, distinct from data-quality QC
+    (which belongs downstream in obus/imbus).
+ .
+      Intended for pre-submission validation: data submitters can use opus specs
+    locally to validate DATRAS submissions before uploading to ICES.
+License: CC0
+URL: https://github.com/einarhjorleifsson/opus
+BugReports: https://github.com/einarhjorleifsson/opus/issues
+Encoding: UTF-8
+Language: en-US
+Depends:
+    R (>= 4.5)
+Imports:
+    arrow,
+    jsonlite,
+    yaml,
+    icesVocab
+Suggests:
+    testthat (>= 3.0.0),
+    dplyr,
+    httr2,
+    icesDatras (>= 1.5.2),
+    purrr,
+    readr,
+    tidyr,
+    knitr,
+    rmarkdown,
+    quarto,
+    pkgdown
+Config/roxygen2/version: 8.0.0

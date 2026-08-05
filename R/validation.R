@@ -4,6 +4,10 @@
 #' opus YAML dictionaries. Use these in the development loop:
 #' (1) curate YAML, (2) inspect real data, (3) validate, (4) refine YAML.
 #'
+#' **Note**: `op_describe_parquet()` and `op_draft_from_parquet()` require
+#' the `describe-command` and `draft-command` branches of data-dict to be
+#' merged and built. They will error gracefully if unavailable.
+#'
 #' These are development tools, not shipped API.
 
 #' Check YAML dictionary conformance to data-dict.yaml spec
@@ -38,14 +42,19 @@ op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
   )
 }
 
-#' Inspect parquet file schema and sample
+#' Inspect parquet file schema
 #'
 #' See what data-dict CLI sees in a parquet file.
+#' Uses `describe --json` to profile the file and extract schema information.
+#'
+#' **Note**: Prior to data-dict v0.0.3 (2026-08-04), this used `types parquet`.
+#' It now uses `describe --json` since `types parquet` was removed.
 #'
 #' @param parquet_path Path to parquet file
 #' @param cli_bin Path to data-dict CLI binary
 #'
-#' @return List: (schema = JSON, raw_output = lines)
+#' @return List: (valid = T/F, columns = data.frame with name/type/parquet_type,
+#'   raw_output = JSON text, command)
 #' @export
 op_inspect_parquet <- function(parquet_path,
                                cli_bin = "~/garbage/data-dict/target/release/data-dict") {
@@ -60,13 +69,35 @@ op_inspect_parquet <- function(parquet_path,
     stop("Parquet file not found at ", parquet_path, call. = FALSE)
   }
 
-  output <- system2(cli_bin, c("types", "parquet", parquet_path),
+  output <- system2(cli_bin, c("describe", parquet_path, "--json"),
                     stdout = TRUE, stderr = TRUE)
+  status <- attr(output, "status") %||% 0L
+  raw_json <- paste(output, collapse = "\n")
 
-  list(
-    output  = output,
-    command = paste(cli_bin, "types parquet", parquet_path)
-  )
+  if (status == 0) {
+    parsed <- jsonlite::fromJSON(raw_json, simplifyVector = FALSE)
+    columns <- do.call(rbind, lapply(parsed$columns, function(col) {
+      data.frame(
+        name = col$name,
+        type = col$type,
+        parquet_type = col$parquet_type,
+        stringsAsFactors = FALSE
+      )
+    }))
+    list(
+      valid       = TRUE,
+      columns     = columns,
+      raw_output  = raw_json,
+      command     = paste(cli_bin, "describe", parquet_path, "--json")
+    )
+  } else {
+    list(
+      valid       = FALSE,
+      error       = paste(output, collapse = "\n"),
+      raw_output  = raw_json,
+      command     = paste(cli_bin, "describe", parquet_path, "--json")
+    )
+  }
 }
 
 #' Validate dataset metadata against dictionary
@@ -343,6 +374,116 @@ op_flag_violations <- function(data_path, table,
   }
 
   df
+}
+
+#' Describe columns of a parquet file
+#'
+#' Profiles a parquet file and summarizes each column: type, distinct/null counts,
+#' histograms (numeric/temporal), or most common values (string/boolean).
+#'
+#' Requires `describe-command` branch of data-dict to be built. Call
+#' `op_describe_parquet()` to check availability.
+#'
+#' @param parquet_path Path to parquet file
+#' @param column Optional: summarize only this column (default: all)
+#' @param json Logical: return JSON output? (default: FALSE returns formatted text)
+#' @param cli_bin Path to data-dict CLI binary
+#'
+#' @return List: (available = T/F, output = text/JSON, raw_output = lines, exit_status)
+#' @export
+op_describe_parquet <- function(parquet_path, column = NULL,
+                               json = FALSE,
+                               cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+  cli_bin <- path.expand(cli_bin)
+  parquet_path <- path.expand(parquet_path)
+
+  if (!file.exists(cli_bin)) {
+    return(list(
+      available = FALSE,
+      error = paste("data-dict CLI not found at", cli_bin),
+      note = "The 'describe' command requires describe-command branch to be merged and built"
+    ))
+  }
+
+  if (!file.exists(parquet_path)) {
+    stop("Parquet file not found at ", parquet_path, call. = FALSE)
+  }
+
+  args <- c("describe", parquet_path)
+  if (!is.null(column)) {
+    args <- c(args, column)
+  }
+  if (json) {
+    args <- c(args, "--json")
+  }
+
+  output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
+  status <- attr(output, "status") %||% 0L
+
+  list(
+    available  = TRUE,
+    valid      = (status == 0L),
+    exit_status = status,
+    output     = if (json) jsonlite::fromJSON(paste(output, collapse = "\n")) else paste(output, collapse = "\n"),
+    raw_output = output,
+    command    = paste(c(cli_bin, args), collapse = " ")
+  )
+}
+
+#' Draft a data-dict.yaml from parquet files
+#'
+#' Generates a skeleton `data-dict.yaml` by profiling one or more parquet files.
+#' Creates one table per input file, with inferred types, observed ranges/examples,
+#' and `# TODO:` markers for human decisions.
+#'
+#' Requires `draft-command` branch of data-dict to be built. The output file
+#' always passes `validate-spec`, so you can refine it incrementally.
+#'
+#' @param parquet_paths Character vector: paths to parquet files to describe
+#' @param output Path to write output YAML (default: `"./data-dict.yaml"`)
+#'   Use `"-"` for stdout.
+#' @param cli_bin Path to data-dict CLI binary
+#'
+#' @return List: (available = T/F, exit_status, output_path, skipped = files already in dict,
+#'   created = new tables, raw_output, stderr)
+#' @export
+op_draft_from_parquet <- function(parquet_paths,
+                                 output = "./data-dict.yaml",
+                                 cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+  cli_bin <- path.expand(cli_bin)
+  output <- path.expand(output)
+
+  if (!file.exists(cli_bin)) {
+    return(list(
+      available = FALSE,
+      error = paste("data-dict CLI not found at", cli_bin),
+      note = "The 'draft' command requires draft-command branch to be merged and built"
+    ))
+  }
+
+  # Validate input files exist
+  missing <- parquet_paths[!file.exists(parquet_paths)]
+  if (length(missing) > 0) {
+    stop("Parquet file(s) not found: ", paste(missing, collapse = ", "), call. = FALSE)
+  }
+
+  args <- c("draft", parquet_paths, "--output", output)
+  err_file <- tempfile()
+  on.exit(unlink(err_file), add = TRUE)
+
+  stdout_lines <- system2(cli_bin, args, stdout = TRUE, stderr = err_file)
+  status <- attr(stdout_lines, "status") %||% 0L
+  stderr_lines <- if (file.exists(err_file)) readLines(err_file, warn = FALSE) else character(0)
+
+  list(
+    available   = TRUE,
+    valid       = (status == 0L),
+    exit_status = status,
+    output_path = if (output != "-") output else NA_character_,
+    raw_output  = stdout_lines,
+    stderr      = stderr_lines,
+    command     = paste(c(cli_bin, args), collapse = " ")
+  )
 }
 
 # Null coalesce helper

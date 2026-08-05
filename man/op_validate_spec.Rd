@@ -23,6 +23,10 @@ opus YAML dictionaries. Use these in the development loop:
 (1) curate YAML, (2) inspect real data, (3) validate, (4) refine YAML.
 }
 \details{
+**Note**: `op_describe_parquet()` and `op_draft_from_parquet()` require
+the `describe-command` and `draft-command` branches of data-dict to be
+merged and built. They will error gracefully if unavailable.
+
 These are development tools, not shipped API.
 Check YAML dictionary conformance to data-dict.yaml spec
 }

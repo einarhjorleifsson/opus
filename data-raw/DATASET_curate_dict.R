@@ -129,6 +129,70 @@ apply_correction <- function(dict, correction) {
 
 curated <- reduce(corrections, apply_correction, .init = seed)
 
+# --- Enrich with legacy field names from icesDatras (critical for icesVocab lookups) ---
+#
+# icesVocab code lookups are DEPENDENT on field names, and those names are
+# both old (legacy ICES names) and new (current names). Many fields have
+# vocabularies ONLY under the old name (e.g., Sex has TS_Sex, but no
+# TS_IndividualSex), so we must document the mapping for downstream code
+# and validation tools.
+#
+# Format: Add "Legacy field name: {OldName}" prefix to details field.
+# This approach is:
+#   - Fully data-dict spec-compliant (details is free-text)
+#   - Machine-readable via regex: /Legacy field name: (\w+)/
+#   - Human-readable and easy to scan
+#   - Survives YAML round-trips
+#
+# See vignettes/articles/technical-notes.md for design rationale and
+# the icesVocab dependency discovery.
+#
+add_legacy_field_names <- function(dict) {
+  # Get old->new name mapping from icesDatras (the authoritative source)
+  fl <- icesDatras::getDatrasFieldList()
+
+  # Build lookup: table::new_name -> old_name
+  legacy_names <- list()
+  for (i in seq_len(nrow(fl))) {
+    old <- fl$FieldNameOld[i]
+    new <- fl$FieldName[i]
+    rec <- fl$RecordHeader[i]
+
+    if (old != new) {
+      key <- paste(rec, new, sep = "::")
+      legacy_names[[key]] <- old
+    }
+  }
+
+  # Apply legacy names to curated dict
+  for (table_idx in seq_along(dict$tables)) {
+    table <- dict$tables[[table_idx]]
+    for (col_idx in seq_along(table$columns)) {
+      col <- table$columns[[col_idx]]
+      key <- paste(table$name, col$name, sep = "::")
+
+      if (key %in% names(legacy_names)) {
+        old_name <- legacy_names[[key]]
+        legacy_note <- sprintf("Legacy field name: %s (see icesDatras::getDatrasFieldList()).", old_name)
+
+        # Append to existing details, or create new (separated by two newlines for clarity)
+        if (is.null(col$details) || is.na(col$details)) {
+          col$details <- legacy_note
+        } else {
+          # Append with double newline to separate legacy note from existing details
+          col$details <- paste(col$details, legacy_note, sep = "\n\n")
+        }
+
+        dict$tables[[table_idx]]$columns[[col_idx]] <- col
+      }
+    }
+  }
+
+  dict
+}
+
+curated <- add_legacy_field_names(curated)
+
 # Fills type MEASURE (id/ordinal/quantity -- the seed deliberately leaves
 # these bare, see DATASET_seed_dict.R's own header), `units` (quantity
 # columns only, per spec), `range`/`examples`, and `constraints` where
@@ -428,6 +492,17 @@ curated <- reduce(field_specs, apply_field_spec, .init = curated)
 # every table's `columns` list is fully independent); this list is how
 # opus's OWN generation script enforces the consistency the shipped YAML
 # itself cannot.
+
+# Helper: Get Gear codes from icesVocab as enum values
+get_gear_enum_values <- function() {
+  library(icesVocab)
+  gear_list <- getCodeList('Gear')
+  # Filter out deprecated codes
+  active_gears <- gear_list[gear_list$Deprecated == FALSE, ]
+  # Create named list: code -> description
+  setNames(as.list(active_gears$Description), active_gears$Key)
+}
+
 shared_field_specs <- list(
   # ---- string-typed fields: `examples` fill, 2026-07-29 ---------------------
   # The type-measure/range/examples pass above (and its own tier1_field_stats.R
@@ -444,8 +519,8 @@ shared_field_specs <- list(
        details = "29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false lead, not this field's source: its 133 codes are ICES's own cross-domain internal survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own short acronyms -- confirmed by checking real codes against it directly, not assumed. Not used."),
   list(field = "Country", examples = list("NL", "DE", "GB", "DK", "GB-SCT"),
        details = "22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT' illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by checking real codes against it directly. Not used."),
-  list(field = "Gear", examples = list("GOV", "BT3", "W2A", "TVL", "BT6"),
-       details = "55 of 99 official codes observed in HH's archive (verified 2026-07-29). icesVocab's Gear list confirms all five real examples used here (checked 2026-07-29, data-raw/datras_vocabulary.R): GOV='GOV Trawl', BT3='Beam trawl 3 meters', BT6='Beam trawl 6 meters', TVL='Large TV trawl', W2A='Western IIA'. Not retyped enum: 99 codes is far past the seed's VOCAB_CODE_LIMIT of 20."),
+  list(field = "Gear", type = "enum", values = get_gear_enum_values(),
+       details = "All 99 active icesVocab Gear Type codes (deprecated code OTG excluded, 2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions (may be used in future submissions or by other surveys). Each code has a full description in icesVocab. Validation: enum restricts submissions to these codes."),
   list(field = "Platform", examples = list("74E9", "26D4", "748S", "64SS", "18NE"),
        details = "110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an open list, not a fixed enum."),
   list(field = "StationName", examples = list("1", "2", "22", "9", "17"),
@@ -604,6 +679,44 @@ curated <- list(
   glossary = glossary
 )
 
+# Format long text fields with line breaks for YAML readability (80 chars/line)
+format_long_text <- function(text, width = 80) {
+  if (is.null(text) || !nchar(text) > width) return(text)
+  # Break on word boundaries
+  words <- strsplit(text, " ")[[1]]
+  lines <- character()
+  current_line <- ""
+  for (word in words) {
+    if (nchar(current_line) + nchar(word) + 1 <= width) {
+      current_line <- if (nchar(current_line) == 0) word else paste(current_line, word)
+    } else {
+      if (nchar(current_line) > 0) lines <- c(lines, current_line)
+      current_line <- word
+    }
+  }
+  if (nchar(current_line) > 0) lines <- c(lines, current_line)
+  paste(lines, collapse = "\n")
+}
+
+# Apply formatting to all text fields
+format_yaml_text <- function(dict) {
+  for (ti in seq_along(dict$tables)) {
+    for (ci in seq_along(dict$tables[[ti]]$columns)) {
+      col <- dict$tables[[ti]]$columns[[ci]]
+      if (!is.null(col$description) && nchar(col$description) > 80) {
+        col$description <- format_long_text(col$description)
+      }
+      if (!is.null(col$details) && nchar(col$details) > 80) {
+        col$details <- format_long_text(col$details)
+      }
+      dict$tables[[ti]]$columns[[ci]] <- col
+    }
+  }
+  dict
+}
+
+curated <- format_yaml_text(curated)
+
 write_yaml(curated, "inst/DATRAS-data-dict.yaml")
 
 # ============================================================================
@@ -628,58 +741,69 @@ write_yaml(curated, "inst/DATRAS-data-dict.yaml")
 # LT table:
 #   - PARAM: 50 distinct values; A2/A5/A7/A14/A3/A6 undocumented (~50k rows)
 
-strict <- curated
-for (ti in seq_along(strict$tables)) {
-  table_name <- strict$tables[[ti]]$name
-
-  for (ci in seq_along(strict$tables[[ti]]$columns)) {
-    col_name <- strict$tables[[ti]]$columns[[ci]]$name
-    col_def <- strict$tables[[ti]]$columns[[ci]]
-
-    # CA: Restrict enum fields to icesVocab codes only
-    if (table_name == "CA" && col_name == "AgeSource" && !is.null(col_def$values)) {
-      # Documented icesVocab codes for age determination method
-      strict$tables[[ti]]$columns[[ci]]$values <- list(
-        "Otolith" = "Otolith",
-        "Scale" = "Scale",
-        "Operculum" = "Operculum",
-        "Vertebra" = "Vertebra",
-        "Finray" = "Finray"
-      )
+# Post-process YAML to quote number-looking string examples (new spec requirement)
+# (R's yaml writer doesn't preserve quote style for strings like "74E9", but only
+# for `string` columns -- `number(id)` examples should remain unquoted numbers)
+for (outfile in c("inst/DATRAS-data-dict.yaml")) {
+  lines <- readLines(outfile)
+  i <- 1
+  while (i <= length(lines)) {
+    # Look for "type: string" followed (several lines later) by "examples:"
+    if (grepl("^\\s+type: string\\s*$", lines[i])) {
+      # Found a string column; now look for its examples section
+      col_start <- i
+      j <- i + 1
+      examples_found <- FALSE
+      while (j <= length(lines) && !grepl("^\\s+- name: ", lines[j])) {
+        if (grepl("^\\s+examples:\\s*$", lines[j])) {
+          examples_found <- TRUE
+          # Quote examples on this string column
+          j <- j + 1
+          while (j <= length(lines) && grepl("^\\s+- ", lines[j])) {
+            match <- regexpr("- (.+)$", lines[j])
+            if (match > 0) {
+              value <- regmatches(lines[j], match)
+              value <- sub("^- ", "", value)
+              # Quote if it looks like a number/hex code and isn't already quoted
+              if (!grepl("^['\"]", value) && (grepl("^[0-9A-Fa-f]+$", value) || grepl("^[0-9A-Fa-f]*[E|D]", value))) {
+                indent <- regmatches(lines[j], regexpr("^\\s+", lines[j]))
+                lines[j] <- paste0(indent, "- '", value, "'")
+              }
+            }
+            j <- j + 1
+          }
+          break
+        }
+        j <- j + 1
+      }
     }
-
-    if (table_name == "CA" && col_name == "AgePreparationMethod" && !is.null(col_def$values)) {
-      # Documented icesVocab codes for specimen preparation
-      strict$tables[[ti]]$columns[[ci]]$values <- list(
-        "Burnt" = "Burnt",
-        "Thin section" = "Thin section",
-        "Break and burn" = "Break and burn"
-      )
-    }
-
-    # HH: Restrict ThermoCline to documented value only
-    if (table_name == "HH" && col_name == "ThermoCline" && !is.null(col_def$values)) {
-      # Real archive has "Y"/"y" (case variants); spec only has "N"
-      strict$tables[[ti]]$columns[[ci]]$values <- list("N" = "No thermocline")
-    }
-
-    # LT: Restrict PARAM to well-documented codes only
-    if (table_name == "LT" && col_name == "PARAM" && !is.null(col_def$values)) {
-      # Real archive has 50 distinct codes; A2/A5/A7/A14 etc are undocumented
-      # Restrict strict version to only the core, well-defined code
-      strict$tables[[ti]]$columns[[ci]]$values <- list(
-        "LT-TOT" = "Litter - total"
-      )
-    }
+    i <- i + 1
   }
+  writeLines(lines, outfile)
 }
 
-write_yaml(strict, "inst/DATRAS-data-dict-icesvocab.yaml")
+# ============================================================================
+# FINAL: Validate YAML structure against data-dict spec
+# ============================================================================
+
+source("R/validation.R")
+
+validation_result <- op_validate_spec("inst/DATRAS-data-dict.yaml")
+
+if (!validation_result$valid) {
+  cat("\n✗ YAML VALIDATION FAILED:\n\n")
+  cat(paste(validation_result$output, collapse = "\n"))
+  cat("\n\n")
+  stop("YAML validation failed. Fix errors above before committing.", call. = FALSE)
+} else {
+  cat("\n✓ YAML validation passed!\n\n")
+}
 
 message(
   "Curated ", length(corrections), " WSDL-disagreement correction(s), ",
   length(field_specs), " per-table field-spec fill(s), and ",
   length(shared_field_specs), " cross-table shared-spec fill(s). Wrote ",
-  "inst/DATRAS-data-dict.yaml (descriptive with observed data enums) and ",
-  "inst/DATRAS-data-dict-icesvocab.yaml (strict with icesVocab-only enums)."
+  "inst/DATRAS-data-dict.yaml (descriptive with observed data enums and legacy field names). ",
+  "Post-processed to quote number-looking string examples for data-dict spec compliance.",
+  "\n✓ Validated against data-dict spec."
 )

@@ -34,12 +34,14 @@ Imports:
     icesVocab
 Suggests:
     testthat (>= 3.0.0),
+    curl,
     dplyr,
+    digest,
     httr2,
-    icesDatras (>= 1.5.2),
     purrr,
     readr,
     tidyr,
+    XML,
     knitr,
     rmarkdown,
     quarto,

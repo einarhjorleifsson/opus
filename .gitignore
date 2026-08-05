@@ -27,6 +27,17 @@ docs/
 # Development seed data (upstream sources)
 data-raw/seed/
 
+# Retired working notes (analysis, prototypes, iterations)
+*_retired.md
+*_retired.R
+*_retired.csv
+*_retired.html
+
+# Runtime artifacts
+.datras/
+logs/
+/scripts/
+
 # Incomplete work and scratch files
 /imbus-interim-note-mockup.qmd
 /tmp

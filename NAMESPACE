@@ -6,12 +6,18 @@ export(op_validate_data)
 export(op_validate_full)
 export(op_inspect_parquet)
 export(op_flag_violations)
+export(op_describe_parquet)
+export(op_draft_from_parquet)
 
 # Exports: vocabulary utilities for enriching data-dict with ICES code lists
 export(op_vocab_get_types)
 export(op_vocab_resolve_key)
 export(op_vocab_get_codes)
 export(op_vocab_first_usable)
+
+# Exports: field name utilities
+export(op_legacy_field_name)
+export(op_field_name_map)
 
 # Imports
 importFrom(yaml, read_yaml, write_yaml)

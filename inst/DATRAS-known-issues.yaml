@@ -1,55 +1,62 @@
-$version: 0.1.0
-$learn_more: https://github.com/einarhjorleifsson/opus
-name: datras_known_issues
-label: ICES DATRAS Known Data/Specification Issues (Tier 1)
-description: Registry of data-specification disagreements discovered during validation of ICES DATRAS Tier 1 exchange tables.
+# DATRAS Known Issues & Sentinel Values Registry
+#
+# Opus-specific extension to data-dict.yaml spec v0.1.0
+# Documents: sentinels, known violations, data quality issues
+#
+# Version: 0.1.0 (draft)
+# Last updated: 2026-08-05
 
-issues:
-  - id: swell_height_type_mismatch
-    title: SwellHeight is numeric, not categorical enum
-    table: HH
-    field: SwellHeight
-    severity: high
-    discovered_date: 2026-07-30
-    status: open
-    description: icesVocab (ICES vocabulary service) declares SwellHeight as enum with codes {H, L, M, N, NR, VH}. Real HH archive data contains 37,446+ numeric continuous values (0.0–2.0+ meters), zero enum codes.
-    impact: Data submitters cannot comply with both the spec and their field measurements. Requires numeric validation, not enum.
-    recommendation: Clarify with ICES whether icesVocab spec is outdated, misapplied, or DATRAS archive has a different standard.
-    spec_source: "icesVocab online vocabulary service (verified 2026-07-29)"
-    archive_source: "opus v0.2.0 validation against full HH archive data (verified 2026-07-30)"
+# Sentinel values that mean "missing/not recorded"
+# Applied during Phase 2 parsing before type casting
+sentinels:
+  global:
+    - value: "-9"
+      meaning: "Not recorded / not applicable"
+      context: "Default DATRAS sentinel for numeric columns"
 
-  - id: valid_aphia_type_mismatch
-    title: Valid_Aphia is numeric despite WSDL declaring character
-    tables: [HL, CA]
-    severity: medium
-    discovered_date: 2026-07-29
-    status: documented
-    description: ICES WSDL operations (getHLData, getCatchesAtAge) declare Valid_Aphia as character/string. Actual live service returns numeric WoRMS AphiaID values.
-    impact: Type mismatch between declared and actual service behavior complicates client library design and validation.
-    wsdl_source: "ICES ASMX WSDL inspection for getHLData and getCatchesAtAge operations (verified 2026-07-29)"
-    service_source: "Live ICES DATRAS service response validation (icesDatras package cross-check)"
+  field_specific:
+    - field: HaulDuration
+      table: "HH"
+      values: ["-9", "0"]
+      meaning: "Zero or negative time indicates missing/invalid"
 
-  - id: dateofcalculation_type_mismatch
-    title: DateofCalculation type inconsistent across WSDL operations
-    table: LT
-    severity: medium
-    discovered_date: 2026-07-29
-    status: documented
-    description: ICES WSDL declares DateofCalculation as character/string in getLitterAssessmentOutput, but as numeric/decimal in getHHData, getHLData, getCatchesAtAge. Real archive data is 8-digit YYYYMMDD string in all tables.
-    impact: Type inconsistency within ICES WSDL across related operations causes client library confusion and validation uncertainty.
-    wsdl_source: "ICES ASMX WSDL inspection for getHHData, getHLData, getCatchesAtAge, getLitterAssessmentOutput (verified 2026-07-29)"
-    archive_source: "Real DATRAS Tier 1 archive data contains 8-digit YYYYMMDD strings (verified 2026-07-29)"
+    - field: AgeSource
+      table: "CA"
+      values: ["-1", "-5", "-95"]
+      meaning: "Not determined age source"
 
-  - id: ca_haul_number_nullable
-    title: CA table HaulNumber contains nulls despite required constraint (HH/HL/LT status unknown)
-    tables: [CA, HH, HL, LT]
-    field: HaulNumber
-    severity: high
-    discovered_date: 2026-07-30
-    status: open
-    description: DATRAS-data-dict.yaml v0.1.0 marks HaulNumber as `constraints: [required]` in all four Tier 1 tables (HH, HL, CA, LT) — constraint added during data-raw/DATASET_curate_dict.R curation with no documented source. CA table archive (via icesDatras package) contains 305,276 null values in HaulNumber (5.12% of 5.97M rows), violating the NOT NULL constraint. **Status of HH/HL/LT unknown** — validation run only checked CA. **Caveat:** icesDatras unconditionally converts literal -9 to NA for all numeric columns (data-raw/tier1_field_stats.R header), so CA's nulls may originally be -9 sentinels in raw ICES data. Confirmation requires raw HTTP queries to ICES DATRAS web service, bypassing icesDatras preprocessing.
-    impact: Records with null HaulNumber cannot reliably link to HH haul-level data via join. Affects any analysis requiring haul-level context. True nature of nulls (missing vs. sentinel -9) is unknown. Scope across all four tables is unclear.
-    recommendation: "(1) Re-validate HH/HL/LT for null HaulNumber to confirm scope (CA-only or systemic); (2) Clarify with ICES whether -9 is documented sentinel for HaulNumber; (3) If nulls are legitimate (e.g., composite CA records), reconsider NOT NULL constraint in WSDL; (4) Consider querying raw ICES DATRAS service to confirm original -9 vs. true-missing in source."
-    constraint_source: "DATRAS-data-dict.yaml v0.1.0 curation (data-raw/DATASET_curate_dict.R line 459, 462, 464) adds `constraints: [required]` to HaulNumber in all four tables. Source of this constraint decision is undocumented."
-    archive_source: "opus v0.2.0 validation run checked CA only — found 305,276 nulls in CA (2026-07-30). HH/HL/LT validation status unknown."
-    preprocessing_caveat: "icesDatras parseDatras() and applyDatrasTypeSchema() unconditionally replace -9 with NA for all numeric columns (icesDatras R/utilities.R; see data-raw/tier1_field_stats.R header). Raw DATRAS values unknown without bypassing icesDatras."
+# Known Data Quality Issues (Tier 1 validation, 2026-07-29)
+known_violations:
+  - id: "haul_number_nullable"
+    severity: "D"
+    field: "HaulNumber"
+    table: "CA"
+    constraint: "required"
+    extent: "305,276 null values (5.12% of 5.97M rows)"
+    implication: "Use composite 8-field haul key for joins, not HaulNumber alone"
+    discovered: "2026-07-29"
+
+  - id: "swell_height_numeric"
+    severity: "D"
+    field: "SwellHeight"
+    table: "HH"
+    issue: "Possible encoding issues"
+    discovered: "2026-07-29"
+
+  - id: "icesVocab_gaps"
+    severity: "C"
+    issue: "DATRAS enum codes don't fully match icesVocab vocabulary"
+    examples: ["GearExceptions (only 'B' in vocab)", "PARAM in LT (1,938 vocab codes, 50 real values)"]
+    discovered: "2026-07-29"
+
+# Processing directives
+processing:
+  phase2:
+    apply_sentinels: true
+    strict_type_casting: true
+    record_issues: true
+
+  phase3:
+    known_violations_baseline: true
+    expect_haul_number_nulls: true
+    expect_vocab_gaps: true

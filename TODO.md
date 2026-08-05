@@ -2,6 +2,18 @@
 
 **Status:** v0.2.0 complete. Tier 1 (HH, HL, CA, LT) curated with two-YAML validation approach. R functions + validation article ready.
 
+**Latest:** 2026-08-05 — Cleanup and git reorganization complete. Three-phase git history established (v0.1.0-phase1, v0.1.0-phase2, v0.2.0). Removed redundant working notes and prototype scripts. Ready for forward-looking work.
+
+---
+
+## Completed
+
+✓ **Phase 1** — YAML seeded from ICES WSDL + getDatrasFieldList + icesVocab
+✓ **Phase 2** — ICES XML downloaded and parsed to parquet (Tier 1: HH/HL/CA/LT)
+✓ **Phase 3** — YAML curated, enriched with icesVocab, validated against real data
+✓ **Cleanup** — Removed iteration notes, prototype scripts, YAML variants; updated .gitignore
+✓ **Git organization** — Three-phase commits + tags marking milestones
+
 ---
 
 ## SESSION 2026-08-02 FINDINGS

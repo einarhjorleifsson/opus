@@ -35,11 +35,11 @@ See `vignettes/why-opus.qmd` for context and philosophy.
 
 **2. Consolidate scattered knowledge.** WSDL, icesVocab, Technical Reference, real submissions — bring together into one machine-readable place.
 
-**3. Data-only by design.** opus ships YAML + registry, no computational code. Portability, minimal maintenance, clear signal: this is a reference specification. obus ships thin wrapper functions (e.g., `validate_with_datadict()`) around the bundled data-dict CLI to remove friction for users who prefer not to shell out, but the wrappers are glue only — computation stays in the pipeline, not in package functions.
+**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation and curation tooling (20 R functions). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
 
 **4. Don't guess; document.** Every range/constraint/enum needs evidence: real data, WSDL, or icesVocab. Borderline calls get flagged in `details:` for expert review.
 
-**5. Separate concerns: specs ≠ QC.** Known-issues registry documents schema gaps (upstream at ICES). Data-quality problems (wrong values) belong downstream in obus/imbus.
+**5. Separate concerns: specs ≠ QC.** Known-issues registry documents schema gaps (upstream at ICES). Data-quality problems (wrong values) belong downstream in obus/imbus. opus surfaces whether data violates the *documented* spec; imbus solves whether it's *valid* in context.
 
 **6. Shared fields stay consistent.** HH/HL/CA/LT repeat field names (same facts). Type, units, range must match byte-for-byte across tables.
 
@@ -64,9 +64,11 @@ See `vignettes/why-opus.qmd` for context and philosophy.
 ### Decision Gate: New Work
 
 Before starting work on opus, ask:
-1. Does this document DATRAS schema (YAML spec) or known issues?
-2. If adding code: is it a thin wrapper (glue only)?
-3. If neither: does it belong in obus/imbus instead?
+1. Does this improve the YAML specification (types, constraints, values, known issues)?
+2. If adding code: does it work *on* the specification (validation, curation, metadata utilities) or work *with* the specification (domain QC, contextual constraints, data transformation)?
+   - *On* the spec → belongs in opus (metadata-centric per Principle 3)
+   - *With* the spec → belongs in obus/imbus (domain logic)
+3. Will this function help data submitters validate locally or help opus maintainers curate specs?
 4. If uncertain: flag for explicit decision before proceeding.
 
 ------------------------------------------------------------------------
@@ -132,28 +134,51 @@ opus unifies these three sources into a single YAML specification, making incons
 
 ## Implementation
 
-**Development workflow** (`R/validation.R`):
+**User-facing exported functions** (20 total):
+
+*Specification validation* (`R/validation.R`):
 - `op_validate_spec(dict_path)` — Check YAML spec conformation (uses data-dict CLI)
 - `op_validate_meta(data_path, table, dict_path)` — Validate column names/types
 - `op_validate_data(data_path, table, dict_path)` — Validate values vs constraints
 - `op_validate_full(data_path, table, dict_path)` — Run all three checks
 - `op_inspect_parquet(parquet_path)` — See what data-dict CLI sees
-- `op_flag_violations(data_path, table, dict_path)` — Flag rows with constraint violations (workaround until data-dict CLI v0.0.1 returns row numbers)
+- `op_flag_violations(data_path, table, dict_path)` — Flag rows with constraint violations
 
-These wrappers enable the curation loop: build YAML → validate against real data → identify issues → refine YAML. Use the **descriptive YAML** as reference for what exists in practice, including both icesVocab-defined codes and undocumented variants observed in real submissions.
+*Parquet exploration and drafting* (`R/op_draft_from_parquet.R`):
+- `op_describe_parquet(parquet_path)` — Describe parquet structure and statistics
+- `op_draft_from_parquet(parquet_paths, output_path)` — Generate skeleton YAML from parquet data
 
-**obus wrapper** (`R/validate_with_datadict.R`):
-- `validate_with_datadict(dict_path, verbose=FALSE)` — Validate data against opus's data-dict spec (thin wrapper around bundled data-dict CLI). Works in development and after install.
+*ICES Vocabulary utilities* (`R/vocab.R`):
+- `op_vocab_get_types()` — Get all ICES vocabulary code-types with prefix metadata
+- `op_vocab_resolve_key(field_name, table_name)` — Find candidate vocabulary keys for a field
+- `op_vocab_get_codes(vocab_key)` — Fetch code:description pairs for a vocabulary
+- `op_vocab_first_usable(vocab_keys)` — Select first non-empty vocabulary from candidates
+
+*Field name utilities* (`R/field_names.R`):
+- `op_legacy_field_name(details)` — Extract legacy (old ICES) field name from YAML details
+- `op_field_name_map(dict, table_name=NULL)` — Build legacy→new field name mapping table
+
+These wrappers enable the curation loop: build YAML → validate against real data → identify issues → refine YAML. The **descriptive YAML** (DATRAS-data-dict.yaml) is the reference for what exists in practice, including both icesVocab-defined codes and undocumented variants observed in submissions.
+
+**Development-only functions** (`R/` — not exported):
+- `op_minimal_yaml()` — Generate minimal type-only YAML from WSDL (Phase 1 seed)
+- `op_enrich_stage2_yaml()` — Enrich with icesVocab codes (Phase 2)
+- `op_apply_curated_spec()` — Apply field renames and type refinements (Phase 3)
+- `op_build_final_yaml()` — Merge curated + enriched YAML
+- `op_check_type_mismatch()` — Audit types across WSDL/curated/real data
+- `op_audit_yaml_phase2_mismatch()` — Compare versions during curation
+
+These are internal to the three-phase bootstrap workflow; see [[project_bootstrap_yaml_workflow]] for rationale.
 
 **Source scripts** (`data-raw/`):
-- `DATASET_seed_dict.R` — pull specs from live WSDL + getDatrasFieldList + icesVocab (no corrections). Sources types directly from WSDL (not from getDatrasFieldList's DataFormat field) to avoid known bugs.
-- `DATASET_curate_dict.R` — apply hand-written corrections with issue_id tags, enriches enums from icesVocab, documents legacy field names, includes intelligent post-processing to quote number-looking string examples per data-dict spec
-- `yaml_to_formatted_md.R` — render YAML to Quarto markdown for pkgdown articles (human-readable reference)
+- `DATASET_seed_dict.R` — pull specs from live WSDL + getDatrasFieldList + icesVocab (no corrections)
+- `DATASET_curate_dict.R` — apply hand-written corrections, enrich enums, document legacy names
+- `yaml_to_formatted_md.R` — render YAML to Quarto markdown for documentation
 
 **ICES API wrappers** (`data-raw/ices_api.R` — development tools, not shipped):
-- `op_fetch_datras_field_list()` — Direct call to ICES getDatrasFieldList endpoint (bypasses icesDatras package). Returns field names, old→new mappings, descriptions. 24-hour caching.
-- `op_fetch_vocab_codes()` — Direct call to icesVocab API for code lists (bypasses icesVocab package). Returns codes with descriptions, deprecation status, modification dates.
-- Used by `DATASET_seed_dict.R` and `DATASET_curate_dict.R` for building the spec. Roxygen-documented for maintainability, but not exported (keeping opus "data-only" per Principle 3).
+- `op_fetch_datras_field_list()` — Direct ICES API call for field metadata
+- `op_fetch_vocab_codes()` — Direct ICES API call for vocabulary codes
+- Roxygen-documented for maintainability but not exported (dev use only)
 
 ------------------------------------------------------------------------
 

@@ -1,75 +1,48 @@
 # opus — TODO
 
-**Status:** v0.2.0 complete. Tier 1 (HH, HL, CA, LT) curated with two-YAML validation approach. R functions + validation article ready.
+**Status:** v0.2.0 complete. Tier 1 (HH, HL, CA, LT) fully curated and documented. Ready for forward work: Tier 2 + imbus coordination.
 
-**Latest:** 2026-08-05 — Cleanup and git reorganization complete. Three-phase git history established (v0.1.0-phase1, v0.1.0-phase2, v0.2.0). Removed redundant working notes and prototype scripts. Ready for forward-looking work.
-
----
-
-## Completed
-
-✓ **Phase 1** — YAML seeded from ICES WSDL + getDatrasFieldList + icesVocab
-✓ **Phase 2** — ICES XML downloaded and parsed to parquet (Tier 1: HH/HL/CA/LT)
-✓ **Phase 3** — YAML curated, enriched with icesVocab, validated against real data
-✓ **Cleanup** — Removed iteration notes, prototype scripts, YAML variants; updated .gitignore
-✓ **Git organization** — Three-phase commits + tags marking milestones
+**Latest:** 2026-08-05 — AGENTS.md and process cleaned up. R function scope clarified (20 exported metadata/validation tools, not "data-only" but metadata-centric per Principle 3).
 
 ---
 
-## SESSION 2026-08-02 FINDINGS
+## v0.2.0 — Complete
 
-### Known-Issues Registry (Priority: Strategic)
-
-- [ ] **Restructure known-issues.yaml for two-level escalation:**
-  - Level 1: Field-level issues (HaulValidity incomplete, GearExceptions incomplete, etc.)
-  - Level 2: Architectural/systemic issues (vocabulary governance patterns, domain-prefix confusion, naming inconsistencies)
-  - Currently "a bit short" — captures individual gaps but not institutional patterns
-  
-- [ ] **Investigate naming mysteries:**
-  - [ ] SpeciesSex (HL) / IndividualSex (CA) / TS_Sex — are these semantically identical? Why three names for 7 identical codes with no unified vocab?
-  - [ ] Document pattern: field names changed (GearEx → GearExceptions, Sex → SpeciesSex/IndividualSex) but icesVocab keys weren't updated in parallel
-  
-- [ ] **Domain-prefix architectural issue:**
-  - [ ] icesVocab uses TS_ (Trawl Survey) and AC_ (Acoustic) domains
-  - [ ] DATRAS uses codes from both domains with no explicit cross-domain mapping
-  - [ ] Flag as systemic: vocabulary design assumes domain isolation but real use is cross-domain
-  
-- [ ] **Type divergence escalation:**
-  - [ ] Confirm WSDL vs getDatrasFieldList divergence with ICES (Year, Distance fields)
-  - [ ] Investigate whether getDatrasFieldList can be auto-synced with WSDL (currently hand-maintained, drifts from reality)
-
-### Escalation Protocol
-
-- [ ] **Define liaison strategy with imbus/ICES:**
-  - [ ] Does WP2 synthesize findings into strategic memo, or does registry go directly?
-  - [ ] Should findings be prioritized (critical gaps vs. cosmetic inconsistencies)?
-  - [ ] Track ICES response: when does HaulValidity get all 7 codes added to icesVocab?
-  
-- [ ] **Consider temporal tracking:**
-  - [ ] Log dates when issues are reported to ICES
-  - [ ] Track when ICES resolves each issue (vocabulary completion, type alignment, naming clarification)
-  - [ ] Measure opus's impact on ICES data governance improvement
+✓ **Bootstrap workflow** — Three-phase bootstrap (WSDL seed → parquet enrich → curate) with supporting R functions
+✓ **Tier 1 (HH, HL, CA, LT)** — Curated YAML specs + descriptive/strict YAML variants + known-issues registry
+✓ **R package** — 20 exported functions (validation, vocabulary, field name utilities) + 5 vignettes
+✓ **Documentation** — why-opus, using-opus, technical-notes articles + Quarto reference site
+✓ **Test data** — Parquet samples for each Tier 1 table
+✓ **Git history** — Clean three-phase commits with milestone tags
+✓ **Package build** — devtools::check() passing; .rbuildignore optimized
 
 ---
 
-## Tier 1 — Remaining
+## Immediate: Tier 1 Validation + Known-Issues Escalation
 
-- [ ] Spot-check `.qmd` render (data-raw/DATASET_dict_to_qmd.R)
-- [ ] Domain-expert review of borderline range/constraint calls
-- [ ] Enum audit findings review (enum_field_inventory.csv, enum_enrichment_analysis.md)
+- [ ] **Known-issues registry refinement:**
+  - [ ] Restructure for two-level escalation: field-level gaps vs. systemic patterns
+  - [ ] Inventory findings from 2026-08-02 session (7 D-level issues across HH/HL/CA/LT)
+  - [ ] Prioritize escalation candidates for imbus feedback
+  
+- [ ] **imbus/ICES liaison (WP2 handoff):**
+  - [ ] Define escalation format: memo, GitHub Issues, or direct registry submission?
+  - [ ] Clarify opus's role vs. imbus's data governance work
+  - [ ] Establish timeline for ICES feedback loop (e.g., HaulValidity vocab completion)
 
-## Tier 2 — FL, CPUEL, CPUEA, IDX
+- [ ] **QC workflow decision:**
+  - [ ] Domain-expert review of borderline constraints (range calls, enum membership)
+  - [ ] Spot-check Quarto renders for accuracy
+  - [ ] Validate enum audit results (enum_field_inventory.csv from 2026-08-02)
 
-- [ ] Verify WSDL coverage; seed if complete, hand-curate if gaps
-- [ ] Follow Tier 1 workflow: corrections, type measures, known-issues filing
-- [ ] Repeat enum audit for Tier 2 fields
+## Forward: Tier 2 (FL, CPUEL, CPUEA, IDX)
 
-## Tier 3 — obus contracts
+- [ ] Assess WSDL coverage (complete vs. gaps)
+- [ ] Decide: seed from WSDL or direct hand-author (depends on confidence in source)
+- [ ] Follow Tier 1 workflow if seeding (bootstrap + curate + audit)
+- [ ] Test parquet availability for validation data
 
-- [ ] Hand-authored only (no seed/curate pipeline). Start after Tier 1+2 stable.
+## Future: Tier 3 (obus contracts)
 
-## imbus coordination
-
-- [ ] Report known-issues findings to ICES Datacenter; track response status
-- [ ] Share enum audit results (35/52 fields with vocab, 4 with gaps, 1 with empty vocab)
-- [ ] Highlight architectural patterns: vocabulary governance is systemic issue, not random gaps
+- [ ] Hand-authored specs (no ICES source); deferred until Tier 1+2 stable
+- [ ] Coordinate with obus team on contract-specific constraints and enums

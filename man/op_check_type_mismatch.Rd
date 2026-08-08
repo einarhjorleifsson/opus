@@ -37,7 +37,7 @@ Compares field names and types across three sources:
 \details{
 Flags:
 - Field renames (old name in WSDL but different in curated)
-- Type downgrades (e.g., number → string) in curated vs WSDL
+- Type downgrades (e.g., number -> string) in curated vs WSDL
 - Type mismatches between WSDL and actual data (Stage 2)
 - Missing legacy field name documentation
 

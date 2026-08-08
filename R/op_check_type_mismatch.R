@@ -7,7 +7,7 @@
 #'
 #' Flags:
 #' - Field renames (old name in WSDL but different in curated)
-#' - Type downgrades (e.g., number → string) in curated vs WSDL
+#' - Type downgrades (e.g., number -> string) in curated vs WSDL
 #' - Type mismatches between WSDL and actual data (Stage 2)
 #' - Missing legacy field name documentation
 #'
@@ -164,8 +164,8 @@ op_check_type_mismatch <- function(minimal_yaml, curated_yaml, stage2_yaml, verb
 
       # Check type mismatches
       if (!is.na(current_type) && wsdl_type != current_type) {
-        # Downgrades (number → string, string → numeric) are critical
-        # Expansions (string → enum) are expected curation
+        # Downgrades (number -> string, string -> numeric) are critical
+        # Expansions (string -> enum) are expected curation
         if ((wsdl_type == "number" && current_type == "string") ||
             (wsdl_type == "string" && current_type == "number")) {
           issue_count <- issue_count + 1
@@ -176,7 +176,7 @@ op_check_type_mismatch <- function(minimal_yaml, curated_yaml, stage2_yaml, verb
             wsdl_type = wsdl_type,
             current_type = current_type,
             stage2_type = stage2_type,
-            issue = paste0("Type downgrade: ", wsdl_type, " → ", current_type),
+            issue = paste0("Type downgrade: ", wsdl_type, " -> ", current_type),
             severity = "critical",
             stringsAsFactors = FALSE
           )

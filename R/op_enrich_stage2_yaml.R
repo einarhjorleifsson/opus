@@ -7,10 +7,10 @@
 #' 1. For each string field with cardinality < max_codes (default 50)
 #' 2. Use op_vocab_resolve_key() to find candidate vocabulary keys
 #' 3. Use op_vocab_get_codes() to fetch code:description pairs
-#' 4. Populate field type: enum and values: {code: description}
+#' 4. Populate field type: enum and values: \{code: description\}
 #' 5. Keep non-enum fields as-is (open lists like Survey, Country, Platform)
 #'
-#' @param stage2_yaml List: parsed Stage 2 skeleton YAML
+#' @param stage2_yaml_path List: parsed Stage 2 skeleton YAML
 #' @param parquet_path Character: path to parquet file for cardinality checks
 #' @param table_name Character: table name (HH, HL, CA, LT)
 #' @param max_codes Integer: max codes to auto-populate (default 50). Fields with
@@ -80,7 +80,7 @@ op_enrich_stage2_yaml <- function(stage2_yaml_path, parquet_path, table_name,
     }
 
     # Get cardinality
-    cardinality <- length(unique(na.omit(parquet_data[[field_name]])))
+    cardinality <- length(unique(stats::na.omit(parquet_data[[field_name]])))
 
     # Skip if too many unique values
     if (cardinality > max_codes) {
@@ -145,7 +145,7 @@ op_enrich_stage2_yaml <- function(stage2_yaml_path, parquet_path, table_name,
   # Report
   cat("\n=== Stage 3 Enrichment Report (", table_name, ") ===\n")
   if (length(enriched) > 0) {
-    cat("\nEnriched fields (string → enum):\n")
+    cat("\nEnriched fields (string -> enum):\n")
     for (field in names(enriched)) {
       info <- enriched[[field]]
       ambig_note <- ifelse(info$ambiguous, " [AMBIGUOUS - check domain match]", "")

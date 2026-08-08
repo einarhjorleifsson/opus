@@ -10,7 +10,6 @@
 #'
 #' @export
 op_minimal_yaml <- function(output_path = "inst/DATRAS-types-minimal.R", verbose = TRUE) {
-  library(dplyr, quietly = TRUE)
   source("data-raw/datras_operation_types.R")
 
   tier1_tables <- c("HH", "HL", "CA", "LT")
@@ -23,7 +22,7 @@ op_minimal_yaml <- function(output_path = "inst/DATRAS-types-minimal.R", verbose
 
   # Map WSDL types to data-dict spec types
   wsdl_to_dict_type <- function(wsdl_type) {
-    case_when(
+    dplyr::case_when(
       wsdl_type == "string" ~ "string",
       wsdl_type == "int" ~ "number",
       wsdl_type == "decimal" ~ "number",
@@ -69,7 +68,12 @@ op_minimal_yaml <- function(output_path = "inst/DATRAS-types-minimal.R", verbose
 
   # Write YAML
   yaml::write_yaml(minimal_yaml, output_path)
-  if (verbose) message("✓ Wrote minimal YAML to ", output_path)
+  if (verbose) message("Wrote minimal YAML to ", output_path)
 
   invisible(minimal_yaml)
 }
+
+# get_datras_operations()/get_datras_operation_types() come from
+# data-raw/datras_operation_types.R, sourced at call-time above -- not
+# real package globals, so R CMD check can't see them statically.
+utils::globalVariables(c("get_datras_operations", "get_datras_operation_types"))

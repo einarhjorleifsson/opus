@@ -13,6 +13,8 @@ op_enrich_stage2_yaml(
 )
 }
 \arguments{
+\item{stage2_yaml_path}{List: parsed Stage 2 skeleton YAML}
+
 \item{parquet_path}{Character: path to parquet file for cardinality checks}
 
 \item{table_name}{Character: table name (HH, HL, CA, LT)}
@@ -21,8 +23,6 @@ op_enrich_stage2_yaml(
 more codes are marked as TODO instead.}
 
 \item{dry_run}{Logical: if TRUE, just report what would change (default FALSE)}
-
-\item{stage2_yaml}{List: parsed Stage 2 skeleton YAML}
 }
 \value{
 List: enriched YAML with enum values populated where icesVocab matches
@@ -36,7 +36,7 @@ Process:
 1. For each string field with cardinality < max_codes (default 50)
 2. Use op_vocab_resolve_key() to find candidate vocabulary keys
 3. Use op_vocab_get_codes() to fetch code:description pairs
-4. Populate field type: enum and values: {code: description}
+4. Populate field type: enum and values: \{code: description\}
 5. Keep non-enum fields as-is (open lists like Survey, Country, Platform)
 
 

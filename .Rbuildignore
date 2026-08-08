@@ -18,3 +18,6 @@
 ^README\.html$
 ^imbus-interim-note-mockup\.qmd$
 ^pkgdown$
+^\.datras$
+^\.\.Rcheck$
+^opus.Rcheck$

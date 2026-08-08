@@ -10,6 +10,7 @@ export(op_describe_parquet)
 export(op_draft_from_parquet)
 export(op_export_spec)
 export(op_export_data)
+export(op_render_spec)
 
 # Exports: vocabulary utilities for enriching data-dict with ICES code lists
 export(op_vocab_get_types)

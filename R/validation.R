@@ -586,5 +586,58 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
   )
 }
 
+#' Render a data dictionary as a self-contained HTML page
+#'
+#' Thin wrapper around data-dict CLI's `render` command: one HTML file with
+#' a relationship diagram, a searchable index of tables and columns, and the
+#' glossary. Profiles each table's `source` data (row counts, histograms,
+#' missing values) when present.
+#'
+#' @param dict_path Path to data-dict.yaml or directory containing one
+#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#' @param output Path to write the HTML page. Default `NULL` writes to a
+#'   tempfile and opens it in the browser; pass a path to keep a copy instead.
+#' @param cli_bin Path to data-dict CLI binary
+#'
+#' @return List: (valid = T/F, exit_status, output_path, raw_output, command)
+#' @export
+op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+                          output = NULL,
+                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+  cli_bin <- path.expand(cli_bin)
+  dict_path <- path.expand(dict_path)
+
+  if (!file.exists(cli_bin)) {
+    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
+  }
+
+  if (!file.exists(dict_path)) {
+    stop("Dictionary not found at ", dict_path, call. = FALSE)
+  }
+
+  open_in_browser <- is.null(output)
+  if (open_in_browser) {
+    output <- tempfile(fileext = ".html")
+  } else {
+    output <- path.expand(output)
+  }
+
+  args <- c("render", dict_path, "-o", output)
+  raw_output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
+  status <- attr(raw_output, "status") %||% 0L
+
+  if (status == 0L && open_in_browser) {
+    utils::browseURL(output)
+  }
+
+  list(
+    valid       = (status == 0L),
+    exit_status = status,
+    output_path = output,
+    raw_output  = raw_output,
+    command     = paste(c(cli_bin, args), collapse = " ")
+  )
+}
+
 # Null coalesce helper
 `%||%` <- function(x, y) if (is.null(x)) y else x

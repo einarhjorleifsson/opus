@@ -8,7 +8,7 @@ description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length)
   and why.'
 origin: data-raw/DATASET_seed_dict.R <U+2192> data-raw/DATASET_curate_dict.R
 version:
-  date: '2026-08-05'
+  date: '2026-08-07'
 tables:
 - name: HH
   columns:
@@ -19,26 +19,26 @@ tables:
       included on that record. HH=Haul Information, HL=Length Frequency Distribution,
       CA=individual fish recordings with biological information, LT= Litter data
       records
-    details: 'Legacy field name: RecordType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: RecordType (verified via op_datras_field_list()).'
     values:
       HH: Haul Information
     label: Record Type
   - name: Survey
     type: string
-    details: |-
-      Legacy field name: - (see icesDatras::getDatrasFieldList()). 29 distinct values
-      in HH's archive (verified 2026-07-29); ICES DATRAS survey acronym, an open list,
-      not a fixed enum. icesVocab DOES resolve a 'Survey' key by name (checked
-      2026-07-29, data-raw/datras_vocabulary.R) but it's a false lead, not this
-      field's source: its 133 codes are ICES's own cross-domain internal survey IDs
-      (e.g. 'A1012'), a completely different scheme from DATRAS's own short acronyms
-      -- confirmed by checking real codes against it directly, not assumed. Not used.
     examples:
     - NS-IBTS
     - BTS
     - BITS
     - 'DYFS'
     - Can-Mar
+    details: |-
+      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS survey
+      acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key
+      by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
+      lead, not this field's source: its 133 codes are ICES's own cross-domain
+      internal survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's
+      own short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.
   - name: Quarter
     type: enum
     description: |-
@@ -70,7 +70,7 @@ tables:
     type: string
     description: SeaDataNet Ship and Platform Codes
     details: |-
-      Legacy field name: Ship (see icesDatras::getDatrasFieldList()). 110 distinct
+      Legacy field name: Ship (verified via op_datras_field_list()). 110 distinct
       values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an
       open list, not a fixed enum.
     examples:
@@ -194,7 +194,7 @@ tables:
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
       survey manuals for further details
-    details: 'Legacy field name: SweepLngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SweepLngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -218,7 +218,7 @@ tables:
     - S2
     - SB
     - ST
-    details: 'Legacy field name: GearEx (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: GearEx (verified via op_datras_field_list()).'
   - name: DoorType
     type: enum
     description: Type of door used
@@ -239,7 +239,7 @@ tables:
     type: string
     description: Station number. National coding system, not defined by ICES.
     details: |-
-      Legacy field name: StNo (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: StNo (verified via op_datras_field_list()). Field's own
       description says this is a national coding system, not defined by ICES --
       examples show the common shape (short numeric-looking strings), not an
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
@@ -255,7 +255,7 @@ tables:
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     details: |-
-      Legacy field name: HaulNo (see icesDatras::getDatrasFieldList()). Sequential
+      Legacy field name: HaulNo (verified via op_datras_field_list()). Sequential
       per-cruise numbering, but countries vary in whether it resets each cruise or
       runs continuously -- the archive-wide range spans many cruises' own counts
       pooled together, not one cruise's own haul tally.
@@ -300,7 +300,7 @@ tables:
     type: string
     description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
     details: |-
-      Legacy field name: TimeShot (see icesDatras::getDatrasFieldList()). 1,440
+      Legacy field name: TimeShot (verified via op_datras_field_list()). 1,440
       distinct values in HH's archive (verified 2026-07-29), always populated
       (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
       10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
@@ -337,7 +337,7 @@ tables:
       bottom at the stated towing speed. Stop is defined as the start of hauling of
       the gear.
     details: |-
-      Legacy field name: HaulDur (see icesDatras::getDatrasFieldList()). A haul cannot
+      Legacy field name: HaulDur (verified via op_datras_field_list()). A haul cannot
       take zero or negative time; 217 rows recorded as exactly 0 and 2 as negative
       (-514, -238) are excluded, most likely unrecorded/placeholder rather than a
       genuine instantaneous haul. Upper bound set at 2 hours: DATRAS carries no
@@ -360,7 +360,7 @@ tables:
   - name: ShootLatitude
     type: number(quantity)
     description: Decimal latitude position on the shooting location
-    details: 'Legacy field name: ShootLat (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: ShootLat (verified via op_datras_field_list()).'
     units: decimal degrees
     range:
     - 36.0013
@@ -369,7 +369,7 @@ tables:
     type: number(quantity)
     description: Decimal longitude position on the shooting location
     details: |-
-      Legacy field name: ShootLong (see icesDatras::getDatrasFieldList()). A genuine
+      Legacy field name: ShootLong (verified via op_datras_field_list()). A genuine
       value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS longitude off
       Ireland/Iberia) would be indistinguishable from missing here: icesDatras's fetch
       pipeline scrubs literal -9 to NA for every numeric column, not just where -9 is
@@ -382,7 +382,7 @@ tables:
     type: number(quantity)
     description: Decimal latitude position on the hauling location
     details: |-
-      Legacy field name: HaulLat (see icesDatras::getDatrasFieldList()). 3 rows record
+      Legacy field name: HaulLat (verified via op_datras_field_list()). 3 rows record
       exactly 0 degrees (the equator), categorically outside any DATRAS survey area --
       excluded; the lower bound instead matches ShootLatitude's own clean minimum for
       the same archive.
@@ -394,7 +394,7 @@ tables:
     type: number(quantity)
     description: Decimal longitude position on the hauling location
     details: |-
-      Legacy field name: HaulLong (see icesDatras::getDatrasFieldList()). Same
+      Legacy field name: HaulLong (verified via op_datras_field_list()). Same
       -9-as-missing caveat as ShootLongitude above (0 degrees, the Prime Meridian, is
       a genuine North Sea value here and is kept).
     units: decimal degrees
@@ -407,7 +407,7 @@ tables:
       Intended ICES statistical area rectangle (0.5 degrees latitude, 1 degree
       longitude)
     details: |-
-      Legacy field name: StatRec (see icesDatras::getDatrasFieldList()). 701 distinct
+      Legacy field name: StatRec (verified via op_datras_field_list()). 701 distinct
       values in HH's archive (verified 2026-07-29); real ICES statistical rectangle
       codes (0.5 deg lat x 1 deg lon grid), not a fixed enum given the size of the
       grid. 12,235 of 150,262 HH rows unpopulated. Only present in HH and LT
@@ -422,7 +422,7 @@ tables:
   - name: BottomDepth
     type: number(quantity)
     description: Sampling depth in metres, measured from the water surface.
-    details: 'Legacy field name: Depth (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Depth (verified via op_datras_field_list()).'
     units: m
     range:
     - 1.0
@@ -438,14 +438,14 @@ tables:
     - 'N'
     - S
     - V
-    details: 'Legacy field name: HaulVal (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: HaulVal (verified via op_datras_field_list()).'
   - name: HydrographicStationID
     type: string
     description: |-
       The national hydrographic station number. If possible, align with information
       submitted to ocean.ices.dk
     details: |-
-      Legacy field name: HydroStNo (see icesDatras::getDatrasFieldList()). National
+      Legacy field name: HydroStNo (verified via op_datras_field_list()). National
       station numbering (field's own description), so examples are illustrative only,
       not an exhaustive domain -- 18,373 distinct values, only 79,371 of 150,262 rows
       populated. '88888888' recurs 1,635 times and reads like an undocumented all-8s
@@ -471,7 +471,7 @@ tables:
     - '2'
     - '3'
     - '4'
-    details: 'Legacy field name: StdSpecRecCode (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: StdSpecRecCode (verified via op_datras_field_list()).'
   - name: BycatchSpeciesCode
     type: enum
     description: Information on which bycatch species have been recorded.
@@ -483,7 +483,7 @@ tables:
     - '4'
     - '5'
     - '6'
-    details: 'Legacy field name: BySpecRecCode (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: BySpecRecCode (verified via op_datras_field_list()).'
   - name: DataType
     type: enum
     description: |-
@@ -502,7 +502,7 @@ tables:
     description: |-
       Mean value in metres of vertical net opening measurements. For details see the
       survey manual.
-    details: 'Legacy field name: Netopening (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Netopening (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -546,7 +546,7 @@ tables:
     description: |-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
       on survey, for further details see survey manuals.
-    details: 'Legacy field name: Warplngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Warplngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -555,7 +555,7 @@ tables:
     type: number(quantity)
     description: Warp diametre in millimetres.
     details: |-
-      Legacy field name: Warpdia (see icesDatras::getDatrasFieldList()). A dense,
+      Legacy field name: Warpdia (verified via op_datras_field_list()). A dense,
       well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart from
       it with no comparable support and are treated as data-entry errors, excluded
@@ -569,7 +569,7 @@ tables:
     description: |-
       Warp weight in kg per linear meter of warp. See survey manuals for more
       information.
-    details: 'Legacy field name: WarpDen (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: WarpDen (verified via op_datras_field_list()).'
     units: kg/m
     range:
     - 0.0
@@ -584,7 +584,7 @@ tables:
   - name: DoorWeight
     type: number(quantity)
     description: Door weight in kilograms.
-    details: 'Legacy field name: DoorWgt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: DoorWgt (verified via op_datras_field_list()).'
     units: kg
     range:
     - 0.0
@@ -629,7 +629,7 @@ tables:
     type: number(quantity)
     description: Kite area in square metres.
     details: |-
-      Legacy field name: KiteDim (see icesDatras::getDatrasFieldList()). Coarse,
+      Legacy field name: KiteDim (verified via op_datras_field_list()). Coarse,
       equipment-spec values (0, 0.5, 0.7, 0.72, 0.8, 1) rather than a continuously
       measured quantity -- only 6 distinct values across 30,116 rows.
     units: m2
@@ -641,7 +641,7 @@ tables:
     description: |-
       Total weight of the ground rope in kilograms. Recommended weight depends on
       survey, see survey manuals for further details.
-    details: 'Legacy field name: WgtGroundRope (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: WgtGroundRope (verified via op_datras_field_list()).'
     units: kg
     range:
     - 0.0
@@ -650,7 +650,7 @@ tables:
     type: number(quantity)
     description: Direction of towing in degrees. 360=direction from south to north.
     details: |-
-      Legacy field name: TowDir (see icesDatras::getDatrasFieldList()). 999 (3 rows)
+      Legacy field name: TowDir (verified via op_datras_field_list()). 999 (3 rows)
       reads as an undocumented out-of-domain 'not recorded' marker, the same pattern
       confirmed for WindDirection below. A further cluster -- 450 deg (62 rows),
       520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary
@@ -667,10 +667,9 @@ tables:
       Ground speed of towing in knots. Recommended speed depends on survey, see survey
       manuals for more details
     details: |-
-      Legacy field name: GroundSpeed (see icesDatras::getDatrasFieldList()). Ceiling
-      is a domain judgment (real trawling ground speed), not an observed cluster
-      boundary -- observed values run 10.8 up to a 99.9 marker with no clean gap, all
-      excluded.
+      Legacy field name: GroundSpeed (verified via op_datras_field_list()). Ceiling is
+      a domain judgment (real trawling ground speed), not an observed cluster boundary
+      -- observed values run 10.8 up to a 99.9 marker with no clean gap, all excluded.
     units: knots
     range:
     - 0.0
@@ -688,7 +687,7 @@ tables:
       Surface current direction in degrees. No movement = 0, 360=direction from south
       to north.
     details: |-
-      Legacy field name: SurCurDir (see icesDatras::getDatrasFieldList()). Two
+      Legacy field name: SurCurDir (verified via op_datras_field_list()). Two
       single-occurrence values just above 360 (392, 390) excluded; the rest of the
       archive is densely populated right up to 360.
     units: degrees
@@ -699,7 +698,7 @@ tables:
     type: number(quantity)
     description: Surface current speed in m/sec.
     details: |-
-      Legacy field name: SurCurSpeed (see icesDatras::getDatrasFieldList()). 99
+      Legacy field name: SurCurSpeed (verified via op_datras_field_list()). 99
       (marker) and 46.3 and 16 (each a single, isolated occurrence with no support
       nearby) excluded; a smoother, better-populated tail resumes at 9.3 (3 rows) and
       below.
@@ -712,7 +711,7 @@ tables:
     description: |-
       Bottom current direction in degrees. No movement = 0, 360=direction from south
       to north.
-    details: 'Legacy field name: BotCurDir (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: BotCurDir (verified via op_datras_field_list()).'
     units: degrees
     range:
     - 0.0
@@ -721,7 +720,7 @@ tables:
     type: number(quantity)
     description: Bottom current speed in metres/sec.
     details: |-
-      Legacy field name: BotCurSpeed (see icesDatras::getDatrasFieldList()). 9.9 (1
+      Legacy field name: BotCurSpeed (verified via op_datras_field_list()). 9.9 (1
       row) is unusually high for a bottom current and resembles the '9-family' marker
       pattern seen elsewhere in HH, but a genuinely fast tidal-race reading can't be
       ruled out -- kept in range rather than excluded, unlike the more clear-cut cases
@@ -736,7 +735,7 @@ tables:
       Direction of wind in degrees. Calm = 0,  direction from north to south = 360,
       varying direction = -1
     details: |-
-      Legacy field name: WindDir (see icesDatras::getDatrasFieldList()). -1 is
+      Legacy field name: WindDir (verified via op_datras_field_list()). -1 is
       documented ('varying direction'). 999 (57 rows) reads as an undocumented
       out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded.
@@ -762,7 +761,7 @@ tables:
     description: |-
       Direction of swell in degrees. No movement=0, direction from south to north =
       360, varying direction = -1
-    details: 'Legacy field name: SwellDir (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SwellDir (verified via op_datras_field_list()).'
     units: degrees
     range:
     - 0.0
@@ -784,7 +783,7 @@ tables:
   - name: SurfaceTemperature
     type: number(quantity)
     description: Temperature at the surface water layer in Celsius degrees.
-    details: 'Legacy field name: SurTemp (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SurTemp (verified via op_datras_field_list()).'
     units: degC
     range:
     - -1.5
@@ -792,7 +791,7 @@ tables:
   - name: BottomTemperature
     type: number(quantity)
     description: Temperature at the bottom water layer in degrees Celsius
-    details: 'Legacy field name: BotTemp (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: BotTemp (verified via op_datras_field_list()).'
     units: degC
     range:
     - -1.0
@@ -800,7 +799,7 @@ tables:
   - name: SurfaceSalinity
     type: number(quantity)
     description: Salinity at the surface water layer in Practical Salinity Units (PSU).
-    details: 'Legacy field name: SurSal (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SurSal (verified via op_datras_field_list()).'
     units: PSU
     range:
     - 0.0
@@ -808,7 +807,7 @@ tables:
   - name: BottomSalinity
     type: number(quantity)
     description: Salinity at the bottom water layer in Practical Salinity Units (PSU).
-    details: 'Legacy field name: BotSal (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: BotSal (verified via op_datras_field_list()).'
     units: PSU
     range:
     - 3.13
@@ -827,7 +826,7 @@ tables:
     description: |-
       Depth (metres, measured from water surface) at which the thermocline was found.
       Requires Y in Thermocline field.
-    details: 'Legacy field name: ThClineDepth (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: ThClineDepth (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -891,7 +890,7 @@ tables:
     - '1'
     - '2'
     - '3'
-    details: 'Legacy field name: PelSampType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: PelSampType (verified via op_datras_field_list()).'
   - name: MinTrawlDepth
     type: number(quantity)
     description: Highest point of the pelagic trawling
@@ -935,9 +934,11 @@ tables:
     Gear, {StationName or StNo}, and HaulNumber. The naming convention differs by
     era: newer submissions use Platform/StationName/HaulNumber (new style); older
     submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a
-    valid join key <U+2014> it is nullable (305,276 nulls found in CA, ~5.12% of data) and
-    must be paired with all seven other fields to uniquely identify a haul across
-    the full dataset. See obus::dr_add_id for the composite ID construction logic.'
+    valid join key and must be paired with all seven other fields -- but even the
+    full composite key doesn''t recover everything: 288,581 CA rows (4.92%) carry
+    a -9 sentinel (not a null; verified 2026-08-07) in HaulNumber/HaulNo and match
+    no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh)
+    and obus::dr_add_id for the composite ID construction logic.'
   origin: data-raw/DATASET_curate_dict.R
   source:
     parquet: HH.parquet
@@ -950,26 +951,26 @@ tables:
       included on that record. HH=Haul Information, HL=Length Frequency Distribution,
       CA=individual fish recordings with biological information, LT= Litter data
       records
-    details: 'Legacy field name: RecordType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: RecordType (verified via op_datras_field_list()).'
     values:
       HL: Length Frequency Distribution
     label: Record Type
   - name: Survey
     type: string
-    details: |-
-      Legacy field name: - (see icesDatras::getDatrasFieldList()). 29 distinct values
-      in HH's archive (verified 2026-07-29); ICES DATRAS survey acronym, an open list,
-      not a fixed enum. icesVocab DOES resolve a 'Survey' key by name (checked
-      2026-07-29, data-raw/datras_vocabulary.R) but it's a false lead, not this
-      field's source: its 133 codes are ICES's own cross-domain internal survey IDs
-      (e.g. 'A1012'), a completely different scheme from DATRAS's own short acronyms
-      -- confirmed by checking real codes against it directly, not assumed. Not used.
     examples:
     - NS-IBTS
     - BTS
     - BITS
     - 'DYFS'
     - Can-Mar
+    details: |-
+      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS survey
+      acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key
+      by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
+      lead, not this field's source: its 133 codes are ICES's own cross-domain
+      internal survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's
+      own short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.
   - name: Quarter
     type: enum
     description: |-
@@ -1001,7 +1002,7 @@ tables:
     type: string
     description: SeaDataNet Ship and Platform Codes
     details: |-
-      Legacy field name: Ship (see icesDatras::getDatrasFieldList()). 110 distinct
+      Legacy field name: Ship (verified via op_datras_field_list()). 110 distinct
       values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an
       open list, not a fixed enum.
     examples:
@@ -1125,7 +1126,7 @@ tables:
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
       survey manuals for further details
-    details: 'Legacy field name: SweepLngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SweepLngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -1149,7 +1150,7 @@ tables:
     - S2
     - SB
     - ST
-    details: 'Legacy field name: GearEx (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: GearEx (verified via op_datras_field_list()).'
   - name: DoorType
     type: enum
     description: Type of door used
@@ -1170,7 +1171,7 @@ tables:
     type: string
     description: Station number. National coding system, not defined by ICES.
     details: |-
-      Legacy field name: StNo (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: StNo (verified via op_datras_field_list()). Field's own
       description says this is a national coding system, not defined by ICES --
       examples show the common shape (short numeric-looking strings), not an
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
@@ -1186,7 +1187,7 @@ tables:
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     details: |-
-      Legacy field name: HaulNo (see icesDatras::getDatrasFieldList()). Sequential
+      Legacy field name: HaulNo (verified via op_datras_field_list()). Sequential
       per-cruise numbering, but countries vary in whether it resets each cruise or
       runs continuously -- the archive-wide range spans many cruises' own counts
       pooled together, not one cruise's own haul tally.
@@ -1211,12 +1212,12 @@ tables:
     values:
     - T
     - W
-    details: 'Legacy field name: SpecCodeType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SpecCodeType (verified via op_datras_field_list()).'
   - name: SpeciesCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
     details: |-
-      Legacy field name: SpecCode (see icesDatras::getDatrasFieldList()). Official
+      Legacy field name: SpecCode (verified via op_datras_field_list()). Official
       WoRMS AphiaID as submitted by the data provider -- contrast with Valid_Aphia,
       the ICES Datacenter's own validated/corrected version of the same concept,
       inserted server-side (see Valid_Aphia's own details below).
@@ -1245,7 +1246,7 @@ tables:
     - '7'
     - '8'
     - '9'
-    details: 'Legacy field name: SpecVal (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SpecVal (verified via op_datras_field_list()).'
   - name: SpeciesSex
     type: enum
     description: |-
@@ -1260,7 +1261,7 @@ tables:
     - 'N'
     - T
     - U
-    details: 'Legacy field name: Sex (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Sex (verified via op_datras_field_list()).'
   - name: TotalNumber
     type: number(quantity)
     description: |-
@@ -1268,7 +1269,7 @@ tables:
       species, sex, devstage and subsampling category identifier). For data type C,
       values should be standardised to 60 minutes. TotalNo=SUM(HLNoAtLngt).
     details: |-
-      Legacy field name: TotalNo (see icesDatras::getDatrasFieldList()). Per the
+      Legacy field name: TotalNo (verified via op_datras_field_list()). Per the
       field's own description, TotalNo=SUM(HLNoAtLngt); values in the hundreds of
       thousands and non-integer values (7.7% of populated rows) both trace to the same
       documented mechanism -- DataType C records are standardised to 60 minutes, which
@@ -1285,7 +1286,7 @@ tables:
       CatIdentifier is always 1. Further details on survey specific subsampling
       categories are available in the survey manuals.
     details: |-
-      Legacy field name: CatIdentifier (see icesDatras::getDatrasFieldList()). Real
+      Legacy field name: CatIdentifier (verified via op_datras_field_list()). Real
       values are {1-5, 11-14, 21-23, 31} -- a coded scheme (verified 2026-07-29
       against the full archive), not a sequence, despite 'category' sounding ordinal.
     examples:
@@ -1303,8 +1304,8 @@ tables:
       C, values should be standardised to 60 minutes.
       NoMeas=Sum(HLNoAtLngt).
     details: |-
-      Legacy field name: NoMeas (see icesDatras::getDatrasFieldList()). Same DataType
-      C standardisation basis as TotalNumber above; top values are all well-supported
+      Legacy field name: NoMeas (verified via op_datras_field_list()). Same DataType C
+      standardisation basis as TotalNumber above; top values are all well-supported
       (4-10 occurrences each), not isolated errors.
     range:
     - 0.0
@@ -1313,11 +1314,11 @@ tables:
     type: number(quantity)
     description: |-
       Sub-sampling factor. If 1/6 of the catch was measured, report 6. If DataType is
-      C, it should be reported as 1. If DataType is S, it is always >1. If DataType is
-      R, the SubFactor is = 1 or >1 for different species depending on whether they
-      were subsampled.
+      C, it should be reported as 1. If DataType is S, it is always &gt;1. If DataType
+      is R, the SubFactor is = 1 or &gt;1 for different species depending on whether
+      they were subsampled.
     details: |-
-      Legacy field name: SubFactor (see icesDatras::getDatrasFieldList()). 356 of
+      Legacy field name: SubFactor (verified via op_datras_field_list()). 356 of
       14,256,091 rows (0.0025%) show values below 1, contradicting the field's own
       description (documented as always >=1, for every DataType) -- excluded. The high
       end is genuine, not an error: top values cluster at power-of-2-like numbers
@@ -1330,7 +1331,7 @@ tables:
   - name: SubsampleWeight
     type: number(quantity)
     description: Weight of the subsample in grams.
-    details: 'Legacy field name: SubWgt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SubWgt (verified via op_datras_field_list()).'
     units: g
     range:
     - 0.0
@@ -1342,10 +1343,10 @@ tables:
       combination of cruise haul, species, sex, devstage and subsampling category
       identifier). For datatype C, values should be standardised to 60 minutes.
     details: |-
-      Legacy field name: CatCatchWgt (see icesDatras::getDatrasFieldList()). -900
-      (2562 rows) and -100 (1 row) are excluded as a 'not weighed' placeholder, the
-      same pattern seen in several HH fields. The high end is genuine: top values all
-      have real support (3-18 occurrences each).
+      Legacy field name: CatCatchWgt (verified via op_datras_field_list()). -900 (2562
+      rows) and -100 (1 row) are excluded as a 'not weighed' placeholder, the same
+      pattern seen in several HH fields. The high end is genuine: top values all have
+      real support (3-18 occurrences each).
     units: g
     range:
     - 0.0
@@ -1365,14 +1366,14 @@ tables:
     - '2'
     - '5'
     - '9'
-    details: 'Legacy field name: LngtCode (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: LngtCode (verified via op_datras_field_list()).'
   - name: LengthClass
     type: number(quantity)
     description: |-
       Lower length boundary of the Length class. In cm or mm depending on the
       LngtCode. E.g. 10-11 cm=10
     details: |-
-      Legacy field name: LngtClass (see icesDatras::getDatrasFieldList()). Unit varies
+      Legacy field name: LngtClass (verified via op_datras_field_list()). Unit varies
       by the sibling LengthCode field (mm or cm; see LengthCode's own values map), so
       no fixed units here. Two isolated outliers excluded, 2026-07-29: 11930
       (LengthCode '.', i.e. 11.93m) and 900 (LengthCode '1', i.e. 9m) -- each a lone
@@ -1394,7 +1395,7 @@ tables:
       cruise haul, species, sex, devstage and category identifier). For data type C,
       values should be standardised to 60 minutes.
     details: |-
-      Legacy field name: HLNoAtLngt (see icesDatras::getDatrasFieldList()). Same
+      Legacy field name: HLNoAtLngt (verified via op_datras_field_list()). Same
       DataType C standardisation basis as TotalNumber above. Top values are each a
       unique one-off but decline smoothly with no marker/gap pattern, consistent with
       genuine (if rare) very large hauls of abundant small-bodied species. CA's own
@@ -1412,7 +1413,7 @@ tables:
     - B
     - E
     - J
-    details: 'Legacy field name: DevStage (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: DevStage (verified via op_datras_field_list()).'
   - name: LengthType
     type: enum
     description: Type of length measurement
@@ -1431,7 +1432,7 @@ tables:
     - '7'
     - '8'
     - '9'
-    details: 'Legacy field name: LenMeasType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: LenMeasType (verified via op_datras_field_list()).'
   - name: DateofCalculation
     type: number(ordinal)
     range:
@@ -1466,9 +1467,10 @@ tables:
     count of fish in that length bin. Population: length-frequency summaries for all
     species caught in surveyed hauls, aggregated by length class. Linked to HH via
     the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship
-    + Gear + StationName/StNo + HaulNumber). Note: HaulNumber is nullable in the CA
-    table (see HH table details); the full 8-field composite key is required for correct
-    joins.'
+    + Gear + StationName/StNo + HaulNumber). Note: CA (not HL) has a verified HaulNumber/HaulNo
+    linkage gap -- 4.92% of CA rows carry a -9 sentinel and match no HH haul even
+    via the full composite key (see HH table details). The full 8-field composite
+    key is required for correct joins regardless.'
   origin: data-raw/DATASET_curate_dict.R
   source:
     parquet: HL.parquet
@@ -1481,26 +1483,26 @@ tables:
       included on that record. HH=Haul Information, HL=Length Frequency Distribution,
       CA=individual fish recordings with biological information, LT= Litter data
       records
-    details: 'Legacy field name: RecordType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: RecordType (verified via op_datras_field_list()).'
     values:
       CA: individual fish recordings with biological information
     label: Record Type
   - name: Survey
     type: string
-    details: |-
-      Legacy field name: - (see icesDatras::getDatrasFieldList()). 29 distinct values
-      in HH's archive (verified 2026-07-29); ICES DATRAS survey acronym, an open list,
-      not a fixed enum. icesVocab DOES resolve a 'Survey' key by name (checked
-      2026-07-29, data-raw/datras_vocabulary.R) but it's a false lead, not this
-      field's source: its 133 codes are ICES's own cross-domain internal survey IDs
-      (e.g. 'A1012'), a completely different scheme from DATRAS's own short acronyms
-      -- confirmed by checking real codes against it directly, not assumed. Not used.
     examples:
     - NS-IBTS
     - BTS
     - BITS
     - 'DYFS'
     - Can-Mar
+    details: |-
+      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS survey
+      acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key
+      by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
+      lead, not this field's source: its 133 codes are ICES's own cross-domain
+      internal survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's
+      own short acronyms -- confirmed by checking real codes against it directly, not
+      assumed. Not used.
   - name: Quarter
     type: enum
     description: |-
@@ -1532,7 +1534,7 @@ tables:
     type: string
     description: SeaDataNet Ship and Platform Codes
     details: |-
-      Legacy field name: Ship (see icesDatras::getDatrasFieldList()). 110 distinct
+      Legacy field name: Ship (verified via op_datras_field_list()). 110 distinct
       values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an
       open list, not a fixed enum.
     examples:
@@ -1656,7 +1658,7 @@ tables:
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
       survey manuals for further details
-    details: 'Legacy field name: SweepLngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SweepLngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
@@ -1680,7 +1682,7 @@ tables:
     - S2
     - SB
     - ST
-    details: 'Legacy field name: GearEx (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: GearEx (verified via op_datras_field_list()).'
   - name: DoorType
     type: enum
     description: Type of door used
@@ -1701,7 +1703,7 @@ tables:
     type: string
     description: Station number. National coding system, not defined by ICES.
     details: |-
-      Legacy field name: StNo (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: StNo (verified via op_datras_field_list()). Field's own
       description says this is a national coding system, not defined by ICES --
       examples show the common shape (short numeric-looking strings), not an
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
@@ -1717,7 +1719,7 @@ tables:
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     details: |-
-      Legacy field name: HaulNo (see icesDatras::getDatrasFieldList()). Sequential
+      Legacy field name: HaulNo (verified via op_datras_field_list()). Sequential
       per-cruise numbering, but countries vary in whether it resets each cruise or
       runs continuously -- the archive-wide range spans many cruises' own counts
       pooled together, not one cruise's own haul tally.
@@ -1742,12 +1744,12 @@ tables:
     values:
     - T
     - W
-    details: 'Legacy field name: SpecCodeType (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SpecCodeType (verified via op_datras_field_list()).'
   - name: SpeciesCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
     details: |-
-      Legacy field name: SpecCode (see icesDatras::getDatrasFieldList()). Official
+      Legacy field name: SpecCode (verified via op_datras_field_list()). Official
       WoRMS AphiaID as submitted by the data provider -- contrast with Valid_Aphia,
       the ICES Datacenter's own validated/corrected version of the same concept,
       inserted server-side (see Valid_Aphia's own details below).
@@ -1809,14 +1811,14 @@ tables:
     - '2'
     - '5'
     - '9'
-    details: 'Legacy field name: LngtCode (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: LngtCode (verified via op_datras_field_list()).'
   - name: LengthClass
     type: number(quantity)
     description: |-
       Lower length boundary of the Length class. In cm or mm depending on the
       LngtCode. E.g. 10-11 cm=10
     details: |-
-      Legacy field name: LngtClass (see icesDatras::getDatrasFieldList()). Unit varies
+      Legacy field name: LngtClass (verified via op_datras_field_list()). Unit varies
       by the sibling LengthCode field (mm or cm; see LengthCode's own values map), so
       no fixed units here. One isolated outlier excluded, 2026-07-29: 932 (LengthCode
       '1', i.e. 9.32m) -- a lone occurrence with a 2.3x gap to the next-highest value
@@ -1842,7 +1844,7 @@ tables:
     - 'N'
     - T
     - U
-    details: 'Legacy field name: Sex (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Sex (verified via op_datras_field_list()).'
   - name: IndividualMaturity
     type: string
     description: |-
@@ -1850,7 +1852,7 @@ tables:
       for e.g. male elasmobranchs. MaturityScale should be filled in when filling in
       Maturity.
     details: |-
-      Legacy field name: Maturity (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: Maturity (verified via op_datras_field_list()). Field's own
       description says the scheme depends on the sibling MaturityScale field
       ('MaturityScale should be filled in when...') -- explains the observed mix of
       numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales using
@@ -1871,28 +1873,31 @@ tables:
     values:
     - +
     - '-9'
-    details: 'Legacy field name: PlusGr (see icesDatras::getDatrasFieldList()).'
-  - name: IndividualAge
+    details: 'Legacy field name: PlusGr (verified via op_datras_field_list()).'
+  - name: Age
     type: number(quantity)
-    description: Age of specimen in years
-    details: |-
-      Legacy field name: Age (see icesDatras::getDatrasFieldList()). -1 (1757 rows)
-      reads as a systematic, undocumented 'not determined' sentinel; -5 and -95 (1 row
-      each) are isolated anomalies -- all three excluded. 99 (54 rows) is kept: real,
-      repeated support, not a fluke -- reads like a plus-group/max-age reporting
-      convention, though that mechanism isn't confirmed here, just noted as an
-      observation.
     units: years
     range:
     - 0.0
     - 99.0
+    details: |-
+      -1 (1757 rows) reads as a systematic, undocumented 'not determined' sentinel; -5
+      and -95 (1 row each) are isolated anomalies -- all three excluded. 99 (54 rows)
+      is kept: real, repeated support, not a fluke -- reads like a plus-group/max-age
+      reporting convention, though that mechanism isn't confirmed here, just noted as
+      an observation. ICES's getDatrasFieldList documents a field 'IndividualAge' for
+      CA, paired with old-name 'AgeRings' -- but 'AgeRings' is not a real CA field
+      (verified 2026-08-06 against both the archive and getCAdata's own live ASMX
+      response; the real field is 'Age', used here). Since that row's old-name half is
+      already wrong, its proposed new name isn't trusted either. Filed with ICES; not
+      yet resolved upstream.
   - name: NumberAtLength
     type: number(quantity)
     description: |-
       Amount of fish at the given category (per haul, species, length class, sex,
       maturity, age).
     details: |-
-      Legacy field name: CANoAtLngt (see icesDatras::getDatrasFieldList()). Distinct
+      Legacy field name: CANoAtLngt (verified via op_datras_field_list()). Distinct
       population from HL's own NumberAtLength: this counts aged individuals only, not
       the whole catch, hence the much smaller scale -- not assumed identical (Working
       principles, rule 12).
@@ -1902,7 +1907,7 @@ tables:
   - name: IndividualWeight
     type: number(quantity)
     description: Measured individual weight of the fish (grams)
-    details: 'Legacy field name: IndWgt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: IndWgt (verified via op_datras_field_list()).'
     units: g
     range:
     - 0.0
@@ -1925,7 +1930,7 @@ tables:
     type: enum
     description: Flag whether genetic sample was taken
     details: |-
-      Legacy field name: GenSamp (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: GenSamp (verified via op_datras_field_list()). Field's own
       description ('Flag whether genetic sample was taken') confirms boolean intent;
       verified 100% clean two-value split against the full archive, 2026-07-29 (N:
       829,547 rows; Y: 13,793; zero other values across 843,340 non-null rows,
@@ -1937,7 +1942,7 @@ tables:
     type: enum
     description: Flag whether stomach sampling was performed
     details: |-
-      Legacy field name: StomSamp (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: StomSamp (verified via op_datras_field_list()). Field's own
       description ('Flag whether stomach sampling was performed') confirms boolean
       intent; verified 100% clean two-value split against the full archive, 2026-07-29
       (N: 1,018,036 rows; Y: 39,403; zero other values across 1,057,439 non-null rows,
@@ -1966,7 +1971,7 @@ tables:
     - 'NO'
     - WA
     - WO
-    details: 'Legacy field name: AgePrepMet (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: AgePrepMet (verified via op_datras_field_list()).'
     label: Specimen Preparation for Aging
   - name: OtolithGrading
     type: enum
@@ -1977,12 +1982,12 @@ tables:
     - '2'
     - '3'
     - '4'
-    details: 'Legacy field name: OtGrading (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: OtGrading (verified via op_datras_field_list()).'
   - name: ParasiteSamplingFlag
     type: enum
     description: Flag whether parasites sampling was performed
     details: |-
-      Legacy field name: ParSamp (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: ParSamp (verified via op_datras_field_list()). Field's own
       description ('Flag whether parasites sampling was performed') confirms boolean
       intent; verified 100% clean two-value split against the full archive, 2026-07-29
       (N: 893,790 rows; Y: 76,620; zero other values across 970,410 non-null rows,
@@ -2046,12 +2051,15 @@ tables:
     haul. Population: individual organisms sampled and measured from hauls within
     covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the composite
     haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo
-    + HaulNumber). Critical note: HaulNumber contains 305,276 null values (5.12% of
-    5.97M rows), violating the constraint marked in DATRAS-data-dict.yaml. This nullability
-    breaks assumptions about HaulNumber as a join key; the composite 8-field identifier
-    is required instead. See DATRAS-known-issues.yaml (issue: ca_haul_number_nullable)
-    for full details on the constraint violation and preprocessing caveat (icesDatras
-    converts literal -9 to NA).'
+    + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml
+    issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls --
+    288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates
+    the column''s declared range ([0, 82483]; a D04_range violation, confirmed via
+    op_flag_violations()), not the required constraint (D01 never fires here). These
+    rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber
+    fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate,
+    much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails
+    to match HH; cause not yet diagnosed.'
   origin: data-raw/DATASET_curate_dict.R
   source:
     parquet: CA.parquet
@@ -2093,9 +2101,8 @@ tables:
     - required
   - name: Platform
     type: string
-    description: SeaDataNet Ship and Platform Codes
     details: |-
-      Legacy field name: Ship (see icesDatras::getDatrasFieldList()). 110 distinct
+      Legacy field name: Ship (verified via op_datras_field_list()). 110 distinct
       values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an
       open list, not a fixed enum.
     examples:
@@ -2104,6 +2111,7 @@ tables:
     - 748S
     - 64SS
     - 18NE
+    description: SeaDataNet Ship and Platform Codes
   - name: Gear
     type: enum
     description: Gear type code
@@ -2233,9 +2241,8 @@ tables:
       checking real codes against it directly. Not used.
   - name: StationName
     type: string
-    description: Station number. National coding system, not defined by ICES.
     details: |-
-      Legacy field name: StNo (see icesDatras::getDatrasFieldList()). Field's own
+      Legacy field name: StNo (verified via op_datras_field_list()). Field's own
       description says this is a national coding system, not defined by ICES --
       examples show the common shape (short numeric-looking strings), not an
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
@@ -2247,11 +2254,11 @@ tables:
     - '22'
     - '9'
     - '17'
+    description: Station number. National coding system, not defined by ICES.
   - name: HaulNumber
     type: number(ordinal)
-    description: Sequential numbering of hauls during cruise.
     details: |-
-      Legacy field name: HaulNo (see icesDatras::getDatrasFieldList()). Sequential
+      Legacy field name: HaulNo (verified via op_datras_field_list()). Sequential
       per-cruise numbering, but countries vary in whether it resets each cruise or
       runs continuously -- the archive-wide range spans many cruises' own counts
       pooled together, not one cruise's own haul tally.
@@ -2260,19 +2267,19 @@ tables:
     - 82483.0
     constraints:
     - required
+    description: Sequential numbering of hauls during cruise.
   - name: ShootLatitude
     type: number(quantity)
-    description: Decimal latitude position on the shooting location
-    details: 'Legacy field name: ShootLat (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: ShootLat (verified via op_datras_field_list()).'
     units: decimal degrees
     range:
     - 36.0013
     - 76.2117
+    description: Decimal latitude position on the shooting location
   - name: ShootLongitude
     type: number(quantity)
-    description: Decimal longitude position on the shooting location
     details: |-
-      Legacy field name: ShootLong (see icesDatras::getDatrasFieldList()). A genuine
+      Legacy field name: ShootLong (verified via op_datras_field_list()). A genuine
       value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS longitude off
       Ireland/Iberia) would be indistinguishable from missing here: icesDatras's fetch
       pipeline scrubs literal -9 to NA for every numeric column, not just where -9 is
@@ -2281,11 +2288,11 @@ tables:
     range:
     - -67.7115
     - 24.4333
+    description: Decimal longitude position on the shooting location
   - name: HaulLatitude
     type: number(quantity)
-    description: Decimal latitude position on the hauling location
     details: |-
-      Legacy field name: HaulLat (see icesDatras::getDatrasFieldList()). 3 rows record
+      Legacy field name: HaulLat (verified via op_datras_field_list()). 3 rows record
       exactly 0 degrees (the equator), categorically outside any DATRAS survey area --
       excluded; the lower bound instead matches ShootLatitude's own clean minimum for
       the same archive.
@@ -2293,17 +2300,18 @@ tables:
     range:
     - 36.0013
     - 65.0
+    description: Decimal latitude position on the hauling location
   - name: HaulLongitude
     type: number(quantity)
-    description: Decimal longitude position on the hauling location
     details: |-
-      Legacy field name: HaulLong (see icesDatras::getDatrasFieldList()). Same
+      Legacy field name: HaulLong (verified via op_datras_field_list()). Same
       -9-as-missing caveat as ShootLongitude above (0 degrees, the Prime Meridian, is
       a genuine North Sea value here and is kept).
     units: decimal degrees
     range:
     - -67.6762
     - 45.8753
+    description: Decimal longitude position on the hauling location
   - name: OSPARArea
     type: string
     examples:
@@ -2329,21 +2337,21 @@ tables:
       the full LT archive.
   - name: BottomDepth
     type: number(quantity)
-    description: Sampling depth in metres, measured from the water surface.
+    details: 'Legacy field name: Depth (verified via op_datras_field_list()).'
     units: m
     range:
     - 1.0
     - 3098.0
+    description: Sampling depth in metres, measured from the water surface.
   - name: Distance
     type: number(quantity)
-    description: Distance in metres between haul start and haul end point.
     units: m
     range:
     - 0.0
     - 59995.0
+    description: Distance in metres between haul start and haul end point.
   - name: DoorSpread
     type: number(quantity)
-    description: Mean value in metres of door spread measurements.
     units: m
     range:
     - 1.0
@@ -2354,11 +2362,9 @@ tables:
       everything else in the archive (next highest is 250m) and are treated as
       data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
       likely a fixed beam-trawl spread) is kept.
+    description: Mean value in metres of door spread measurements.
   - name: WingSpread
     type: number(quantity)
-    description: |-
-      Mean value in metres of wing spread measurements. For more details see the
-      manual.
     units: m
     range:
     - 4.0
@@ -2368,6 +2374,9 @@ tables:
       support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed
       beam-trawl spread). 142m (1 row) sits far above the next-highest real value
       (50m) and is treated as a data-entry error, excluded.
+    description: |-
+      Mean value in metres of wing spread measurements. For more details see the
+      manual.
   - name: LTREF
     type: enum
     description: |-
@@ -2426,7 +2435,7 @@ tables:
   - name: UnitWeight
     type: string
     details: |-
-      Legacy field name: UnitWgt (see icesDatras::getDatrasFieldList()). Unit of the
+      Legacy field name: UnitWgt (verified via op_datras_field_list()). Unit of the
       sibling LT_Weight field (see LT_Weight's own details below); exactly 2 values
       observed across the full archive (48,758 kg/haul, 26,437 g/haul), 4,256 of
       79,451 rows unpopulated. No description present to confirm this is the complete
@@ -2536,15 +2545,15 @@ tables:
       full LT archive.
   - name: SweepLength
     type: number(quantity)
-    description: |-
-      Length of sweep in metres. Recommended values depend on survey and quarter, see
-      survey manuals for further details
-    details: 'Legacy field name: SweepLngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SweepLngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
     - 850.0
-  - name: GearEx
+    description: |-
+      Length of sweep in metres. Recommended values depend on survey and quarter, see
+      survey manuals for further details
+  - name: GearExceptions
     type: enum
     values:
     - '-9'
@@ -2560,9 +2569,9 @@ tables:
     - S2
     - SB
     - ST
+    details: 'Legacy field name: GearEx (verified via op_datras_field_list()).'
   - name: DoorType
     type: enum
-    description: Type of door used
     values:
     - '-9'
     - F
@@ -2576,9 +2585,9 @@ tables:
     - T6
     - V
     - WR
+    description: Type of door used
   - name: Month
     type: enum
-    description: Sampling month, as part of the calendar date.
     values:
     - '1'
     - '10'
@@ -2592,19 +2601,19 @@ tables:
     - '7'
     - '8'
     - '9'
+    description: Sampling month, as part of the calendar date.
   - name: Day
     type: number(ordinal)
-    description: Sampling day, as part of the calendar date
     range:
     - 1.0
     - 31.0
     constraints:
     - required
+    description: Sampling day, as part of the calendar date
   - name: StartTime
     type: string
-    description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
     details: |-
-      Legacy field name: TimeShot (see icesDatras::getDatrasFieldList()). 1,440
+      Legacy field name: TimeShot (verified via op_datras_field_list()). 1,440
       distinct values in HH's archive (verified 2026-07-29), always populated
       (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
       10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
@@ -2616,14 +2625,11 @@ tables:
     - '1300'
     - '900'
     - '700'
+    description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
   - name: HaulDuration
     type: number(quantity)
-    description: |-
-      Haul duration in minutes. Start time is the moment when the gear settles at the
-      bottom at the stated towing speed. Stop is defined as the start of hauling of
-      the gear.
     details: |-
-      Legacy field name: HaulDur (see icesDatras::getDatrasFieldList()). A haul cannot
+      Legacy field name: HaulDur (verified via op_datras_field_list()). A haul cannot
       take zero or negative time; 217 rows recorded as exactly 0 and 2 as negative
       (-514, -238) are excluded, most likely unrecorded/placeholder rather than a
       genuine instantaneous haul. Upper bound set at 2 hours: DATRAS carries no
@@ -2634,13 +2640,14 @@ tables:
     range:
     - 1.0
     - 120.0
+    description: |-
+      Haul duration in minutes. Start time is the moment when the gear settles at the
+      bottom at the stated towing speed. Stop is defined as the start of hauling of
+      the gear.
   - name: StatisticalRectangle
     type: string
-    description: |-
-      Intended ICES statistical area rectangle (0.5 degrees latitude, 1 degree
-      longitude)
     details: |-
-      Legacy field name: StatRec (see icesDatras::getDatrasFieldList()). 701 distinct
+      Legacy field name: StatRec (verified via op_datras_field_list()). 701 distinct
       values in HH's archive (verified 2026-07-29); real ICES statistical rectangle
       codes (0.5 deg lat x 1 deg lon grid), not a fixed enum given the size of the
       grid. 12,235 of 150,262 HH rows unpopulated. Only present in HH and LT
@@ -2652,6 +2659,9 @@ tables:
     - '36F7'
     - '32F3'
     - '36F6'
+    description: |-
+      Intended ICES statistical area rectangle (0.5 degrees latitude, 1 degree
+      longitude)
   - name: Depth
     type: number(quantity)
     units: m
@@ -2659,14 +2669,17 @@ tables:
     - 1.0
     - 3098.0
     details: |-
-      Confirmed 2026-07-29: byte-for-byte identical to this table's own BottomDepth
-      across all 79,288 populated rows (0 differences, 0 one-sided nulls) -- a known
-      ICES-side redundancy (also documented in obus's own download-stage comments),
-      not an opus/obus naming quirk. Given the same type/units/range as BottomDepth
-      here rather than re-derived independently, since it is BottomDepth.
+      Re-verified 2026-08-06 (originally 2026-07-29, against an older LT archive
+      snapshot whose row count differs from the current one -- re-checked here to
+      avoid repeating a stale figure): byte-for-byte identical to this table's own
+      BottomDepth across all 75,310 rows (100% populated in both, 0 differences, 0
+      one-sided nulls) -- a known ICES-side redundancy (also documented in obus's own
+      download-stage comments), not an opus/obus naming quirk. Filed with ICES
+      2026-08-06 (see inst/ICES_ISSUE_REPORT_20260806.md, Issue 6). Given the same
+      type/units/range as BottomDepth here rather than re-derived independently, since
+      it is BottomDepth.
   - name: HaulValidity
     type: enum
-    description: Haul validity code
     values:
     - A
     - C
@@ -2675,35 +2688,33 @@ tables:
     - 'N'
     - S
     - V
-    details: 'Legacy field name: HaulVal (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: HaulVal (verified via op_datras_field_list()).'
+    description: Haul validity code
   - name: DataType
     type: enum
-    description: |-
-      Specification of the data aggregation in the HL record. C: CPUE (per hour) data;
-      TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw), S (subsample of
-      the entire catch): data as recorded during the cruise, and P (pseudocategory
-      sampling, only used by Scotland).
     values:
     - '-9'
     - C
     - P
     - R
     - S
+    description: |-
+      Specification of the data aggregation in the HL record. C: CPUE (per hour) data;
+      TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw), S (subsample of
+      the entire catch): data as recorded during the cruise, and P (pseudocategory
+      sampling, only used by Scotland).
   - name: NetOpening
     type: number(quantity)
-    description: |-
-      Mean value in metres of vertical net opening measurements. For details see the
-      survey manual.
-    details: 'Legacy field name: Netopening (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Netopening (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
     - 76.0
+    description: |-
+      Mean value in metres of vertical net opening measurements. For details see the
+      survey manual.
   - name: Rigging
     type: enum
-    description: |-
-      The way the gear is rigged. Rigging depends on survey, see survey manuals for
-      further details.
     values:
     - '-9'
     - BC
@@ -2720,27 +2731,29 @@ tables:
     - T
     - TS
     - TT
+    description: |-
+      The way the gear is rigged. Rigging depends on survey, see survey manuals for
+      further details.
   - name: Tickler
     type: number(quantity)
-    description: Amount of ticklers connected to the gear.
     range:
     - 0.0
     - 27.0
+    description: Amount of ticklers connected to the gear.
   - name: WarpLength
     type: number(quantity)
-    description: |-
-      Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
-      on survey, for further details see survey manuals.
-    details: 'Legacy field name: Warplngt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: Warplngt (verified via op_datras_field_list()).'
     units: m
     range:
     - 0.0
     - 4065.0
+    description: |-
+      Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
+      on survey, for further details see survey manuals.
   - name: WarpDiameter
     type: number(quantity)
-    description: Warp diametre in millimetres.
     details: |-
-      Legacy field name: Warpdia (see icesDatras::getDatrasFieldList()). A dense,
+      Legacy field name: Warpdia (verified via op_datras_field_list()). A dense,
       well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart from
       it with no comparable support and are treated as data-entry errors, excluded
@@ -2749,36 +2762,36 @@ tables:
     range:
     - 16.0
     - 30.0
+    description: Warp diametre in millimetres.
   - name: WarpDensity
     type: number(quantity)
-    description: |-
-      Warp weight in kg per linear meter of warp. See survey manuals for more
-      information.
-    details: 'Legacy field name: WarpDen (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: WarpDen (verified via op_datras_field_list()).'
     units: kg/m
     range:
     - 0.0
     - 26.0
+    description: |-
+      Warp weight in kg per linear meter of warp. See survey manuals for more
+      information.
   - name: DoorSurface
     type: number(quantity)
-    description: Door surface area in square metres.
     units: m2
     range:
     - 0.0
     - 20.2
+    description: Door surface area in square metres.
   - name: DoorWeight
     type: number(quantity)
-    description: Door weight in kilograms.
-    details: 'Legacy field name: DoorWgt (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: DoorWgt (verified via op_datras_field_list()).'
     units: kg
     range:
     - 0.0
     - 1720.0
+    description: Door weight in kilograms.
   - name: TowDirection
     type: number(quantity)
-    description: Direction of towing in degrees. 360=direction from south to north.
     details: |-
-      Legacy field name: TowDir (see icesDatras::getDatrasFieldList()). 999 (3 rows)
+      Legacy field name: TowDir (verified via op_datras_field_list()). 999 (3 rows)
       reads as an undocumented out-of-domain 'not recorded' marker, the same pattern
       confirmed for WindDirection below. A further cluster -- 450 deg (62 rows),
       520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary
@@ -2789,34 +2802,31 @@ tables:
     range:
     - 0.0
     - 360.0
+    description: Direction of towing in degrees. 360=direction from south to north.
   - name: SpeedGround
     type: number(quantity)
-    description: |-
-      Ground speed of towing in knots. Recommended speed depends on survey, see survey
-      manuals for more details
     details: |-
-      Legacy field name: GroundSpeed (see icesDatras::getDatrasFieldList()). Ceiling
-      is a domain judgment (real trawling ground speed), not an observed cluster
-      boundary -- observed values run 10.8 up to a 99.9 marker with no clean gap, all
-      excluded.
+      Legacy field name: GroundSpeed (verified via op_datras_field_list()). Ceiling is
+      a domain judgment (real trawling ground speed), not an observed cluster boundary
+      -- observed values run 10.8 up to a 99.9 marker with no clean gap, all excluded.
     units: knots
     range:
     - 0.0
     - 10.0
+    description: |-
+      Ground speed of towing in knots. Recommended speed depends on survey, see survey
+      manuals for more details
   - name: SpeedWater
     type: number(quantity)
-    description: Trawl speed on water in knots.
     units: knots
     range:
     - 0.0
     - 22.0
+    description: Trawl speed on water in knots.
   - name: WindDirection
     type: number(quantity)
-    description: |-
-      Direction of wind in degrees. Calm = 0,  direction from north to south = 360,
-      varying direction = -1
     details: |-
-      Legacy field name: WindDir (see icesDatras::getDatrasFieldList()). -1 is
+      Legacy field name: WindDir (verified via op_datras_field_list()). -1 is
       documented ('varying direction'). 999 (57 rows) reads as an undocumented
       out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded.
@@ -2824,9 +2834,11 @@ tables:
     range:
     - -1.0
     - 360.0
+    description: |-
+      Direction of wind in degrees. Calm = 0,  direction from north to south = 360,
+      varying direction = -1
   - name: WindSpeed
     type: number(quantity)
-    description: Speed of wind in metres/sec.
     units: m/s
     range:
     - 0.0
@@ -2837,19 +2849,19 @@ tables:
       exceed it, tailing off smoothly with no clean gap up to 342 m/s; the count jumps
       from a thin 1-7-row-per-value tail above 28 to 357 rows right at 28, consistent
       with a real distribution below and noise above.
+    description: Speed of wind in metres/sec.
   - name: SwellDirection
     type: number(quantity)
-    description: |-
-      Direction of swell in degrees. No movement=0, direction from south to north =
-      360, varying direction = -1
-    details: 'Legacy field name: SwellDir (see icesDatras::getDatrasFieldList()).'
+    details: 'Legacy field name: SwellDir (verified via op_datras_field_list()).'
     units: degrees
     range:
     - 0.0
     - 360.0
+    description: |-
+      Direction of swell in degrees. No movement=0, direction from south to north =
+      360, varying direction = -1
   - name: SwellHeight
     type: enum
-    description: Height of (swell) waves, in metres
     values:
     - H
     - L
@@ -2857,9 +2869,9 @@ tables:
     - 'N'
     - NR
     - VH
+    description: Height of (swell) waves, in metres
   - name: CodendMesh
     type: number(quantity)
-    description: Codend mesh size in mm
     units: mm
     range:
     - 9.0
@@ -2868,6 +2880,7 @@ tables:
       0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh
       size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows)
       and is treated as a data-entry error, excluded.
+    description: Codend mesh size in mm
   - name: EEZ
     type: string
     examples:
@@ -2923,8 +2936,9 @@ tables:
     a thematic addition to the HH/HL/CA core exchange tables with a separate collection
     protocol and scope. Linked to HH via the composite haul identifier (Survey + Year
     + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note:
-    like CA, LT''s own HaulNumber may be nullable; the full 8-field composite key
-    is required for correct joins.'
+    CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table
+    details); whether LT''s own HaulNumber has a similar issue has not been separately
+    checked. The full 8-field composite key is required for correct joins regardless.'
   origin: data-raw/DATASET_curate_dict.R
   source:
     parquet: LT.parquet

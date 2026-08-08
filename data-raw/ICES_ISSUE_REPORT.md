@@ -162,18 +162,22 @@ future LT submissions/exports.
 
 ---
 
-## A related, non-ICES note: `icesDatras`'s own patch should also be retired
+## Also worth flagging to ICES: `icesDatras`'s own patch should also be retired
 
-Not an ICES-service issue, but relevant context: the widely-used
-`icesDatras` R package's `getDatrasFieldList()` function silently applies
-its own hand-typed correction on top of the live endpoint above — a ~40-row
-fabricated table for LT, plus a few explicit overrides — undocumented in
-its own source and not sourced from ICES. It happens to get Issues 1–2
-empirically right (matching real data) via its maintainers' own domain
-knowledge, but does **not** resolve Issue 4 (it still trusts the orphaned
-`IndividualAge` row), and of course doesn't touch Issues 3, 5, or 6 at all.
-We'd suggest the `icesDatras` maintainers retire that patch in favour of
-querying each operation's own live ASMX response directly (exactly as this
-report's verification method does) once the ICES-side issues above are
+Not a DATRAS web-service issue like Issues 1–6 above, but still squarely
+ICES's to fix, not a third party's: `icesDatras` is itself an ICES package
+(maintained by ICES staff — colin.millar@ices.dk — under the
+`ices-tools-prod` GitHub organization, confirmed via the installed
+package's own `DESCRIPTION`, not assumed). Its `getDatrasFieldList()`
+function silently applies its own hand-typed correction on top of the live
+endpoint above — a ~40-row fabricated table for LT, plus a few explicit
+overrides — undocumented in its own source and not sourced from the live
+service it wraps. It happens to get Issues 1–2 empirically right (matching
+real data) via its maintainers' own domain knowledge, but does **not**
+resolve Issue 4 (it still trusts the orphaned `IndividualAge` row), and of
+course doesn't touch Issues 3, 5, or 6 at all. We'd suggest retiring that
+patch in favour of querying each operation's own live ASMX response
+directly (exactly as this report's verification method does) once the
+ICES-side issues above are
 fixed — a package-internal workaround stops being useful once its target
 service is corrected, and stops being *silently* wrong in the meantime.

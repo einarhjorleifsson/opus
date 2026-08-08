@@ -1,0 +1,9 @@
+---
+title: "DATRAS-known-issues.yaml"
+---
+
+
+::: {.callout-note}
+Generated from `inst/DATRAS-known-issues.yaml` by `data-raw/DATASET_dict_to_qmd.R`. Edit the YAML and regenerate -- don't hand-edit this file.
+:::
+

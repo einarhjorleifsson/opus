@@ -2,7 +2,7 @@
 
 **Status:** v0.2.0 complete. Tier 1 (HH, HL, CA, LT) fully curated and documented. Ready for forward work: Tier 2 + imbus coordination.
 
-**Latest:** 2026-08-05 — AGENTS.md and process cleaned up. R function scope clarified (20 exported metadata/validation tools, not "data-only" but metadata-centric per Principle 3).
+**Latest:** 2026-08-06 — Removed `icesDatras`/`icesVocab` R-package dependencies (direct, verified web-service calls instead). Rebuilding the replacement surfaced and fixed 6 confirmed ICES-side `getDatrasFieldList` errors; drafted `inst/ICES_ISSUE_REPORT_20260806.md`. `inst/DATRAS-data-dict.yaml` regenerated and validated (3/3 reproducible runs, `R CMD check` clean, no regressions). See AGENTS.md's Open Items for full detail.
 
 ---
 
@@ -10,11 +10,21 @@
 
 ✓ **Bootstrap workflow** — Three-phase bootstrap (WSDL seed → parquet enrich → curate) with supporting R functions
 ✓ **Tier 1 (HH, HL, CA, LT)** — Curated YAML specs + descriptive/strict YAML variants + known-issues registry
-✓ **R package** — 20 exported functions (validation, vocabulary, field name utilities) + 5 vignettes
+✓ **R package** — 17 exported functions (validation, vocabulary, field name utilities) + 5 vignettes
 ✓ **Documentation** — why-opus, using-opus, technical-notes articles + Quarto reference site
 ✓ **Test data** — Parquet samples for each Tier 1 table
 ✓ **Git history** — Clean three-phase commits with milestone tags
 ✓ **Package build** — devtools::check() passing; .rbuildignore optimized
+✓ **Zero R-package dependency on `icesDatras`/`icesVocab`** (2026-08-06) — direct, cross-verified web-service calls instead (`op_datras_field_list()` in `R/field_names.R`, direct HTTP in `R/vocab.R`)
+
+---
+
+## Immediate: 2026-08-06 session follow-through
+
+- [x] **Decide the fate of same-day pre-dependency-work documents** — deleted 2026-08-07 (`inst/PHASE2_ISSUES_FOR_ICES.md`, `inst/PHASE3_ROADMAP.md`, `inst/DATRAS_PHASE2_ORIGINAL_NAMES.yaml`, `ICESVOCAB_MAPPING_AUDIT.md`, and related CSVs). All were untracked, so nothing was lost from git history.
+- [ ] **File `inst/ICES_ISSUE_REPORT_20260806.md` with ICES** — 6 confirmed `getDatrasFieldList`/archive-data issues, drafted but not yet sent. Venue undecided (informal imbus discussion first, per existing strategy, or direct GitHub/DIG submission?).
+- [ ] **Raise the `icesDatras` package note separately** — its `getDatrasFieldList()` wrapper silently patches around some of the same ICES errors with an undocumented, unsourced hand-patch; worth telling its maintainers once the ICES-side fix is in motion.
+- [x] **Review and commit tonight's diff** — done 2026-08-07/08 as a sequence of reviewable commits (icesDatras/icesVocab removal, seed/curate script updates, known-issues registry fix) rather than one large diff. Remaining: website/vignette artifacts, which still reference the now-corrected HaulNumber claim.
 
 ---
 

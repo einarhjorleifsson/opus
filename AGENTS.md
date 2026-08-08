@@ -119,7 +119,12 @@ opus consolidates metadata from three ICES web services:
 2. **getDatrasFieldList API**
    - Source: `https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList`
    - Provides: Field name mappings (old → new), descriptions
-   - Authority: Secondary—derived from WSDL and internal DATRAS schema
+   - Authority: Secondary—derived from WSDL and internal DATRAS schema, and
+     **confirmed unreliable** (2026-08-06): covers only 22 of LT's 58 real
+     fields, wrongly claims 3 LT fields were never renamed, documents a
+     `RecordHeader` field LT doesn't have, and pairs CA's `IndividualAge`
+     with an old-name (`AgeRings`) that doesn't exist. Filed with ICES —
+     see `inst/ICES_ISSUE_REPORT_20260806.md`.
    - Scope: DATRAS-specific (no other ICES products)
    - Note: DataFormat field can diverge from WSDL; opus sources types from WSDL directly
 
@@ -132,9 +137,18 @@ opus consolidates metadata from three ICES web services:
 
 opus unifies these three sources into a single YAML specification, making inconsistencies visible and escalatable to ICES.
 
+**No R-package dependency on either `icesDatras` or `icesVocab`** (removed
+2026-08-06): opus calls these two web services directly (`R/vocab.R`,
+`R/field_names.R`'s `op_datras_field_list()`), verifying every claim against
+at least two independent live sources rather than trusting either service's
+metadata blindly — this is how the getDatrasFieldList errors above were
+caught. `icesDatras`'s own `getDatrasFieldList()` papers over some of the
+same errors with an undocumented, ICES-unsourced hand-patch; opus does not
+rely on it.
+
 ## Implementation
 
-**User-facing exported functions** (20 total):
+**User-facing exported functions** (17 total):
 
 *Specification validation* (`R/validation.R`):
 - `op_validate_spec(dict_path)` — Check YAML spec conformation (uses data-dict CLI)
@@ -143,6 +157,8 @@ opus unifies these three sources into a single YAML specification, making incons
 - `op_validate_full(data_path, table, dict_path)` — Run all three checks
 - `op_inspect_parquet(parquet_path)` — See what data-dict CLI sees
 - `op_flag_violations(data_path, table, dict_path)` — Flag rows with constraint violations
+- `op_export_spec(dict_path)` — Export a fully-resolved dictionary as JSON (wraps data-dict CLI's `export-spec`)
+- `op_export_data(dict_path)` — Export a dictionary with per-column data profiles as JSON (wraps data-dict CLI's `export-data`)
 
 *Parquet exploration and drafting* (`R/op_draft_from_parquet.R`):
 - `op_describe_parquet(parquet_path)` — Describe parquet structure and statistics
@@ -157,6 +173,7 @@ opus unifies these three sources into a single YAML specification, making incons
 *Field name utilities* (`R/field_names.R`):
 - `op_legacy_field_name(details)` — Extract legacy (old ICES) field name from YAML details
 - `op_field_name_map(dict, table_name=NULL)` — Build legacy→new field name mapping table
+- `op_datras_field_list(tables)` — Derive verified Tier 1 old-name→new-name mappings directly from ICES's live services (replaces `icesDatras::getDatrasFieldList()`); tiers each mapping as `confirmed` / `cross_table_confirmed` / `no_evidence` rather than trusting ICES's field-list metadata blindly. See its own roxygen docs for the six confirmed ICES-side errors this caught.
 
 These wrappers enable the curation loop: build YAML → validate against real data → identify issues → refine YAML. The **descriptive YAML** (DATRAS-data-dict.yaml) is the reference for what exists in practice, including both icesVocab-defined codes and undocumented variants observed in submissions.
 
@@ -197,3 +214,5 @@ These are internal to the three-phase bootstrap workflow; see [[project_bootstra
 **Type source authority (2026-08-02):** Discovered three ICES metadata sources claim to define field types and **they diverge**. WSDL is authoritative (auto-generated from server code). getDatrasFieldList is secondary (hand-maintained table). Five confirmed divergences: Year fields (WSDL=int, API=char; real archive=int), Distance (WSDL=int, API=float; real archive=int). opus seeds from WSDL only. Documented in known-issues #10 (datras_field_list_type_divergence) as institutional accountability marker — ICES must align getDatrasFieldList with WSDL and real data behavior.
 
 **What opus really is (2026-08-02 realization):** Not a data reformatting tool. **opus is institutional data governance audit infrastructure.** Systematically exposes where ICES's three metadata sources (WSDL, getDatrasFieldList, icesVocab) diverge from each other and from real data. Known-issues registry becomes accountability log: "Here's evidence this is broken, here's the impact, here's how to fix it." This reconciliation work is the actual deliverable — YAML specs are the vehicle, but exposure of governance gaps is the value.
+
+**Dependency removal + getDatrasFieldList audit (2026-08-06):** Removed opus's R-package dependency on both `icesDatras` and `icesVocab` (direct web-service calls instead, verified byte-identical for icesVocab's two endpoints). Building the replacement (`op_datras_field_list()`, see `R/field_names.R`) required cross-verifying ICES's live `getDatrasFieldList` metadata against each operation's own ASMX response and the real archive, which surfaced 6 confirmed ICES-side errors (LT coverage gap, 3 wrong LT renames, a phantom LT `RecordHeader` field, CA's unverifiable `IndividualAge`/`AgeRings` row, missing `DateofCalculation`/`Valid_Aphia` entries, and LT's `Depth`/`BottomDepth` data duplication) — filed as `inst/ICES_ISSUE_REPORT_20260806.md`, not yet sent to ICES. Corrected opus's own spec accordingly: `CA.IndividualAge` reverted to `CA.Age` (the rename rested on an unverifiable metadata row), LT's ~23 shared fields renamed via verified cross-table inference (matching what `icesDatras`'s own unsourced patch did, but sourced and documented this time). **Still open:** the earlier same-day session (before this dependency work) produced several documents (`PHASE2_ISSUES_FOR_ICES.md`, `PHASE3_ROADMAP.md`, `DATRAS_PHASE2_ORIGINAL_NAMES.yaml`, `ICESVOCAB_MAPPING_AUDIT.md` and related CSVs) containing fabricated row counts and misattributed sources, discovered when this session's rigor caught a specific bad claim — their fate (delete vs. mark superseded) is undecided; do not treat their contents as reliable.

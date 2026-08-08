@@ -9,8 +9,7 @@
 ^_pkgdown\.yml$
 ^_pkgdown\.site$
 ^_quarto\.yaml$
-^vignettes/\.quarto$
-^vignettes/articles$
+^vignettes$
 ^AGENTS\.*
 ^TODO\.md$
 ^README\.Rmd$
@@ -21,3 +20,5 @@
 ^\.datras$
 ^\.\.Rcheck$
 ^opus.Rcheck$
+^logs$
+^scripts$

@@ -27,14 +27,24 @@ sentinels:
 
 # Known Data Quality Issues (Tier 1 validation, 2026-07-29)
 known_violations:
-  - id: "haul_number_nullable"
+  - id: "ca_haulno_unlinkable_to_hh"
     severity: "D"
-    field: "HaulNumber"
+    field: "HaulNo"
     table: "CA"
-    constraint: "required"
-    extent: "305,276 null values (5.12% of 5.97M rows)"
-    implication: "Use composite 8-field haul key for joins, not HaulNumber alone"
-    discovered: "2026-07-29"
+    issue: "-9 sentinel (not null); affected rows unlinkable to HH via any key"
+    extent: "288,581 rows (4.92% of 5,865,076) carry HaulNo == -9; 0 true nulls in either table"
+    implication: "Rows do not match any HH haul on the documented composite key (Survey, Year, Quarter, Country, Ship, Gear, StNo, HaulNo), even with HaulNo dropped -- not a join-key problem, genuinely orphaned CA records. Surfaces as a D04_range violation (declared range [0, 82483] excludes -9), not D01_required (confirmed via op_flag_violations(), 2026-08-07)."
+    verified: "2026-08-07, against full local archive (.datras/parquet/{HH,CA}.parquet)"
+    discovered: "2026-07-29 (mechanism corrected 2026-08-07; originally miscategorized as 305,276 null values / D01_required)"
+
+  - id: "ca_haulno_tail_mismatch"
+    severity: "D"
+    field: "HaulNo"
+    table: "CA"
+    issue: "Small residual of non-sentinel HaulNo values that still fail to match HH on the composite key"
+    extent: "700 rows (0.01% of 5,865,076)"
+    implication: "Cause not yet diagnosed; distinct from the -9 sentinel issue above."
+    discovered: "2026-08-07"
 
   - id: "swell_height_numeric"
     severity: "D"
@@ -58,5 +68,5 @@ processing:
 
   phase3:
     known_violations_baseline: true
-    expect_haul_number_nulls: true
+    expect_ca_haulno_sentinel: true
     expect_vocab_gaps: true

@@ -1,3 +1,29 @@
+#' Base URL for the ICES Vocabulary web service.
+#'
+#' opus calls this service directly (plain, unauthenticated JSON GET
+#' requests) rather than depending on the `icesVocab` R package. Traced
+#' 2026-08-06 from `icesVocab`'s own source (`vocab_api()`,
+#' `icesConnect::ices_get()`, both called with `use_token = FALSE`) and
+#' confirmed against the live endpoints with `curl`.
+#'
+#' @keywords internal
+.ices_vocab_base_url <- "https://vocab.ices.dk/services/api"
+
+#' Fetch and parse a JSON array from the ICES Vocabulary service
+#'
+#' @param path Character scalar: path appended to the base URL (e.g.
+#'   "CodeType" or "Code/TS_Sex").
+#' @return A data frame (one row per JSON array element), or a zero-row
+#'   data frame if the service returns an empty array or the request fails.
+#' @keywords internal
+.ices_vocab_get <- function(path) {
+  url <- paste0(.ices_vocab_base_url, "/", utils::URLencode(path))
+  tryCatch(
+    jsonlite::fromJSON(url, simplifyVector = TRUE),
+    error = function(e) data.frame()
+  )
+}
+
 #' Get ICES Vocabulary Types with Prefix Metadata
 #'
 #' Fetches the complete code-type list from the ICES Vocabulary service and
@@ -35,7 +61,13 @@
 #'
 #' @export
 op_vocab_get_types <- function() {
-  types <- icesVocab::getCodeTypeList()
+  types <- .ices_vocab_get("CodeType")
+  if (nrow(types) == 0) {
+    return(data.frame(Key = character(0), stripped = character(0),
+                       prefix = character(0), Description = character(0)))
+  }
+  types$Key <- types$key
+  types$Description <- types$description
   types$prefix <- ifelse(grepl("^TS_", types$Key), "TS",
                    ifelse(grepl("^AC_", types$Key), "AC", "bare"))
   types$stripped <- sub("^(TS_|AC_)", "", types$Key)
@@ -174,11 +206,15 @@ op_vocab_resolve_key <- function(field_name, types) {
 #'
 #' @export
 op_vocab_get_codes <- function(key) {
-  codes <- tryCatch(icesVocab::getCodeList(key), error = function(e) NULL)
-  if (!is.data.frame(codes) || !"Deprecated" %in% names(codes) || nrow(codes) == 0) {
+  if (is.na(key)) {
     return(data.frame(Key = character(0), Description = character(0)))
   }
-  codes <- codes[!codes$Deprecated, c("Key", "Description")]
+  codes <- .ices_vocab_get(paste0("Code/", key))
+  if (nrow(codes) == 0 || !all(c("key", "description", "deprecated") %in% names(codes))) {
+    return(data.frame(Key = character(0), Description = character(0)))
+  }
+  codes <- codes[!codes$deprecated, c("key", "description")]
+  names(codes) <- c("Key", "Description")
   row.names(codes) <- NULL
   codes
 }

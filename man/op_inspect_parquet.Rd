@@ -2,7 +2,7 @@
 % Please edit documentation in R/validation.R
 \name{op_inspect_parquet}
 \alias{op_inspect_parquet}
-\title{Inspect parquet file schema and sample}
+\title{Inspect parquet file schema}
 \usage{
 op_inspect_parquet(
   parquet_path,
@@ -15,8 +15,14 @@ op_inspect_parquet(
 \item{cli_bin}{Path to data-dict CLI binary}
 }
 \value{
-List: (schema = JSON, raw_output = lines)
+List: (valid = T/F, columns = data.frame with name/type/parquet_type,
+  raw_output = JSON text, command)
 }
 \description{
 See what data-dict CLI sees in a parquet file.
+Uses `describe --json` to profile the file and extract schema information.
+}
+\details{
+**Note**: Prior to data-dict v0.0.3 (2026-08-04), this used `types parquet`.
+It now uses `describe --json` since `types parquet` was removed.
 }

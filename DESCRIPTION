@@ -30,8 +30,7 @@ Depends:
 Imports:
     arrow,
     jsonlite,
-    yaml,
-    icesVocab
+    yaml
 Suggests:
     testthat (>= 3.0.0),
     curl,

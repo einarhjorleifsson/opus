@@ -8,6 +8,8 @@ export(op_inspect_parquet)
 export(op_flag_violations)
 export(op_describe_parquet)
 export(op_draft_from_parquet)
+export(op_export_spec)
+export(op_export_data)
 
 # Exports: vocabulary utilities for enriching data-dict with ICES code lists
 export(op_vocab_get_types)
@@ -18,8 +20,8 @@ export(op_vocab_first_usable)
 # Exports: field name utilities
 export(op_legacy_field_name)
 export(op_field_name_map)
+export(op_datras_field_list)
 
 # Imports
 importFrom(yaml, read_yaml, write_yaml)
 importFrom(jsonlite, fromJSON)
-importFrom(icesVocab, getCodeTypeList, getCodeList)

@@ -486,5 +486,105 @@ op_draft_from_parquet <- function(parquet_paths,
   )
 }
 
+#' Export dictionary as fully-resolved JSON
+#'
+#' Renders a data-dict.yaml as JSON with all references resolved: enum keys
+#' expanded to their full definitions, descriptions populated, types normalized.
+#'
+#' @param dict_path Path to data-dict.yaml or directory containing one
+#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
+#' @param cli_bin Path to data-dict CLI binary
+#'
+#' @return List: (valid = T/F, spec = parsed JSON, raw_output = JSON text,
+#'   exit_status, command)
+#' @export
+op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+                          pretty = FALSE,
+                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+  cli_bin <- path.expand(cli_bin)
+  dict_path <- path.expand(dict_path)
+
+  if (!file.exists(cli_bin)) {
+    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
+  }
+
+  if (!file.exists(dict_path)) {
+    stop("Dictionary not found at ", dict_path, call. = FALSE)
+  }
+
+  args <- c("export-spec", dict_path)
+  if (pretty) {
+    args <- c(args, "--pretty")
+  }
+
+  output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
+  status <- attr(output, "status") %||% 0L
+  raw_json <- paste(output, collapse = "\n")
+
+  parsed <- tryCatch(
+    jsonlite::fromJSON(raw_json, simplifyVector = FALSE),
+    error = function(e) NULL
+  )
+
+  list(
+    valid       = (status == 0L),
+    exit_status = status,
+    spec        = parsed,
+    raw_output  = raw_json,
+    command     = paste(c(cli_bin, args), collapse = " ")
+  )
+}
+
+#' Export dictionary with per-column data profiles
+#'
+#' Renders a data-dict.yaml as JSON with per-column profiles: statistics,
+#' distinct counts, value distributions, and example values for each column.
+#'
+#' @param dict_path Path to data-dict.yaml or directory containing one
+#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
+#' @param cli_bin Path to data-dict CLI binary
+#'
+#' @return List: (valid = T/F, data = parsed JSON, raw_output = JSON text,
+#'   exit_status, command)
+#' @export
+op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+                          pretty = FALSE,
+                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+  cli_bin <- path.expand(cli_bin)
+  dict_path <- path.expand(dict_path)
+
+  if (!file.exists(cli_bin)) {
+    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
+  }
+
+  if (!file.exists(dict_path)) {
+    stop("Dictionary not found at ", dict_path, call. = FALSE)
+  }
+
+  args <- c("export-data", dict_path)
+  if (pretty) {
+    args <- c(args, "--pretty")
+  }
+
+  output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
+  status <- attr(output, "status") %||% 0L
+  raw_json <- paste(output, collapse = "\n")
+
+  parsed <- tryCatch(
+    jsonlite::fromJSON(raw_json, simplifyVector = FALSE),
+    error = function(e) NULL
+  )
+
+  list(
+    valid       = (status == 0L),
+    exit_status = status,
+    data        = parsed,
+    raw_output  = raw_json,
+    command     = paste(c(cli_bin, args), collapse = " ")
+  )
+}
+
 # Null coalesce helper
 `%||%` <- function(x, y) if (is.null(x)) y else x

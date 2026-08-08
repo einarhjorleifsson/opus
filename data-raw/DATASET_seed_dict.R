@@ -91,9 +91,22 @@ crawled <-
 # FieldName, which data-dict.yaml requires non-blank; falling back to the
 # WSDL's own field name there is a structural necessity, not an assertion
 # that this IS the field's "new" name.
+#
+# Was previously `icesDatras::getDatrasFieldList()`. Replaced 2026-08-06
+# with opus's own direct fetch (`opus:::.fetch_live_datras_field_list()`):
+# icesDatras's version layers its own hand-typed patch on top of the same
+# live endpoint (undocumented in its own code, not sourced from ICES --
+# see R/field_names.R's op_datras_field_list() for the traced evidence),
+# which contradicts this seed's own stated design ("report ONLY what
+# ICES's live services say, unfixed"). The raw fetch also normalizes
+# ICES's own "-" placeholder (meaning "never renamed") to equal FieldName,
+# fixing a latent bug below: without it, `has_distinct_new_name` was
+# TRUE for every field ICES marks "-" (e.g. Survey), the opposite of
+# what "-" means.
 fl <-
-  icesDatras::getDatrasFieldList() |>
+  opus:::.fetch_live_datras_field_list() |>
   filter(RecordHeader %in% tier1_tables) |>
+  mutate(FieldNameOld = ifelse(FieldNameOld == "-", FieldName, FieldNameOld)) |>
   distinct(RecordHeader, FieldNameOld, .keep_all = TRUE) |>
   select(RecordHeader, FieldNameOld, FieldName, Description)
 
@@ -105,6 +118,30 @@ crawled <-
     Description = coalesce(Description, ""),
     has_distinct_new_name = FieldName != FieldNameOld
   )
+
+# Self-verification, not a soft check: confirm a handful of
+# independently-verified anchor mappings hold, and fail loudly (not
+# silently write bad output) if they don't. LT is deliberately excluded --
+# ICES's own getDatrasFieldList genuinely does not document Ship/StNo/
+# HaulNo -> Platform/StationName/HaulNumber for LT specifically (only for
+# HH/HL/CA), so the seed correctly reports LT's Ship/StNo/HaulNo as
+# unrenamed, warts and all; fixing that via cross-table inference is
+# op_datras_field_list()'s job in the curation stage, not this one's (see
+# AGENTS.md's seed-vs-curate split -- asserting the fix here would violate
+# the seed's own "report ICES's sources literally, unfixed" design).
+anchors <- list(
+  c("HH", "Ship", "Platform"), c("HH", "StNo", "StationName"), c("HH", "HaulNo", "HaulNumber")
+)
+for (a in anchors) {
+  got <- crawled$FieldName[crawled$RecordHeader == a[1] & crawled$FieldNameOld == a[2]]
+  if (length(got) != 1 || got != a[3]) {
+    stop("Anchor check failed: ", a[1], "/", a[2], " resolved to '",
+         paste(got, collapse=","), "', expected '", a[3], "'. ",
+         "This run's data is untrustworthy -- re-run rather than proceed.",
+         call. = FALSE)
+  }
+}
+message("Anchor checks passed: ", length(anchors), "/", length(anchors))
 
 # NOTE: no correction/override step here, deliberately. icesDatras's own
 # build_datras_schema.R applies a documented override at this point (HL/CA's

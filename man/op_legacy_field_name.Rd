@@ -20,7 +20,7 @@ via [op_datras_field_list()], not the icesDatras package).
 }
 \details{
 Format: The legacy name is stored as a fixed-prefix line in the details field:
-`Legacy field name: {OldName} (verified via op_datras_field_list()).`
+`Legacy field name: \{OldName\} (verified via op_datras_field_list()).`
 
 This approach:
 - Complies with data-dict v0.1.0 spec (details is free-text)

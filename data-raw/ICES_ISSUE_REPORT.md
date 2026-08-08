@@ -23,6 +23,15 @@ No finding here rests on a single source, and none rest on the `icesDatras`
 R package's own internal patches, which we found to be undocumented,
 unsourced from ICES, and in at least one case (see Issue 4) still wrong.
 
+**2026-08-08 re-verification:** Issues 1–3 (LT's real field set, the
+`Ship`/`StNo`/`HaulNo` renames, and the phantom `RecordType` field)
+independently re-confirmed via a third method not used above: parsing raw
+LT exchange XML directly (at least one non-empty file per survey, all 28
+surveys) and diffing the resulting real field-tag set against
+`inst/DATRAS-data-dict.yaml`'s own legacy-name annotations for all four
+Tier 1 tables, not just LT. Zero discrepancies in either direction for HH,
+HL, CA, or LT.
+
 ---
 
 ## Issue 1: `getDatrasFieldList` covers only 22 of LT's 58 real fields
@@ -45,28 +54,34 @@ fields `getLitterAssessmentOutput` actually returns.
 
 ---
 
-## Issue 2: `getDatrasFieldList` wrongly claims no rename for 3 LT fields
+## Issue 2: `getDatrasFieldList` wrongly claims 3 LT legacy fields were never renamed
 
 **Severity: Data quality — actively incorrect, not just incomplete**
 
-Of the 22 LT fields the field-list *does* document, 3 claim no rename
-(`FieldNameOld == FieldName`):
+Of the 22 LT fields the field-list *does* document, 3 real legacy fields are
+claimed to have no rename at all (`FieldNameOld == FieldName`):
 
-| Field | Field-list claims | Real LT data / ASMX page shows |
+| Real legacy field | Field-list's current-name row | Field-list wrongly sets `FieldNameOld` to |
 |---|---|---|
-| `Platform` | `Platform` (unchanged) | `Ship` |
-| `StationName` | `StationName` (unchanged) | `StNo` |
-| `HaulNumber` | `HaulNumber` (unchanged) | `HaulNo` |
+| `Ship` | `Platform` | `Platform` (should be `Ship`) |
+| `StNo` | `StationName` | `StationName` (should be `StNo`) |
+| `HaulNo` | `HaulNumber` | `HaulNumber` (should be `HaulNo`) |
 
-The field-list's own HH, HL, and CA sections correctly document these exact
-same renames (`Ship`→`Platform`, `StNo`→`StationName`, `HaulNo`→`HaulNumber`)
-— only the LT section is wrong. Confirmed against the real archived LT
-parquet data (columns are literally named `Ship`, `StNo`, `HaulNo`) and
-independently against `getLitterAssessmentOutput`'s own ASMX sample
-response.
+The field-list's own HH, HL, and CA sections correctly document these same
+three legacy fields as renamed (`Ship`→`Platform`, `StNo`→`StationName`,
+`HaulNo`→`HaulNumber`) — only the LT section claims otherwise. Confirmed
+against the real archived LT parquet data (columns are literally named
+`Ship`, `StNo`, `HaulNo`, matching HH/HL/CA) and independently against
+`getLitterAssessmentOutput`'s own ASMX sample response.
 
-**Recommendation:** Correct the LT section's `FieldNameOld` for these 3
-fields to match HH/HL/CA.
+Opus's own resolution of this (LT's `Ship`/`StNo`/`HaulNo` mapped to
+`Platform`/`StationName`/`HaulNumber`, matching the other three tables) is
+recorded in `inst/DATRAS-data-dict.yaml`'s own field annotations, not here —
+this section reports ICES's metadata bug; it isn't opus's naming ledger.
+
+**Recommendation:** Correct the LT section's `FieldNameOld` for `Platform`,
+`StationName`, and `HaulNumber` to `Ship`, `StNo`, and `HaulNo` respectively,
+matching HH/HL/CA.
 
 ---
 
@@ -74,13 +89,15 @@ fields to match HH/HL/CA.
 
 **Severity: Data quality — inverse of Issues 1–2**
 
-The field-list documents `RecordHeader = "LT"` as having a `RecordHeader`
-field (old name `RecordType`). Neither `getLitterAssessmentOutput`'s own
-live sample response nor the real archived LT data contain any such column
-— LT genuinely has no record-type indicator field at all, unlike HH/HL/CA.
+Under `RecordHeader = "LT"` (the metadata service's own table selector — a
+different sense of "RecordHeader" from the per-record field below), the
+field-list documents a per-record legacy field `RecordType` (current name
+`RecordHeader`). Neither `getLitterAssessmentOutput`'s own live sample
+response nor the real archived LT data contain any such column — LT
+genuinely has no record-type indicator field at all, unlike HH/HL/CA.
 
 **Recommendation:** Either confirm LT is intentionally exempt from carrying
-a `RecordHeader`/`RecordType` field and remove the phantom entry from the
+a `RecordType`/`RecordHeader` field and remove the phantom entry from the
 field-list, or add the field to the live `getLitterAssessmentOutput`
 response if one was intended.
 

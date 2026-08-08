@@ -4,17 +4,17 @@
 #' a manifest of all downloads for resume/audit purposes.
 #'
 #' Usage:
-#'   Rscript data-raw/datras_download.R
+#'   Rscript data-raw/archive_02_download.R
 #'
 #' Or for periodic refresh:
-#'   nohup Rscript data-raw/datras_download.R > logs/download_$(date +%F_%H%M%S).log 2>&1 &
+#'   nohup Rscript data-raw/archive_02_download.R > logs/download_$(date +%F_%H%M%S).log 2>&1 &
 
 suppressPackageStartupMessages({
   library(dplyr)
 })
 
-source("data-raw/datras_download_config.R")
-source("data-raw/datras_catalog.R")  # Direct ICES API (no icesDatras dependency)
+source("data-raw/archive_01_download_config.R")
+source("data-raw/archive_03_catalog.R")  # Direct ICES API (no icesDatras dependency)
 
 # ---- Helper: fetch raw XML from URL using curl ----
 fetch_datras_raw_xml <- function(url) {

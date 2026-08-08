@@ -55,7 +55,7 @@
 #' actually generates for that operation -- independent of (and, per
 #' [op_datras_field_list()]'s tracing, sometimes more accurate than) the
 #' separately-maintained getDatrasFieldList metadata service. Ported from
-#' `data-raw/datras_operation_types.R`'s crawler so this capability doesn't
+#' `data-raw/spec_00_operation_types.R`'s crawler so this capability doesn't
 #' require sourcing a data-raw file at package runtime.
 #'
 #' @param operation Character scalar: an ICES DATRAS web service operation

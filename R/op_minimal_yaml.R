@@ -10,7 +10,7 @@
 #'
 #' @export
 op_minimal_yaml <- function(output_path = "inst/DATRAS-types-minimal.R", verbose = TRUE) {
-  source("data-raw/datras_operation_types.R")
+  source("data-raw/spec_00_operation_types.R")
 
   tier1_tables <- c("HH", "HL", "CA", "LT")
   record_operations <- c(
@@ -74,6 +74,6 @@ op_minimal_yaml <- function(output_path = "inst/DATRAS-types-minimal.R", verbose
 }
 
 # get_datras_operations()/get_datras_operation_types() come from
-# data-raw/datras_operation_types.R, sourced at call-time above -- not
+# data-raw/spec_00_operation_types.R, sourced at call-time above -- not
 # real package globals, so R CMD check can't see them statically.
 utils::globalVariables(c("get_datras_operations", "get_datras_operation_types"))

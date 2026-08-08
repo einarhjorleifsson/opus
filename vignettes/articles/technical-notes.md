@@ -88,7 +88,7 @@ In each column with a legacy name:
 Flag patterns during YAML generation:
 
 ```r
-# In DATASET_curate_dict.R:
+# In spec_02_curate_dict.R:
 vocab_coverage <- data.frame(
   field = ...,
   vocab_via_old = ...,

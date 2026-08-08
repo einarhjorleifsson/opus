@@ -4,9 +4,9 @@ name: datras_exchange
 label: ICES DATRAS Exchange Data (Tier 1 -- raw haul-grain submissions)
 description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),
   CA (age), LT (litter). Curated from data-raw/seed/DATRAS-exchange-dict-seed.yaml
-  -- see data-raw/DATASET_curate_dict.R for the corrections and field-spec fills applied
+  -- see data-raw/spec_02_curate_dict.R for the corrections and field-spec fills applied
   and why.'
-origin: data-raw/DATASET_seed_dict.R <U+2192> data-raw/DATASET_curate_dict.R
+origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R
 version:
   date: '2026-08-07'
 tables:
@@ -939,7 +939,7 @@ tables:
     a -9 sentinel (not a null; verified 2026-08-07) in HaulNumber/HaulNo and match
     no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh)
     and obus::dr_add_id for the composite ID construction logic.'
-  origin: data-raw/DATASET_curate_dict.R
+  origin: data-raw/spec_02_curate_dict.R
   source:
     parquet: HH.parquet
 - name: HL
@@ -1471,7 +1471,7 @@ tables:
     linkage gap -- 4.92% of CA rows carry a -9 sentinel and match no HH haul even
     via the full composite key (see HH table details). The full 8-field composite
     key is required for correct joins regardless.'
-  origin: data-raw/DATASET_curate_dict.R
+  origin: data-raw/spec_02_curate_dict.R
   source:
     parquet: HL.parquet
 - name: CA
@@ -1777,7 +1777,7 @@ tables:
       2026-07-29, data-raw/datras_vocabulary.R): '0'=ICES Statistical Rectangles,
       '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish North Areas,
       '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes
-      total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/DATASET_seed_dict.R)
+      total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec_01_seed_dict.R)
       for a usable `values` map -- and confirms the true domain genuinely is wider
       than what's observed here (17 of 27 codes appear in this archive). Verified
       2026-07-29 against the full CA archive.
@@ -2060,7 +2060,7 @@ tables:
     fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate,
     much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails
     to match HH; cause not yet diagnosed.'
-  origin: data-raw/DATASET_curate_dict.R
+  origin: data-raw/spec_02_curate_dict.R
   source:
     parquet: CA.parquet
 - name: LT
@@ -2337,7 +2337,16 @@ tables:
       the full LT archive.
   - name: BottomDepth
     type: number(quantity)
-    details: 'Legacy field name: Depth (verified via op_datras_field_list()).'
+    details: |-
+      Not a rename -- BottomDepth is already the raw ICES field name in LT's
+      archive. It sits alongside a separate legacy field named Depth that is
+      byte-for-byte identical to it (see Depth's own details): a known
+      ICES-side redundancy, not a rename relationship, filed with ICES
+      2026-08-06 (data-raw/ICES_ISSUE_REPORT.md, Issue 6). This field used to
+      carry a wrongly-worded annotation claiming it was itself a rename of
+      Depth; that claim was removed after confirming against real LT
+      exchange XML that BottomDepth and Depth are distinct elements on the
+      same record, neither one a rename of the other.
     units: m
     range:
     - 1.0
@@ -2675,7 +2684,7 @@ tables:
       BottomDepth across all 75,310 rows (100% populated in both, 0 differences, 0
       one-sided nulls) -- a known ICES-side redundancy (also documented in obus's own
       download-stage comments), not an opus/obus naming quirk. Filed with ICES
-      2026-08-06 (see inst/ICES_ISSUE_REPORT_20260806.md, Issue 6). Given the same
+      2026-08-06 (see data-raw/ICES_ISSUE_REPORT.md, Issue 6). Given the same
       type/units/range as BottomDepth here rather than re-derived independently, since
       it is BottomDepth.
   - name: HaulValidity
@@ -2939,7 +2948,7 @@ tables:
     CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table
     details); whether LT''s own HaulNumber has a similar issue has not been separately
     checked. The full 8-field composite key is required for correct joins regardless.'
-  origin: data-raw/DATASET_curate_dict.R
+  origin: data-raw/spec_02_curate_dict.R
   source:
     parquet: LT.parquet
 glossary:

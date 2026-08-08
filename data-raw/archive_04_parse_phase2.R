@@ -6,8 +6,8 @@
 #' 3. Rigid type casting from opus specs (fail loudly on errors)
 #'
 #' Usage:
-#'   Rscript data-raw/datras_parse_phase2_v2.R
-#'   Rscript data-raw/datras_parse_phase2_v2.R HH  # specific record type
+#'   Rscript data-raw/archive_04_parse_phase2.R
+#'   Rscript data-raw/archive_04_parse_phase2.R HH  # specific record type
 
 suppressPackageStartupMessages({
   library(dplyr)
@@ -15,7 +15,7 @@ suppressPackageStartupMessages({
   library(yaml)
 })
 
-source("data-raw/datras_download_config.R")
+source("data-raw/archive_01_download_config.R")
 
 # ============================================================================
 # ---- CONFIGURATION ----
@@ -90,6 +90,11 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
       "python3 << 'PYEOF'\nimport xml.etree.ElementTree as ET\nimport sys\nimport csv\n\nxml_path = '%s'\n\ntree = ET.parse(xml_path)\nroot = tree.getroot()\n\nns = ''\nif '}' in root.tag:\n  ns = root.tag.split('}')[0] + '}'\n\nrecords = list(root)\nif not records:\n  sys.exit(1)\n\nfields = []\nfor child in records[0]:\n  tag = child.tag\n  if '}' in tag:\n    tag = tag.split('}')[1]\n  fields.append(tag)\n\nwriter = csv.writer(sys.stdout, delimiter='\t')\nwriter.writerow(fields)\nfor record in records:\n  values = []\n  for field in fields:\n    elem = record.find(f'{ns}{field}')\n    if elem is None:\n      elem = record.find(field)\n    val = (elem.text or '').strip() if elem is not None else ''\n    values.append(val)\n  writer.writerow(values)\nPYEOF\n", xml_path
     ), intern = TRUE, ignore.stderr = TRUE)
 
+    if (length(output) == 0) {
+      record_issue(rt, survey, year, quarter, "EMPTY_RECORDS", "XML contains no records")
+      return(NULL)
+    }
+
     # Parse TSV output
     con <- textConnection(output)
     df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "")
@@ -106,7 +111,10 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
       "HH" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
       "HL" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
       "CA" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
-      "LT" = c("RecordType", "Survey", "Year", "Quarter"),
+      # LT records carry no RecordType/RecordHeader field in the real archive --
+      # ICES's getDatrasFieldList metadata claims one exists, but it's a phantom
+      # (see data-raw/ICES_ISSUE_REPORT.md); don't require what ICES doesn't send.
+      "LT" = c("Survey", "Year", "Quarter"),
       c()
     )
 

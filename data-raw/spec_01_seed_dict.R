@@ -14,7 +14,7 @@
 # separately-maintained table can.
 #
 # Data-raw helpers used here:
-#   - datras_operation_types.R  (WSDL type/old-name crawl; copied from
+#   - spec_00_operation_types.R  (WSDL type/old-name crawl; copied from
 #     icesDatras/data-raw, not yet packaged)
 #   - opus::op_vocab_* functions (icesVocab code-meaning lookup; now exported
 #     via R/vocab.R in this package)
@@ -46,7 +46,7 @@ library(purrr)
 library(readr)
 library(opus)
 
-source("data-raw/datras_operation_types.R")
+source("data-raw/spec_00_operation_types.R")
 
 tier1_tables <- c("HH", "HL", "CA", "LT")
 record_operations <- c(
@@ -185,7 +185,7 @@ crawled <- crawled |>
 # NOTE: tables are ordered HH, HL, CA, LT (opus's deliberate tier ordering --
 # see AGENTS.md), via the factor level order below. Fields *within* each
 # table are deliberately not arranged/sorted -- kept exactly as the WSDL
-# crawl (data-raw/datras_operation_types.R) returns them, not alphabetized.
+# crawl (data-raw/spec_00_operation_types.R) returns them, not alphabetized.
 
 map_type <- function(data_format) {
   case_when(

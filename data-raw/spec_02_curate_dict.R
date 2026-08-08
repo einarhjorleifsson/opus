@@ -4,7 +4,7 @@
 #
 #   diff data-raw/seed/DATRAS-exchange-dict-seed.yaml inst/DATRAS-data-dict.yaml
 #
-# This is a separate script from DATASET_seed_dict.R on purpose (AGENTS.md's
+# This is a separate script from spec_01_seed_dict.R on purpose (AGENTS.md's
 # Working principles, rule 11 / seed-vs-curate split): the seed reports
 # ICES's sources literally, unfixed; corrections happen only here, and each
 # one is written down explicitly below, not silently applied while seeding.
@@ -204,6 +204,18 @@ add_legacy_field_names <- function(dict) {
   fl <- op_datras_field_list()
   fl <- fl[fl$source_tier %in% c("confirmed", "cross_table_confirmed") & fl$old_name != fl$new_name, ]
 
+  # Same exception as the LT rename step above (~line 166): LT's "Depth" is
+  # not a name variant of "BottomDepth" -- both are genuine, separate,
+  # byte-for-byte-duplicate legacy columns (see data-raw/ICES_ISSUE_REPORT.md,
+  # Issue 6). op_datras_field_list()'s cross-table inference doesn't know
+  # about this LT-specific duplication and infers the rename anyway; without
+  # this exclusion, LT's real BottomDepth column incorrectly gets a
+  # "Legacy field name: Depth" note (caught 2026-08-08, via
+  # data-raw/archive_06_split_legacy_new.R's ground-truth assertion against the
+  # real legacy parquet -- this function is the actual source of that bug,
+  # not just inst/DATRAS-data-dict.yaml's generated output).
+  fl <- fl[!(fl$RecordHeader == "LT" & fl$old_name == "Depth"), ]
+
   # Build lookup: table::new_name -> old_name
   legacy_names <- list()
   for (i in seq_len(nrow(fl))) {
@@ -241,7 +253,7 @@ add_legacy_field_names <- function(dict) {
 curated <- add_legacy_field_names(curated)
 
 # Fills type MEASURE (id/ordinal/quantity -- the seed deliberately leaves
-# these bare, see DATASET_seed_dict.R's own header), `units` (quantity
+# these bare, see spec_01_seed_dict.R's own header), `units` (quantity
 # columns only, per spec), `range`/`examples`, and `constraints` where
 # directly verified. Kept as its own step, distinct from `corrections`
 # above: these are gap-fills the seed always intended for hand curation, not
@@ -412,7 +424,7 @@ field_specs <- list(
   # (describing "what was observed" as if it were "the full valid domain").
   list(table = "CA", field = "AreaType",
        examples = list("0", "13", "2", "12", "6"),
-       details = "Field's own description ('Age sampling aggregation level') doesn't explain what the codes themselves mean, but icesVocab's TS_AreaType resolves them (checked 2026-07-29, data-raw/datras_vocabulary.R): '0'=ICES Statistical Rectangles, '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish North Areas, '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/DATASET_seed_dict.R) for a usable `values` map -- and confirms the true domain genuinely is wider than what's observed here (17 of 27 codes appear in this archive). Verified 2026-07-29 against the full CA archive."),
+       details = "Field's own description ('Age sampling aggregation level') doesn't explain what the codes themselves mean, but icesVocab's TS_AreaType resolves them (checked 2026-07-29, data-raw/datras_vocabulary.R): '0'=ICES Statistical Rectangles, '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish North Areas, '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec_01_seed_dict.R) for a usable `values` map -- and confirms the true domain genuinely is wider than what's observed here (17 of 27 codes appear in this archive). Verified 2026-07-29 against the full CA archive."),
   list(table = "CA", field = "AreaCode",
        examples = list("VIa", "38G3", "43G1", "37G1", "44G0"),
        details = "Field's own description says coding is 'according to AreaType' (its sibling field) -- meaning depends on that field's own value, same pattern as LengthClass/LengthCode. Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). 635 distinct values, 1,898,151 of 5,966,950 rows unpopulated. Verified 2026-07-29 against the full CA archive."),
@@ -501,7 +513,7 @@ field_specs <- list(
        details = "National 12-nautical-mile zone name (sibling concept to EEZ above), no description present. 18 distinct values, 53,303 of 79,451 rows unpopulated. Not treated as a closed set, same reasoning as EEZ. Found 2026-07-29 only after fixing the Y/N-enum crash above -- validate-spec had never actually reached this field before, since it's the table's last column and everything upstream of it kept dying first (ThermoCline, then the flag enums). Verified 2026-07-29 against the full LT archive."),
 
   list(table = "LT", field = "Depth", type = "number(quantity)", units = "m", range = c(1, 3098),
-       details = "Re-verified 2026-08-06 (originally 2026-07-29, against an older LT archive snapshot whose row count differs from the current one -- re-checked here to avoid repeating a stale figure): byte-for-byte identical to this table's own BottomDepth across all 75,310 rows (100% populated in both, 0 differences, 0 one-sided nulls) -- a known ICES-side redundancy (also documented in obus's own download-stage comments), not an opus/obus naming quirk. Filed with ICES 2026-08-06 (see inst/ICES_ISSUE_REPORT_20260806.md, Issue 6). Given the same type/units/range as BottomDepth here rather than re-derived independently, since it is BottomDepth."),
+       details = "Re-verified 2026-08-06 (originally 2026-07-29, against an older LT archive snapshot whose row count differs from the current one -- re-checked here to avoid repeating a stale figure): byte-for-byte identical to this table's own BottomDepth across all 75,310 rows (100% populated in both, 0 differences, 0 one-sided nulls) -- a known ICES-side redundancy (also documented in obus's own download-stage comments), not an opus/obus naming quirk. Filed with ICES 2026-08-06 (see data-raw/ICES_ISSUE_REPORT.md, Issue 6). Given the same type/units/range as BottomDepth here rather than re-derived independently, since it is BottomDepth."),
   list(table = "LT", field = "LT_Weight", type = "number(quantity)", range = c(0, 1600000),
        details = "Unit varies by the sibling UnitWeight field (kg/haul for 46,673 rows, g/haul for 24,383, unspecified for 276), so no fixed units here. Two exclusions, 2026-07-29: -99 (3 rows, kg/haul) as an isolated sentinel-like anomaly, and 46,318,000 (1 row, g/haul) as a lone outlier roughly 29x the next-highest real value (1,600,000) -- an implausible ~46 tonnes of litter in one haul, almost certainly a data-entry error. The rest of the g/haul group's own large values (up to 1,600,000g = 1.6 tonnes) are kept: rare, but large litter catches (e.g. old fishing gear, major debris items) are plausible."),
   list(table = "LT", field = "LT_Items", type = "number(quantity)", range = c(0, 2323),
@@ -662,9 +674,9 @@ curated <- reduce(shared_field_specs, apply_shared_field_spec, .init = curated)
 #
 # apply_col_update() (above) deliberately never touches `description` --
 # unlike type/units/range/details/constraints, it's sourced per-table from
-# ICES's own getDatrasFieldList() service (DATASET_seed_dict.R), which has
+# ICES's own getDatrasFieldList() service (spec_01_seed_dict.R), which has
 # a confirmed, documented coverage gap for LT (22 of 58 real fields; see
-# op_datras_field_list()'s own docs / inst/ICES_ISSUE_REPORT_20260806.md).
+# op_datras_field_list()'s own docs / data-raw/ICES_ISSUE_REPORT.md).
 # Before 2026-08-06 this went unnoticed because icesDatras::getDatrasFieldList()
 # silently patched around the gap with its own undocumented lt_extra table --
 # which, it turns out, included description text copied from HH (verified:
@@ -711,22 +723,22 @@ table_specs <- list(
   list(table = "HH",
        label = "Haul Information",
        description = "Each row is one haul (trawl deployment). Contains haul-level metadata: geography, timing, gear deployment, environmental conditions, and performance flags.",
-       origin = "data-raw/DATASET_curate_dict.R",
+       origin = "data-raw/spec_02_curate_dict.R",
        details = "Grain: each row represents one discrete haul deployment (one trawl operation). Population: all hauls submitted to ICES DATRAS within the covered survey/region/timeframe. Join key: HL, CA, and LT tables reference haul-level data via a composite identifier constructed from eight fields: Survey, Year, Quarter, Country, {Platform or Ship}, Gear, {StationName or StNo}, and HaulNumber. The naming convention differs by era: newer submissions use Platform/StationName/HaulNumber (new style); older submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a valid join key and must be paired with all seven other fields -- but even the full composite key doesn't recover everything: 288,581 CA rows (4.92%) carry a -9 sentinel (not a null; verified 2026-08-07) in HaulNumber/HaulNo and match no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh) and obus::dr_add_id for the composite ID construction logic."),
   list(table = "HL",
        label = "Length Frequency Distribution",
        description = "Each row is a length class within a haul's catch. Contains the count of fish in each length bin, without individual-level age/sex data; the length-aggregated summary layer of Tier 1.",
-       origin = "data-raw/DATASET_curate_dict.R",
+       origin = "data-raw/spec_02_curate_dict.R",
        details = "Grain: each row is a (haul, species, length class) combination with a count of fish in that length bin. Population: length-frequency summaries for all species caught in surveyed hauls, aggregated by length class. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA (not HL) has a verified HaulNumber/HaulNo linkage gap -- 4.92% of CA rows carry a -9 sentinel and match no HH haul even via the full composite key (see HH table details). The full 8-field composite key is required for correct joins regardless."),
   list(table = "CA",
        label = "Age Composition (Individual)",
        description = "Each row is one aged fish specimen from a haul. Contains individual-level biological measurements (length, weight, age, sex, maturity) on a subsample of the catch; linked to HH via the composite haul identifier.",
-       origin = "data-raw/DATASET_curate_dict.R",
+       origin = "data-raw/spec_02_curate_dict.R",
        details = "Grain: each row is one biological specimen (a single aged fish) from a haul. Population: individual organisms sampled and measured from hauls within covered surveys, not the full catch — a subsample. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates the column's declared range ([0, 82483]; a D04_range violation, confirmed via op_flag_violations()), not the required constraint (D01 never fires here). These rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails to match HH; cause not yet diagnosed."),
   list(table = "LT",
        label = "Litter Assessment",
        description = "Each row is one litter observation from a haul. Contains types and counts of marine debris (plastics, fishing gear, natural/organic material) recorded during the catch review; a separate thematic addition to the HH/HL/CA exchange.",
-       origin = "data-raw/DATASET_curate_dict.R",
+       origin = "data-raw/spec_02_curate_dict.R",
        details = "Grain: each row is one litter assessment/observation recorded during a haul's catch review. Population: litter records from hauls in covered surveys; a thematic addition to the HH/HL/CA core exchange tables with a separate collection protocol and scope. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table details); whether LT's own HaulNumber has a similar issue has not been separately checked. The full 8-field composite key is required for correct joins regardless.")
 )
 
@@ -789,10 +801,10 @@ curated <- list(
     "Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),",
     "CA (age), LT (litter). Curated from",
     "data-raw/seed/DATRAS-exchange-dict-seed.yaml -- see",
-    "data-raw/DATASET_curate_dict.R for the corrections and field-spec",
+    "data-raw/spec_02_curate_dict.R for the corrections and field-spec",
     "fills applied and why."
   ),
-  origin = "data-raw/DATASET_seed_dict.R → data-raw/DATASET_curate_dict.R",
+  origin = "data-raw/spec_01_seed_dict.R → data-raw/spec_02_curate_dict.R",
   version = list(date = as.character(Sys.Date())),
   tables = curated$tables,
   glossary = glossary

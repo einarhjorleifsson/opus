@@ -1,9 +1,28 @@
 #' Phase 2 v2: Parse raw XML → Parquet with strict specs
 #'
 #' Redesigned to handle:
-#' 1. Issue recording (malformed XML, structural problems)
+#' 1. Issue recording (malformed XML, or literally zero records to parse --
+#'    hard technical failures only, not completeness judgments; a
+#'    "required fields" gate used to also live here and got removed
+#'    2026-08-08, see below)
 #' 2. Global sentinel replacement (-9, -99, etc. → NA)
-#' 3. Rigid type casting from opus specs (fail loudly on errors)
+#' 3. Rigid type casting from live WSDL (physical type only -- string/int/
+#'    decimal; deliberately not from the curated yaml, and deliberately
+#'    doesn't know "enum" exists -- see data-raw/archive_00_wsdl_types.R's
+#'    own header for why. Fixed 2026-08-08: the previous yaml-based caster
+#'    had a broken entry guard that made it a silent no-op for every column,
+#'    every call -- confirmed via a real per-file schema scan, 16 CA columns
+#'    and 8 HL columns ended up typed inconsistently across different files
+#'    for the same column.)
+#'
+#' Scope, deliberately narrow (2026-08-08): this stage converts XML to
+#' parquet conditional only on WSDL's declared type, nothing else. A
+#' "required fields" check that rejected a record for missing an expected
+#' column (with different rules hardcoded per table) has been removed --
+#' that's a completeness/validation judgment, not a type-casting one, and
+#' doesn't belong at this stage any more than the yaml or the word "enum"
+#' do. See data-raw/archive_05_backfill_lt_partitions.R's header for the
+#' fuller reasoning (same fix applied there first).
 #'
 #' Usage:
 #'   Rscript data-raw/archive_04_parse_phase2.R
@@ -12,10 +31,10 @@
 suppressPackageStartupMessages({
   library(dplyr)
   library(arrow)
-  library(yaml)
 })
 
 source("data-raw/archive_01_download_config.R")
+source("data-raw/archive_00_wsdl_types.R")
 
 # ============================================================================
 # ---- CONFIGURATION ----
@@ -43,14 +62,6 @@ dir.create(DATRAS_ISSUES_DIR, showWarnings = FALSE, recursive = TRUE)
 # Load manifest
 man <- read_manifest(DATRAS_MANIFEST)
 log_msg("Manifest: %d entries", nrow(man))
-
-# Load opus spec
-opus_spec <- tryCatch({
-  read_yaml("inst/DATRAS-data-dict.yaml")
-}, error = function(e) {
-  log_msg("WARNING: Failed to load opus spec: %s", conditionMessage(e))
-  NULL
-})
 
 # ============================================================================
 # ---- ISSUE RECORDER ----
@@ -106,24 +117,13 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
       return(NULL)
     }
 
-    # Check for missing required fields based on record type
-    required_fields <- switch(rt,
-      "HH" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
-      "HL" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
-      "CA" = c("RecordType", "Survey", "Year", "Quarter", "HaulNo"),
-      # LT records carry no RecordType/RecordHeader field in the real archive --
-      # ICES's getDatrasFieldList metadata claims one exists, but it's a phantom
-      # (see data-raw/ICES_ISSUE_REPORT.md); don't require what ICES doesn't send.
-      "LT" = c("Survey", "Year", "Quarter"),
-      c()
-    )
-
-    missing_cols <- setdiff(required_fields, names(df))
-    if (length(missing_cols) > 0) {
-      record_issue(rt, survey, year, quarter, "MISSING_FIELDS",
-                   sprintf("Missing required fields: %s", paste(missing_cols, collapse = ", ")))
-      return(NULL)
-    }
+    # No "required fields" gate here, deliberately (2026-08-08) -- this stage
+    # converts XML to parquet conditional only on WSDL's declared type,
+    # nothing else. Whether a record is missing an expected column is a
+    # completeness/validation judgment, not a type-casting one; it belongs
+    # downstream, not as a reason to silently drop data at this stage. See
+    # archive_05_backfill_lt_partitions.R's header for the fuller reasoning
+    # (same fix applied there first).
 
     return(df)
   }, error = function(e) {
@@ -144,61 +144,11 @@ replace_sentinels <- function(df) {
   return(df)
 }
 
-# ============================================================================
-# ---- RIGID TYPE CASTING ----
-# ============================================================================
-
-apply_rigid_types <- function(df, rt, spec) {
-  if (is.null(spec) || !(rt %in% names(spec))) {
-    return(df)
-  }
-
-  table_spec <- spec[[which(sapply(spec, function(t) t$name == rt))]]
-  if (is.null(table_spec$columns)) {
-    return(df)
-  }
-
-  # Build type map
-  type_map <- list()
-  for (col_spec in table_spec$columns) {
-    col_name <- col_spec$name
-    col_type <- col_spec$type
-    if (!is.null(col_name) && !is.null(col_type)) {
-      type_map[[col_name]] <- col_type
-    }
-  }
-
-  # Apply types strictly (fail on conversion errors)
-  for (col_name in names(df)) {
-    if (col_name %in% names(type_map)) {
-      col_type <- type_map[[col_name]]
-
-      # Convert based on type spec
-      if (col_type == "number(quantity)" || col_type == "number") {
-        # Strict: fail if non-NA can't convert to numeric
-        result <- suppressWarnings(as.numeric(df[[col_name]]))
-        invalid <- !is.na(df[[col_name]]) & is.na(result)
-        if (any(invalid)) {
-          warning(sprintf("Column %s: %d values failed numeric conversion",
-                         col_name, sum(invalid)), call. = FALSE)
-        }
-        df[[col_name]] <- result
-      } else if (col_type == "number(ordinal)" || col_type == "number(id)") {
-        # Strict: fail if non-NA can't convert to integer
-        result <- suppressWarnings(as.integer(as.numeric(df[[col_name]])))
-        invalid <- !is.na(df[[col_name]]) & is.na(result)
-        if (any(invalid)) {
-          warning(sprintf("Column %s: %d values failed integer conversion",
-                         col_name, sum(invalid)), call. = FALSE)
-        }
-        df[[col_name]] <- result
-      }
-      # enum and string stay as character
-    }
-  }
-
-  return(df)
-}
+# Rigid type casting is now apply_wsdl_types(df, rt), from
+# data-raw/archive_00_wsdl_types.R (sourced above) -- physical type only,
+# straight from live WSDL. See that file's header for why the yaml-based
+# version this replaces was both wrong (a silent no-op bug) and the wrong
+# design (enum-ness isn't an input this stage should depend on at all).
 
 # ============================================================================
 # ---- PROCESS CELLS ----
@@ -248,7 +198,7 @@ for (i in seq_len(nrow(cells_to_process))) {
   df <- replace_sentinels(df)
 
   # Rigid type casting
-  df <- apply_rigid_types(df, rt, opus_spec)
+  df <- apply_wsdl_types(df, rt)
 
   # Create output path
   pq_dir <- file.path(DATRAS_PARQUET_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y))

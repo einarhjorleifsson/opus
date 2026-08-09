@@ -2,7 +2,10 @@
 #'
 #' Three linked outputs:
 #' 1. .datras/{HH,HL,CA,LT}_legacy.parquet -- the full consolidated archive
-#'    exactly as ICES names it today (previously .datras/parquet/{table}.parquet).
+#'    exactly as ICES names it today, built directly from the partitioned
+#'    .datras/parquet/{table}/Survey=*/Year=*/ output (regenerated fresh
+#'    every run, not migrated-once from an old file -- see Step 1's own
+#'    comment for why that changed 2026-08-09).
 #' 2. .datras/DATRAS-data-dict-legacy.yaml -- inst/DATRAS-data-dict.yaml with
 #'    every column's `name` swapped back to its legacy ICES name. Pure name
 #'    swap only: top-level metadata and every `details` string stay
@@ -39,6 +42,7 @@
 
 suppressPackageStartupMessages({
   library(arrow)
+  library(dplyr)
   library(yaml)
 })
 
@@ -46,27 +50,30 @@ source("R/field_names.R")  # op_legacy_field_name()
 
 TABLES <- c("HH", "HL", "CA", "LT")
 
-## ---- Step 1: move consolidated legacy parquet out of .datras/parquet/ ----
+## ---- Step 1: consolidate the partitioned legacy parquet directly ----
+#
+# Used to migrate a pre-existing .datras/parquet/{t}.parquet (built by some
+# earlier, never-fully-documented process -- see [[legacy_new_split_20260808]])
+# via a one-time rename. Dropped that 2026-08-09: once the partitioned
+# per-file output is itself correct and internally consistent (the WSDL
+# type-casting fix), consolidating directly from it every run is simpler,
+# has a fully-known provenance, and self-heals if the partitioned data is
+# ever reprocessed again -- no "which of two files is current" ambiguity
+# to resolve by hand.
 
 for (t in TABLES) {
-  old_path <- file.path(".datras/parquet", paste0(t, ".parquet"))
-  new_path <- file.path(".datras", paste0(t, "_legacy.parquet"))
-  old_exists <- file.exists(old_path)
-  new_exists <- file.exists(new_path)
+  part_dir <- file.path(".datras/parquet", t)
+  legacy_path <- file.path(".datras", paste0(t, "_legacy.parquet"))
 
-  if (old_exists && new_exists) {
-    stop(sprintf(
-      "Table %s: both %s and %s exist. This move only happens once; a fresh %s means the raw pipeline wrote new consolidated legacy data after the earlier migration. Resolve by hand (decide which is current) rather than have this script guess which one wins.",
-      t, old_path, new_path, old_path
-    ))
-  } else if (new_exists) {
-    message(t, "_legacy.parquet already in place, nothing to move")
-  } else if (old_exists) {
-    file.rename(old_path, new_path)
-    message("Moved ", old_path, " -> ", new_path)
-  } else {
-    stop("Neither ", old_path, " nor ", new_path, " exists for table ", t)
+  if (!dir.exists(part_dir)) {
+    stop("No partitioned directory ", part_dir, " for table ", t,
+         " -- run data-raw/archive_05_backfill_lt_partitions.R first.")
   }
+
+  df <- arrow::open_dataset(part_dir) |> dplyr::collect()
+  arrow::write_parquet(df, legacy_path, compression = "snappy")
+  message("Consolidated ", part_dir, " -> ", legacy_path,
+          " (", nrow(df), " rows, ", ncol(df), " cols)")
 }
 
 ## ---- Step 2a: derive the crosswalk from the yaml itself ----

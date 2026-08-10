@@ -512,11 +512,50 @@ tables:
     - TS
     - TT
   - name: Tickler
-    type: number(quantity)
+    type: enum
     description: Amount of ticklers connected to the gear.
-    range:
-    - 0.0
-    - 27.0
+    values:
+      '-9': No ticklers are allowed
+      '0': Zero ticklers
+      '1': One tickler
+      '10': Ten ticklers
+      '11': Eleven ticklers
+      '12': Twelve ticklers
+      '13': Thirteen ticklers
+      '14': Fourteen ticklers
+      '15': Fifteen ticklers
+      '16': Sixteen ticklers
+      '17': Seventeen ticklers
+      '18': Eighteen ticklers
+      '19': Nineteen ticklers
+      '2': Two ticklers
+      '20': Twenty ticklers
+      '21': Twenty one ticklers
+      '22': Twenty two ticklers
+      '23': Twenty three ticklers
+      '24': Twenty four ticklers
+      '25': Twenty five ticklers
+      '26': Twenty six ticklers
+      '27': Twenty seven ticklers
+      '28': Twenty eight ticklers
+      '29': Twenty nine ticklers
+      '3': Three ticklers
+      '30': Thirty ticklers
+      '4': Four ticklers
+      '5': Five ticklers
+      '6': Six ticklers
+      '7': Seven ticklers
+      '8': Eight ticklers
+      '9': Nine ticklers
+    details: |-
+      icesVocab's TS_Tickler resolves this as a controlled tickler-chain count code
+      list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed' sentinel) -- not
+      an open numeric quantity, found via the full-field vocab sweep
+      (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly
+      against the real archive: HH's 9 distinct values and LT's 3 (0, 5, 8; a subset
+      of HH's own) are both fully covered, zero gaps either direction. 9 of the 32
+      codes are confirmed used across HH+LT (0, 1, 4, 5, 8, 10, 20, 21, 27); the rest
+      are valid ICES definitions not yet observed in this archive.
   - name: Distance
     type: number(quantity)
     description: Distance in metres between haul start and haul end point.
@@ -1233,20 +1272,79 @@ tables:
       counts. Top values all have real support (9-30 occurrences each, a smooth tail),
       not isolated errors.
   - name: CatIdentifier
-    type: number(id)
+    type: enum
     description: |-
       Subsampling category by size for same species in the haul. If DataType is C,
       CatIdentifier is always 1. Further details on survey specific subsampling
       categories are available in the survey manuals.
-    examples:
-    - 1
-    - 4
-    - 12
-    - 21
-    - 31
+    values:
+      '-9': Unknown
+      '1': 1. Level
+      '10': 10. Level
+      '11': 11. Level
+      '12': 12. Level
+      '13': 13. Level
+      '14': 14. Level
+      '15': 15. Level
+      '16': 16. Level
+      '17': 17. Level
+      '18': 18. Level
+      '19': 19. Level
+      '2': 2. Level
+      '20': 20. Level
+      '21': 21. Level
+      '22': 22. Level
+      '23': 23. Level
+      '24': 24. Level
+      '25': 25. Level
+      '26': 26. Level
+      '27': 27. Level
+      '28': 28. Level
+      '29': 29. Level
+      '3': 3. Level
+      '30': 30. Level
+      '31': 31. Level
+      '32': 32. Level
+      '33': 33. Level
+      '34': 34. Level
+      '35': 35. Level
+      '36': 36. Level
+      '37': 37. Level
+      '38': 38. Level
+      '39': 39. Level
+      '4': 4. Level
+      '40': 40. Level
+      '41': 41. Level
+      '42': 42. Level
+      '43': 43. Level
+      '44': 44. Level
+      '45': 45. Level
+      '46': 46. Level
+      '47': 47. Level
+      '48': 48. Level
+      '49': 49. Level
+      '5': 5. Level
+      '50': 50. Level
+      '51': 51. Level
+      '52': 52. Level
+      '53': 53. Level
+      '54': 54. Level
+      '55': 55. Level
+      '6': 6. Level
+      '7': 7. Level
+      '8': 8. Level
+      '9': 9. Level
     details: |-
-      Real values are {1-5, 11-14, 21-23, 31} -- a coded scheme (verified 2026-07-29
-      against the full archive), not a sequence, despite 'category' sounding ordinal.
+      icesVocab's TS_CatIdentifier resolves this as a controlled, leveled code list
+      (56 active codes: '1. Level' through '55. Level', plus a '-9'/'Unknown'
+      sentinel) -- not an open numeric ID, confirming this field's own
+      already-documented shape (real values {1-5, 11-14, 21-23, 31}, a coded scheme,
+      not a sequence, verified 2026-07-29 against the full archive; not this field's
+      own values map until the full-field vocab sweep found it,
+      data-raw/build_vocab_field_audit.R, Issue 9). Re-checked 2026-08-10 directly
+      against the real archive: all 13 real distinct values fully covered, zero gaps
+      either direction. 43 of the 56 codes are valid ICES definitions not yet observed
+      in this archive.
     label: Species Category
   - name: NoMeas
     type: number(quantity)
@@ -2650,10 +2748,49 @@ tables:
       The way the gear is rigged. Rigging depends on survey, see survey manuals for
       further details.
   - name: Tickler
-    type: number(quantity)
-    range:
-    - 0.0
-    - 27.0
+    type: enum
+    values:
+      '-9': No ticklers are allowed
+      '0': Zero ticklers
+      '1': One tickler
+      '10': Ten ticklers
+      '11': Eleven ticklers
+      '12': Twelve ticklers
+      '13': Thirteen ticklers
+      '14': Fourteen ticklers
+      '15': Fifteen ticklers
+      '16': Sixteen ticklers
+      '17': Seventeen ticklers
+      '18': Eighteen ticklers
+      '19': Nineteen ticklers
+      '2': Two ticklers
+      '20': Twenty ticklers
+      '21': Twenty one ticklers
+      '22': Twenty two ticklers
+      '23': Twenty three ticklers
+      '24': Twenty four ticklers
+      '25': Twenty five ticklers
+      '26': Twenty six ticklers
+      '27': Twenty seven ticklers
+      '28': Twenty eight ticklers
+      '29': Twenty nine ticklers
+      '3': Three ticklers
+      '30': Thirty ticklers
+      '4': Four ticklers
+      '5': Five ticklers
+      '6': Six ticklers
+      '7': Seven ticklers
+      '8': Eight ticklers
+      '9': Nine ticklers
+    details: |-
+      icesVocab's TS_Tickler resolves this as a controlled tickler-chain count code
+      list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed' sentinel) -- not
+      an open numeric quantity, found via the full-field vocab sweep
+      (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly
+      against the real archive: HH's 9 distinct values and LT's 3 (0, 5, 8; a subset
+      of HH's own) are both fully covered, zero gaps either direction. 9 of the 32
+      codes are confirmed used across HH+LT (0, 1, 4, 5, 8, 10, 20, 21, 27); the rest
+      are valid ICES definitions not yet observed in this archive.
     description: Amount of ticklers connected to the gear.
   - name: Warplngt
     type: number(quantity)

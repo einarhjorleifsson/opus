@@ -24,6 +24,7 @@
 
 library(yaml)
 library(purrr)
+library(opus)  # op_vocab_get_codes(), via get_vocab_enum_values()
 
 seed <- read_yaml("data-raw/seed/DATRAS-exchange-dict-seed.yaml")
 
@@ -68,6 +69,22 @@ apply_table_update <- function(dict, table, updates) {
   if (!is.null(updates$constraints)) tbl$constraints <- updates$constraints
   dict$tables[[ti]] <- tbl
   dict
+}
+
+# Helper: fetch a vocab key's active codes as an enum values map
+# (code -> description), via opus's own op_vocab_get_codes() (R/vocab.R,
+# already excludes deprecated codes -- no icesVocab package dependency).
+# Generalized 2026-08-10 from a Gear-only version that called
+# `library(icesVocab); getCodeList('Gear')` directly -- a real, undeclared
+# dependency (icesVocab is in neither Imports nor Suggests in DESCRIPTION)
+# that would have failed on any machine without it installed. Confirmed
+# byte-identical output for Gear before switching (99 codes, both sources).
+# Defined here, ahead of field_specs below, because CatIdentifier's entry
+# calls it eagerly (a plain list() literal evaluates its arguments
+# immediately, not lazily).
+get_vocab_enum_values <- function(key) {
+  codes <- op_vocab_get_codes(key)
+  setNames(as.list(codes$Description), codes$Key)
 }
 
 # One row per correction. Add to this list as curation finds more; nothing
@@ -302,9 +319,9 @@ field_specs <- list(
        examples = c(55L, 122388L, 127196L, 159048L, 1789435L),
        constraints = list("required"),
        details = "Official WoRMS AphiaID as submitted by the data provider -- contrast with Valid_Aphia, the ICES Datacenter's own validated/corrected version of the same concept, inserted server-side (see Valid_Aphia's own details below)."),
-  list(table = "HL", field = "CatIdentifier", type = "number(id)",
-       examples = c(1L, 4L, 12L, 21L, 31L),
-       details = "Real values are {1-5, 11-14, 21-23, 31} -- a coded scheme (verified 2026-07-29 against the full archive), not a sequence, despite 'category' sounding ordinal."),
+  list(table = "HL", field = "CatIdentifier", type = "enum",
+       values = get_vocab_enum_values("TS_CatIdentifier"),
+       details = "icesVocab's TS_CatIdentifier resolves this as a controlled, leveled code list (56 active codes: '1. Level' through '55. Level', plus a '-9'/'Unknown' sentinel) -- not an open numeric ID, confirming this field's own already-documented shape (real values {1-5, 11-14, 21-23, 31}, a coded scheme, not a sequence, verified 2026-07-29 against the full archive; not this field's own values map until the full-field vocab sweep found it, data-raw/build_vocab_field_audit.R, Issue 9). Re-checked 2026-08-10 directly against the real archive: all 13 real distinct values fully covered, zero gaps either direction. 43 of the 56 codes are valid ICES definitions not yet observed in this archive."),
   list(table = "HL", field = "TotalNo", type = "number(quantity)", range = c(0, 3581592),
        details = "Per the field's own description, TotalNo=SUM(HLNoAtLngt); values in the hundreds of thousands and non-integer values (7.7% of populated rows) both trace to the same documented mechanism -- DataType C records are standardised to 60 minutes, which can inflate very abundant small-bodied catches to large, non-integer counts. Top values all have real support (9-30 occurrences each, a smooth tail), not isolated errors."),
   list(table = "HL", field = "NoMeas", type = "number(quantity)", range = c(0, 578731),
@@ -497,16 +514,6 @@ curated <- reduce(field_specs, apply_field_spec, .init = curated)
 # opus's OWN generation script enforces the consistency the shipped YAML
 # itself cannot.
 
-# Helper: Get Gear codes from icesVocab as enum values
-get_gear_enum_values <- function() {
-  library(icesVocab)
-  gear_list <- getCodeList('Gear')
-  # Filter out deprecated codes
-  active_gears <- gear_list[gear_list$Deprecated == FALSE, ]
-  # Create named list: code -> description
-  setNames(as.list(active_gears$Description), active_gears$Key)
-}
-
 shared_field_specs <- list(
   # ---- string-typed fields: `examples` fill, 2026-07-29 ---------------------
   # The type-measure/range/examples pass above (and its own tier1_field_stats.R
@@ -523,7 +530,7 @@ shared_field_specs <- list(
        details = "29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false lead, not this field's source: its 133 codes are ICES's own cross-domain internal survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own short acronyms -- confirmed by checking real codes against it directly, not assumed. Not used."),
   list(field = "Country", examples = list("NL", "DE", "GB", "DK", "GB-SCT"),
        details = "22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT' illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by checking real codes against it directly. Not used."),
-  list(field = "Gear", type = "enum", values = get_gear_enum_values(),
+  list(field = "Gear", type = "enum", values = get_vocab_enum_values("Gear"),
        details = "All 99 active icesVocab Gear Type codes (deprecated code OTG excluded, 2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions (may be used in future submissions or by other surveys). Each code has a full description in icesVocab. Validation: enum restricts submissions to these codes."),
   list(field = "Ship", examples = list("74E9", "26D4", "748S", "64SS", "18NE"),
        details = "110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet ship/platform codes, an open list, not a fixed enum."),
@@ -552,7 +559,8 @@ shared_field_specs <- list(
   list(field = "HaulLong", type = "number(quantity)", units = "decimal degrees", range = c(-67.6762, 45.8753),
        details = "Same -9-as-missing caveat as ShootLong above (0 degrees, the Prime Meridian, is a genuine North Sea value here and is kept)."),
   list(field = "Netopening", type = "number(quantity)", units = "m", range = c(0, 76)),
-  list(field = "Tickler", type = "number(quantity)", range = c(0, 27)),
+  list(field = "Tickler", type = "enum", values = get_vocab_enum_values("TS_Tickler"),
+       details = "icesVocab's TS_Tickler resolves this as a controlled tickler-chain count code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed' sentinel) -- not an open numeric quantity, found via the full-field vocab sweep (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly against the real archive: HH's 9 distinct values and LT's 3 (0, 5, 8; a subset of HH's own) are both fully covered, zero gaps either direction. 9 of the 32 codes are confirmed used across HH+LT (0, 1, 4, 5, 8, 10, 20, 21, 27); the rest are valid ICES definitions not yet observed in this archive."),
   list(field = "Distance", type = "number(quantity)", units = "m", range = c(0, 59995)),
   list(field = "Warplngt", type = "number(quantity)", units = "m", range = c(0, 4065)),
   list(field = "Warpdia", type = "number(quantity)", units = "mm", range = c(16, 30),

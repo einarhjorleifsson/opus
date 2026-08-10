@@ -23,7 +23,7 @@
 
 - [x] **Decide the fate of same-day pre-dependency-work documents** — deleted 2026-08-07 (`inst/PHASE2_ISSUES_FOR_ICES.md`, `inst/PHASE3_ROADMAP.md`, `inst/DATRAS_PHASE2_ORIGINAL_NAMES.yaml`, `ICESVOCAB_MAPPING_AUDIT.md`, and related CSVs). All were untracked, so nothing was lost from git history.
 - [ ] **File `data-raw/ICES_ISSUE_REPORT.md`** (moved from `inst/ICES_ISSUE_REPORT_20260806.md` 2026-08-08) **with ICES** — 6 confirmed `getDatrasFieldList`/archive-data issues, drafted but not yet sent. Venue undecided (informal imbus discussion first, per existing strategy, or direct GitHub/DIG submission?).
-- [ ] **Raise the `icesDatras` package note separately** — its `getDatrasFieldList()` wrapper silently patches around some of the same ICES errors with an undocumented, unsourced hand-patch; worth telling its maintainers once the ICES-side fix is in motion.
+- [x] ~~Raise the `icesDatras` package note separately~~ — dropped 2026-08-09: checked directly against the current official `ices-tools-prod/icesDatras`, and its `getDatrasFieldList()` has no patch of any kind (four lines: fetch, parse, return). The "hand-patch" this item referred to was a personal development fork installed locally at the time, not the official package — nothing to raise with ICES's real maintainers. See AGENTS.md's 2026-08-09 note.
 - [x] **Review and commit tonight's diff** — done 2026-08-07/08 as a sequence of reviewable commits (icesDatras/icesVocab removal, seed/curate script updates, known-issues registry fix) rather than one large diff. Remaining: website/vignette artifacts, which still reference the now-corrected HaulNumber claim.
 
 ---

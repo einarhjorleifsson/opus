@@ -50,7 +50,6 @@ man <- read_manifest(DATRAS_MANIFEST)
 log_msg("Manifest: %d existing entries", nrow(man))
 
 opus_v <- pkg_ver("opus")
-ices_v <- pkg_ver("icesDatras")
 
 # ============================================================================
 # ---- BUILD CATALOG (what cells exist at ICES) ----

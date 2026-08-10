@@ -44,11 +44,11 @@ Algorithm, per table:
    `IndividualAge`/`AgeRings`, which triggered this exact case: no
    other Tier 1 table's data explains it, so it stays `no_evidence`).
 
-Confirmed discrepancies as of 2026-08-06 (candidates for an ICES issue;
-`icesDatras`'s own hand-typed patch for these -- most notably a ~40-row
-fabricated `lt_extra` table -- happens to get 1 and 3 empirically right
-via its maintainers' own domain knowledge, but is itself unsourced from
-ICES and should be retired upstream once ICES's service is fixed):
+Confirmed discrepancies as of 2026-08-06 (candidates for an ICES issue --
+checked directly against the official `ices-tools-prod/icesDatras` on
+GitHub, 2026-08-09: its `getDatrasFieldList()` has no patch of any kind,
+so none of these are things "icesDatras already handles"; they're genuine
+gaps in ICES's own live service that any consumer would hit):
   1. LT: getDatrasFieldList documents only 22 of LT's 58 real fields.
   2. LT: 3 of those 22 (Platform/StationName/HaulNumber) claim no
      rename; real data has Ship/StNo/HaulNo (resolved here via tier 2).

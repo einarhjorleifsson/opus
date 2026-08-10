@@ -9,7 +9,10 @@ This page collects detailed technical notes on implementation decisions, tradeof
 ## 1. Field Name Mapping: Old → New and icesVocab Dependency
 
 **Date:** 2026-08-02  
-**Status:** Under implementation
+**Status:** Superseded 2026-08-09 (see note below) — kept for historical design rationale, not current behavior.
+
+> **2026-08-09 update:** Sections 1 and 2 below describe recording a column's legacy name as a `Legacy field name: X` annotation inside its `details:` text, extracted via `op_legacy_field_name()`/`op_field_name_map()` (still live, exported functions — this isn't removed). As of 2026-08-09 the curation pipeline (`data-raw/spec_01_seed_dict.R`/`spec_02_curate_dict.R`) no longer uses that mechanism: legacy names are the *primary* key throughout seeding and curation, and opus's curated names are introduced exactly once, as a pure rename, by `data-raw/spec_03_translate_new_names.R` (crosswalk via the new `op_datras_rename_crosswalk()`, `R/field_names.R`). Both the legacy-named (`inst/DATRAS-data-dict-legacy.yaml`) and curated (`inst/DATRAS-data-dict.yaml`) dictionaries now exist as real, complete files side by side, so annotating one name inside the other's `details:` text is redundant. The design-tradeoff discussion below (why a `details:` prefix over a non-standard key, etc.) is still accurate history for *why that approach was chosen at the time* — just not what the pipeline does today.
+
 
 ### The Discovery
 
@@ -117,7 +120,7 @@ For "BOTH (different)" fields, add clarification to details:
 
 ### References
 
-- Source of truth (updated 2026-08-06): `op_datras_field_list()` (`R/field_names.R`), which replaced `icesDatras::getDatrasFieldList()` after tracing that function to an undocumented, ICES-unsourced hand-patch layered on top of the same live endpoint. `op_datras_field_list()` cross-verifies ICES's live metadata against each operation's own ASMX response before trusting a rename.
+- Source of truth (updated 2026-08-06): `op_datras_field_list()` (`R/field_names.R`), which replaced a direct call to `getDatrasFieldList()`. Correction, 2026-08-09: the "hand-patch layered on top of the same live endpoint" this bullet used to describe was traced to a personal development fork of `icesDatras`, not the official `ices-tools-prod/icesDatras` (whose own `getDatrasFieldList()` has no patch of any kind). `op_datras_field_list()` cross-verifies ICES's live metadata against each operation's own ASMX response before trusting a rename regardless -- that cross-verification is the actual reason it's more reliable, not a claim about what any version of the `icesDatras` package does.
 - icesVocab: https://vocab.ices.dk/
 - Related working principle: AGENTS.md principle 1 ("Real data is ground truth") and principle 4 ("Don't guess; document")
 

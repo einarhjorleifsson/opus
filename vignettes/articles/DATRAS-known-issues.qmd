@@ -4,6 +4,6 @@ title: "DATRAS-known-issues.yaml"
 
 
 ::: {.callout-note}
-Generated from `inst/DATRAS-known-issues.yaml` by `data-raw/spec_03_dict_to_qmd.R`. Edit the YAML and regenerate -- don't hand-edit this file.
+Generated from `inst/DATRAS-known-issues.yaml` by `data-raw/spec_04_dict_to_qmd.R`. Edit the YAML and regenerate -- don't hand-edit this file.
 :::
 

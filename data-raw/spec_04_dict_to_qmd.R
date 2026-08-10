@@ -125,7 +125,7 @@ data_dict_to_qmd <- function(yaml_path, qmd_path = NULL) {
     "",
     "::: {.callout-note}",
     sprintf(
-      "Generated from `%s` by `data-raw/spec_03_dict_to_qmd.R`. Edit the YAML and regenerate -- don't hand-edit this file.",
+      "Generated from `%s` by `data-raw/spec_04_dict_to_qmd.R`. Edit the YAML and regenerate -- don't hand-edit this file.",
       yaml_path
     ),
     ":::",

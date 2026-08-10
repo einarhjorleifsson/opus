@@ -9,12 +9,11 @@
 
 #' Fetch ICES's live getDatrasFieldList metadata directly
 #'
-#' Reimplements the one piece of `icesDatras::getDatrasFieldList()` opus
-#' needs (RecordHeader/FieldName/FieldNameOld triples), without depending
-#' on the icesDatras package. Unlike icesDatras's own version, this does
-#' NOT apply icesDatras's hand-typed patch block on top -- see
-#' [op_datras_field_list()], which cross-verifies this raw data against
-#' each operation's own live response instead.
+#' Fetches and parses the same live endpoint `icesDatras::getDatrasFieldList()`
+#' wraps (RecordHeader/FieldName/FieldNameOld triples), without depending on
+#' the icesDatras package -- this raw data is passed to
+#' [op_datras_field_list()], which cross-verifies it against each
+#' operation's own live response before trusting any claimed rename.
 #'
 #' @return Data frame: RecordHeader, FieldName, FieldNameOld, DataFormat,
 #'   Description -- one row per field ICES's field-list service documents.
@@ -110,11 +109,11 @@
 #'    `IndividualAge`/`AgeRings`, which triggered this exact case: no
 #'    other Tier 1 table's data explains it, so it stays `no_evidence`).
 #'
-#' Confirmed discrepancies as of 2026-08-06 (candidates for an ICES issue;
-#' `icesDatras`'s own hand-typed patch for these -- most notably a ~40-row
-#' fabricated `lt_extra` table -- happens to get 1 and 3 empirically right
-#' via its maintainers' own domain knowledge, but is itself unsourced from
-#' ICES and should be retired upstream once ICES's service is fixed):
+#' Confirmed discrepancies as of 2026-08-06 (candidates for an ICES issue --
+#' checked directly against the official `ices-tools-prod/icesDatras` on
+#' GitHub, 2026-08-09: its `getDatrasFieldList()` has no patch of any kind,
+#' so none of these are things "icesDatras already handles"; they're genuine
+#' gaps in ICES's own live service that any consumer would hit):
 #'   1. LT: getDatrasFieldList documents only 22 of LT's 58 real fields.
 #'   2. LT: 3 of those 22 (Platform/StationName/HaulNumber) claim no
 #'      rename; real data has Ship/StNo/HaulNo (resolved here via tier 2).
@@ -189,6 +188,55 @@ op_datras_field_list <- function(tables = c("HH", "HL", "CA", "LT")) {
   }
 
   do.call(rbind, lapply(tables, resolve_table))
+}
+
+#' Build a rename-ready legacy -> new name crosswalk for one or more tables
+#'
+#' Thin wrapper around [op_datras_field_list()] for callers that need a
+#' clean, collision-free 1:1 `old_name` -> `new_name` map to actually rename
+#' columns with (`data-raw/spec_03_translate_new_names.R`,
+#' `data-raw/archive_06_split_legacy_new.R`) -- as opposed to
+#' [op_datras_field_list()]'s own broader, diagnostic purpose (reporting
+#' every candidate rename along with its confidence tier, for auditing).
+#'
+#' Applies one documented, opus-side correction on top of
+#' [op_datras_field_list()]'s raw output: LT's real `Depth` column is
+#' cross-table-inferred to rename to `BottomDepth` (HH's own confirmed
+#' rename for the same old name), but LT genuinely has its own separate,
+#' real `BottomDepth` column too -- byte-for-byte duplicate values, but two
+#' distinct fields (ICES-side redundancy, not a naming variant; see
+#' `data-raw/ICES_ISSUE_REPORT.md`, Issue 6). Renaming `Depth` -> `BottomDepth`
+#' here would collide two real LT columns into one name. Left unrenamed
+#' (`old_name == new_name == "Depth"`) instead.
+#'
+#' @param tables Character vector: which RecordHeaders to resolve (default
+#'   opus's Tier 1 scope).
+#' @return Data frame: RecordHeader, old_name, new_name -- exactly one row
+#'   per real column, safe to use directly as a rename map (no table's
+#'   new_name values collide with each other).
+#' @export
+op_datras_rename_crosswalk <- function(tables = c("HH", "HL", "CA", "LT")) {
+  fl <- op_datras_field_list(tables)
+
+  lt_depth <- fl$RecordHeader == "LT" & fl$old_name == "Depth"
+  if (any(lt_depth)) fl$new_name[lt_depth] <- fl$old_name[lt_depth]
+
+  # Guard, not a soft check: confirm no table ends up with a rename
+  # collision (two old_names mapping to the same new_name) -- would break
+  # any 1:1 rename applied directly from this crosswalk. Checks generally
+  # rather than just re-testing the one known LT/Depth case, in case a
+  # similar collision ever turns up elsewhere.
+  for (rh in unique(fl$RecordHeader)) {
+    sub <- fl[fl$RecordHeader == rh, ]
+    dup <- sub$new_name[duplicated(sub$new_name)]
+    if (length(dup) > 0) {
+      stop("op_datras_rename_crosswalk(): table '", rh, "' has colliding ",
+           "new_name(s): ", paste(unique(dup), collapse = ", "),
+           " -- not safe to use as a rename map.", call. = FALSE)
+    }
+  }
+
+  fl[, c("RecordHeader", "old_name", "new_name")]
 }
 
 #' Extract legacy field name from column details

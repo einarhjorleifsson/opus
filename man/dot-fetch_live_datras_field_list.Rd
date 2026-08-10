@@ -13,11 +13,10 @@ Data frame: RecordHeader, FieldName, FieldNameOld, DataFormat,
   is left as-is; callers should treat it as equal to `FieldName`.
 }
 \description{
-Reimplements the one piece of `icesDatras::getDatrasFieldList()` opus
-needs (RecordHeader/FieldName/FieldNameOld triples), without depending
-on the icesDatras package. Unlike icesDatras's own version, this does
-NOT apply icesDatras's hand-typed patch block on top -- see
-[op_datras_field_list()], which cross-verifies this raw data against
-each operation's own live response instead.
+Fetches and parses the same live endpoint `icesDatras::getDatrasFieldList()`
+wraps (RecordHeader/FieldName/FieldNameOld triples), without depending on
+the icesDatras package -- this raw data is passed to
+[op_datras_field_list()], which cross-verifies it against each
+operation's own live response before trusting any claimed rename.
 }
 \keyword{internal}

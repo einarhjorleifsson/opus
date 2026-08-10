@@ -5,17 +5,33 @@
 # doesn't currently publish it, the field is left blank here, on purpose,
 # so the gap is visible rather than papered over.
 #
-# Deliberately does NOT rely solely on icesDatras::getDatrasFieldList() --
-# that function is a hand-maintained-ish table that has documented wrong
-# types (e.g. CPUEL/CPUEA's `Area`, declared "int" there but "string" per
-# ICES's own server and confirmed by real data). The actual authoritative
-# source is each operation's own ASMX page, which is generated directly by
-# the server from its real return type and so cannot drift the way a
-# separately-maintained table can.
+# Keyed by LEGACY (real, on-the-wire) field names throughout -- restructured
+# 2026-08-09, was previously keyed by ICES's suggested new name. Two reasons:
+# (1) legacy names need no inference at all, they're just what's really in
+# the data, while a field's NEW name (especially LT's, see step 2 below)
+# sometimes needs cross-table inference ICES's own field-list service
+# doesn't provide -- resolving that here would reintroduce exactly the
+# seed-time correction the seed-vs-curate split (Working principles, rule
+# 11) exists to avoid. That inference now happens once, at translate time
+# (data-raw/spec_03_translate_new_names.R), via op_datras_field_list() --
+# not duplicated here. (2) icesVocab's own domain keys are legacy-name-shaped
+# (TS_HaulVal, not TS_HaulValidity) -- keying the seed by legacy name means
+# every downstream vocab lookup (this script's own `values` step 3 below,
+# and the later full-field vocab audit) uses the field's real name directly,
+# no legacy/new round-trip.
+#
+# Deliberately does NOT rely solely on `getDatrasFieldList()` (ICES's own
+# field-list metadata service, whether accessed via `icesDatras` or directly
+# as here) -- that service documents wrong types (e.g. CPUEL/CPUEA's `Area`,
+# declared "int" there but "string" per ICES's own server and confirmed by
+# real data). The actual authoritative source is each operation's own ASMX
+# page, which is generated directly by the server from its real return type
+# and so cannot drift the way a separately-maintained metadata service can.
 #
 # Data-raw helpers used here:
-#   - spec_00_operation_types.R  (WSDL type/old-name crawl; copied from
-#     icesDatras/data-raw, not yet packaged)
+#   - spec_00_operation_types.R  (WSDL type/old-name crawl; ported from a
+#     personal icesDatras development fork -- itself originally written for
+#     obus -- not the official package, not yet independently packaged here)
 #   - opus::op_vocab_* functions (icesVocab code-meaning lookup; now exported
 #     via R/vocab.R in this package)
 #
@@ -25,12 +41,13 @@
 # range/examples (every column needs one of values/range/examples per the
 # data-dict.yaml spec before it ships). See AGENTS.md, "Seeding process".
 #
-# Deliberately NOT ported from icesDatras/data-raw/build_datras_schema.R:
-# its diagnostic diff report, live-pull cross-checks, hand-curated
-# description file, and -- most importantly -- its documented type/name
-# OVERRIDES. Corrections happen in the curation stage, not here; this
-# script only reports what ICES's own live services say, blanks and
-# disagreements included. A source disagreeing with reality (or with
+# Deliberately does not apply any diagnostic diff report, live-pull
+# cross-check, hand-curated description file, or type/name OVERRIDE at
+# seed time (an earlier personal prototype -- a development fork of
+# icesDatras, not the official package -- did all of this; corrected
+# 2026-08-09, see AGENTS.md). Corrections happen in the curation stage,
+# not here; this script only reports what ICES's own live services say,
+# blanks and disagreements included. A source disagreeing with reality (or with
 # another source) is exactly what DATRAS-known-issues.yaml is for, not
 # something to quietly resolve while seeding. Restricted to Tier 1
 # (HH/HL/CA/LT) only -- Tier 2 (FL, CPUEL, CPUEA, IDX) is a separate,
@@ -56,9 +73,10 @@ record_operations <- c(
   LT = "getLitterAssessmentOutput"
 )
 
-# WSDL type vocabulary: only string/int/decimal/float appear (verified in
-# icesDatras's own build). "float" gets the same normalisation
-# getDatrasFieldList()'s hot-fix already applies upstream.
+# WSDL type vocabulary: only string/int/decimal/float appear across all
+# four operations -- enforced by map_wsdl_type()'s own stop() below, not
+# just assumed. "float" is folded into the same "decimal" bucket as the
+# WSDL's own "decimal" type.
 wsdl_type_map <- c(string = "char", int = "int", decimal = "decimal", float = "decimal")
 
 map_wsdl_type <- function(x) {
@@ -69,7 +87,8 @@ map_wsdl_type <- function(x) {
   unname(wsdl_type_map[x])
 }
 
-# 1. Crawl WSDL types + old names directly from ICES's own operation pages ---
+# 1. Crawl WSDL types + old (legacy, real) names directly from ICES's own
+#    operation pages -----------------------------------------------------
 message("Crawling WSDL operation pages for ", length(record_operations), " operations...")
 valid_ops <- get_datras_operations()
 
@@ -85,20 +104,35 @@ crawled <-
   list_rbind()
 
 # 2. Join FieldName/Description from today's getDatrasFieldList() -----------
+# FieldName (ICES's own suggested NEW name) is kept here only as a
+# reference/sanity-check side column -- it is NOT resolved into anything
+# authoritative by this script. The anchor checks below are a cheap,
+# fail-fast sanity check that ICES's basic (non-cross-table) rename
+# metadata still behaves sanely, run here so a live-service regression is
+# caught at seed time rather than surfacing downstream. The AUTHORITATIVE
+# new-name resolution (including LT's cross-table inference, which this
+# service doesn't cover) happens once, independently, in
+# data-raw/spec_03_translate_new_names.R via op_datras_field_list() -- not
+# by consuming this column.
+#
 # Still an ICES source (ICES's own field-list web service), just not the
 # only one. Left blank (not self-mapped/guessed) where ICES's field list
 # has no matching entry for a WSDL-crawled field -- the exception is
-# FieldName, which data-dict.yaml requires non-blank; falling back to the
-# WSDL's own field name there is a structural necessity, not an assertion
-# that this IS the field's "new" name.
+# FieldName, which is a structural necessity for the sanity check below,
+# not an assertion that the WSDL's own name IS the field's "new" name.
 #
-# Was previously `icesDatras::getDatrasFieldList()`. Replaced 2026-08-06
-# with opus's own direct fetch (`opus:::.fetch_live_datras_field_list()`):
-# icesDatras's version layers its own hand-typed patch on top of the same
-# live endpoint (undocumented in its own code, not sourced from ICES --
-# see R/field_names.R's op_datras_field_list() for the traced evidence),
-# which contradicts this seed's own stated design ("report ONLY what
-# ICES's live services say, unfixed"). The raw fetch also normalizes
+# Was previously a direct call to `getDatrasFieldList()` via whichever
+# `icesDatras` package was installed at the time. Replaced 2026-08-06 with
+# opus's own direct fetch (`opus:::.fetch_live_datras_field_list()`): the
+# installed package turned out to be a personal development fork layering
+# its own hand-typed patch on top of the same live endpoint (undocumented,
+# not sourced from ICES -- confirmed 2026-08-09 against the official
+# `ices-tools-prod/icesDatras`, which has no such patch at all -- see
+# R/field_names.R's op_datras_field_list() for the traced evidence).
+# Direct fetch remains the right design regardless: it doesn't depend on
+# whichever icesDatras version happens to be locally installed, matching
+# this seed's own stated design ("report ONLY what ICES's live services
+# say, unfixed"). The raw fetch also normalizes
 # ICES's own "-" placeholder (meaning "never renamed") to equal FieldName,
 # fixing a latent bug below: without it, `has_distinct_new_name` was
 # TRUE for every field ICES marks "-" (e.g. Survey), the opposite of
@@ -124,11 +158,12 @@ crawled <-
 # silently write bad output) if they don't. LT is deliberately excluded --
 # ICES's own getDatrasFieldList genuinely does not document Ship/StNo/
 # HaulNo -> Platform/StationName/HaulNumber for LT specifically (only for
-# HH/HL/CA), so the seed correctly reports LT's Ship/StNo/HaulNo as
-# unrenamed, warts and all; fixing that via cross-table inference is
-# op_datras_field_list()'s job in the curation stage, not this one's (see
-# AGENTS.md's seed-vs-curate split -- asserting the fix here would violate
-# the seed's own "report ICES's sources literally, unfixed" design).
+# HH/HL/CA), so the seed correctly leaves LT's own FieldName side column at
+# its unrenamed, warts-and-all value; resolving that via cross-table
+# inference is op_datras_field_list()'s job at translate time
+# (data-raw/spec_03_translate_new_names.R), not this seed's (see AGENTS.md's
+# seed-vs-curate split -- asserting the fix here would violate the seed's
+# own "report ICES's sources literally, unfixed" design).
 anchors <- list(
   c("HH", "Ship", "Platform"), c("HH", "StNo", "StationName"), c("HH", "HaulNo", "HaulNumber")
 )
@@ -143,15 +178,17 @@ for (a in anchors) {
 }
 message("Anchor checks passed: ", length(anchors), "/", length(anchors))
 
-# NOTE: no correction/override step here, deliberately. icesDatras's own
-# build_datras_schema.R applies a documented override at this point (HL/CA's
-# Valid_Aphia: WSDL says "char", but it's a WoRMS AphiaID and real data is
-# always numeric) -- that's a curation decision, not a seeding one, and not
-# something ICES's own web services currently assert either way. This
-# script reports the WSDL's own answer as-is, char and all.
+# NOTE: no correction/override step here, deliberately. An earlier personal
+# prototype (a development fork of icesDatras, not the official package)
+# applied a documented override at this point (HL/CA's Valid_Aphia: WSDL
+# says "char", but it's a WoRMS AphiaID and real data is always numeric) --
+# that's a curation decision, not a seeding one, and not something ICES's
+# own web services currently assert either way. This script reports the
+# WSDL's own answer as-is, char and all.
 # TODO (curation stage): Valid_Aphia (HL, CA) -- WSDL crawl reports "char";
-# icesDatras's own build script documents live evidence it's always
-# numeric. Candidate DATRAS-known-issues.yaml entry once that stage starts.
+# real archive data confirms it's always numeric (independently verified
+# against the live service, not just inherited from that old prototype).
+# Candidate DATRAS-known-issues.yaml entry once that stage starts.
 
 # 3. icesVocab code meanings -> data-dict.yaml's `values` -------------------
 # icesVocab (vocab.ices.dk) is itself an ICES web service, independent of
@@ -162,7 +199,8 @@ message("Anchor checks passed: ", length(anchors), "/", length(anchors))
 # information as prose in `description`. Built directly from icesVocab's
 # own structured code/description pairs, not by parsing text back out of
 # anything. Description itself is left untouched (ICES's/getDatrasFieldList's
-# text, blank where step 2 found none).
+# text, blank where step 2 found none). Resolved by legacy name
+# (FieldNameOld), matching icesVocab's own legacy-name-shaped domain keys.
 VOCAB_CODE_LIMIT <- 20  # fields with more codes than this get no `values` (e.g.
                         # Survey, StatRec -- hundreds of codes, not a usable enum)
 vocab_types <- op_vocab_get_types()
@@ -199,7 +237,7 @@ seed <-
   crawled |>
   transmute(
     RecordHeader = factor(RecordHeader, levels = tier1_tables),
-    name = FieldName,
+    name = FieldNameOld,
     # `enum` whenever icesVocab resolved a `values` map for this field;
     # otherwise the coarse WSDL-derived type. Per the spec, `values` is only
     # meaningful paired with `type: enum`.
@@ -207,12 +245,10 @@ seed <-
     description = Description,
     values = values,
     # Not shipped in inst/*.yaml (data-dict.yaml has no alias concept -- see
-    # AGENTS.md); kept here only so curation can add an occasional prose
-    # mention of a legacy name in `details` (AGENTS.md's Working principles,
-    # rule 1) -- opus does not track old-name/new-name history itself;
-    # icesDatras's datras_schema remains the authority for that (settled,
-    # not an open item -- see AGENTS.md's Open items).
-    field_name_old = FieldNameOld
+    # AGENTS.md); kept here only as a reference/sanity-check side column
+    # (see step 2's comment above) -- the authoritative new-name resolution
+    # happens independently in data-raw/spec_03_translate_new_names.R.
+    field_name_new = FieldName
   )
 
 dir.create("data-raw/seed", showWarnings = FALSE)
@@ -259,7 +295,9 @@ draft <- list(
     "Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),",
     "CA (age), LT (litter). SEED ONLY, from ICES's own live WSDL +",
     "getDatrasFieldList() + icesVocab -- no local/curated content; blank",
-    "where ICES currently publishes nothing. Not yet curated -- see AGENTS.md."
+    "where ICES currently publishes nothing. Not yet curated -- see AGENTS.md.",
+    "Keyed by ICES's own legacy (real, on-the-wire) field names -- see",
+    "data-raw/spec_03_translate_new_names.R for the curated/new-named version."
   ),
   tables = tables
 )
@@ -267,7 +305,7 @@ draft <- list(
 yaml::write_yaml(draft, "data-raw/seed/DATRAS-exchange-dict-seed.yaml")
 
 seed |>
-  select(RecordHeader, name, field_name_old) |>
+  select(RecordHeader, name, field_name_new) |>
   write_csv("data-raw/seed/DATRAS-exchange-name-history-seed.csv")
 
 message(

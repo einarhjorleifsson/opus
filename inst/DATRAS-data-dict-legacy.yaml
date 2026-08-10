@@ -3,17 +3,17 @@ $learn_more: http://data-dict.tidyverse.org/
 name: datras_exchange
 label: ICES DATRAS Exchange Data (Tier 1 -- raw haul-grain submissions)
 description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),
-  CA (age), LT (litter). Translated from inst/DATRAS-data-dict-legacy.yaml -- see
-  data-raw/spec_03_translate_new_names.R. A pure rename: every type/units/range/examples/details/constraints/label
-  value is carried over unchanged from the legacy version; only column names (opus''s
-  own curated names, in place of ICES''s legacy on-the-wire names) differ.'
-origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R <U+2192> data-raw/spec_03_translate_new_names.R
+  CA (age), LT (litter). Curated from data-raw/seed/DATRAS-exchange-dict-seed.yaml
+  -- see data-raw/spec_02_curate_dict.R for the corrections and field-spec fills applied
+  and why. Keyed by ICES''s own legacy (real, on-the-wire) field names -- see data-raw/spec_03_translate_new_names.R
+  for the curated/new-named version this package actually ships.'
+origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R
 version:
   date: '2026-08-10'
 tables:
 - name: HH
   columns:
-  - name: RecordHeader
+  - name: RecordType
     type: enum
     description: |-
       Definition of the data type recorded, affecting the layout of the data fields
@@ -66,7 +66,7 @@ tables:
       Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different
       scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by
       checking real codes against it directly. Not used.
-  - name: Platform
+  - name: Ship
     type: string
     description: SeaDataNet Ship and Platform Codes
     examples:
@@ -188,7 +188,7 @@ tables:
       ICES definitions (may be used in future submissions or by other surveys). Each
       code has a full description in icesVocab. Validation: enum restricts submissions
       to these codes.
-  - name: SweepLength
+  - name: SweepLngt
     type: number(quantity)
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
@@ -197,7 +197,7 @@ tables:
     range:
     - 0.0
     - 850.0
-  - name: GearExceptions
+  - name: GearEx
     type: enum
     description: |-
       Deviations of the standard gear. Depends on survey, see survey manuals for
@@ -232,7 +232,7 @@ tables:
     - T6
     - V
     - WR
-  - name: StationName
+  - name: StNo
     type: string
     description: Station number. National coding system, not defined by ICES.
     examples:
@@ -247,7 +247,7 @@ tables:
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
       the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
       unpopulated.
-  - name: HaulNumber
+  - name: HaulNo
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     range:
@@ -291,7 +291,7 @@ tables:
     - 31.0
     constraints:
     - required
-  - name: StartTime
+  - name: TimeShot
     type: string
     description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
     examples:
@@ -324,7 +324,7 @@ tables:
       2026-07-29 against the full HH archive: 194 distinct values, only 75,753 of
       150,262 rows populated (roughly half of surveys don't report it).
     label: Depth Stratum
-  - name: HaulDuration
+  - name: HaulDur
     type: number(quantity)
     description: |-
       Haul duration in minutes. Start time is the moment when the gear settles at the
@@ -350,14 +350,14 @@ tables:
     values:
     - D
     - 'N'
-  - name: ShootLatitude
+  - name: ShootLat
     type: number(quantity)
     description: Decimal latitude position on the shooting location
     units: decimal degrees
     range:
     - 36.0013
     - 76.2117
-  - name: ShootLongitude
+  - name: ShootLong
     type: number(quantity)
     description: Decimal longitude position on the shooting location
     units: decimal degrees
@@ -370,7 +370,7 @@ tables:
       icesDatras's fetch pipeline scrubs literal -9 to NA for every numeric column,
       not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R's
       header.
-  - name: HaulLatitude
+  - name: HaulLat
     type: number(quantity)
     description: Decimal latitude position on the hauling location
     units: decimal degrees
@@ -381,7 +381,7 @@ tables:
       3 rows record exactly 0 degrees (the equator), categorically outside any DATRAS
       survey area -- excluded; the lower bound instead matches ShootLat's own clean
       minimum for the same archive.
-  - name: HaulLongitude
+  - name: HaulLong
     type: number(quantity)
     description: Decimal longitude position on the hauling location
     units: decimal degrees
@@ -391,7 +391,7 @@ tables:
     details: |-
       Same -9-as-missing caveat as ShootLong above (0 degrees, the Prime Meridian, is
       a genuine North Sea value here and is kept).
-  - name: StatisticalRectangle
+  - name: StatRec
     type: string
     description: |-
       Intended ICES statistical area rectangle (0.5 degrees latitude, 1 degree
@@ -408,14 +408,14 @@ tables:
       of the grid. 12,235 of 150,262 HH rows unpopulated. Only present in HH and LT
       (confirmed 2026-07-29) -- consistent with the Open items note that LT's
       assessment output joins in a set of HH-style columns.
-  - name: BottomDepth
+  - name: Depth
     type: number(quantity)
     description: Sampling depth in metres, measured from the water surface.
     units: m
     range:
     - 1.0
     - 3098.0
-  - name: HaulValidity
+  - name: HaulVal
     type: enum
     description: Haul validity code
     values:
@@ -426,7 +426,7 @@ tables:
     - 'N'
     - S
     - V
-  - name: HydrographicStationID
+  - name: HydroStNo
     type: string
     description: |-
       The national hydrographic station number. If possible, align with information
@@ -446,7 +446,7 @@ tables:
       is kept in `examples` (unlike a `range` exclusion, `examples` isn't a validity
       gate) since a reader should know it's a real recurring value. Verified
       2026-07-29 against the full archive.
-  - name: StandardSpeciesCode
+  - name: StdSpecRecCode
     type: enum
     description: |-
       Information on the whether standard species have been recorded. Standard species
@@ -457,7 +457,7 @@ tables:
     - '2'
     - '3'
     - '4'
-  - name: BycatchSpeciesCode
+  - name: BySpecRecCode
     type: enum
     description: Information on which bycatch species have been recorded.
     values:
@@ -481,7 +481,7 @@ tables:
     - P
     - R
     - S
-  - name: NetOpening
+  - name: Netopening
     type: number(quantity)
     description: |-
       Mean value in metres of vertical net opening measurements. For details see the
@@ -524,7 +524,7 @@ tables:
     range:
     - 0.0
     - 59995.0
-  - name: WarpLength
+  - name: Warplngt
     type: number(quantity)
     description: |-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
@@ -533,7 +533,7 @@ tables:
     range:
     - 0.0
     - 4065.0
-  - name: WarpDiameter
+  - name: Warpdia
     type: number(quantity)
     description: Warp diametre in millimetres.
     units: mm
@@ -545,7 +545,7 @@ tables:
       single-occurrence values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85,
       88mm) sit apart from it with no comparable support and are treated as data-entry
       errors, excluded here.
-  - name: WarpDensity
+  - name: WarpDen
     type: number(quantity)
     description: |-
       Warp weight in kg per linear meter of warp. See survey manuals for more
@@ -561,7 +561,7 @@ tables:
     range:
     - 0.0
     - 20.2
-  - name: DoorWeight
+  - name: DoorWgt
     type: number(quantity)
     description: Door weight in kilograms.
     units: kg
@@ -604,7 +604,7 @@ tables:
     range:
     - 0.0
     - 398.0
-  - name: KiteArea
+  - name: KiteDim
     type: number(quantity)
     description: Kite area in square metres.
     units: m2
@@ -614,7 +614,7 @@ tables:
     details: |-
       Coarse, equipment-spec values (0, 0.5, 0.7, 0.72, 0.8, 1) rather than a
       continuously measured quantity -- only 6 distinct values across 30,116 rows.
-  - name: GroundRopeWeight
+  - name: WgtGroundRope
     type: number(quantity)
     description: |-
       Total weight of the ground rope in kilograms. Recommended weight depends on
@@ -623,7 +623,7 @@ tables:
     range:
     - 0.0
     - 2212.0
-  - name: TowDirection
+  - name: TowDir
     type: number(quantity)
     description: Direction of towing in degrees. 360=direction from south to north.
     units: degrees
@@ -637,7 +637,7 @@ tables:
       ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg); plausible but
       not investigated further (would need correlating with Country/Survey). Both
       groups are outside the documented 0-360 domain and excluded here.
-  - name: SpeedGround
+  - name: GroundSpeed
     type: number(quantity)
     description: |-
       Ground speed of towing in knots. Recommended speed depends on survey, see survey
@@ -657,7 +657,7 @@ tables:
     range:
     - 0.0
     - 22.0
-  - name: SurfaceCurrentDirection
+  - name: SurCurDir
     type: number(quantity)
     description: |-
       Surface current direction in degrees. No movement = 0, 360=direction from south
@@ -669,7 +669,7 @@ tables:
     details: |-
       Two single-occurrence values just above 360 (392, 390) excluded; the rest of the
       archive is densely populated right up to 360.
-  - name: SurfaceCurrentSpeed
+  - name: SurCurSpeed
     type: number(quantity)
     description: Surface current speed in m/sec.
     units: m/s
@@ -680,7 +680,7 @@ tables:
       99 (marker) and 46.3 and 16 (each a single, isolated occurrence with no support
       nearby) excluded; a smoother, better-populated tail resumes at 9.3 (3 rows) and
       below.
-  - name: BottomCurrentDirection
+  - name: BotCurDir
     type: number(quantity)
     description: |-
       Bottom current direction in degrees. No movement = 0, 360=direction from south
@@ -689,7 +689,7 @@ tables:
     range:
     - 0.0
     - 359.0
-  - name: BottomCurrentSpeed
+  - name: BotCurSpeed
     type: number(quantity)
     description: Bottom current speed in metres/sec.
     units: m/s
@@ -701,7 +701,7 @@ tables:
       marker pattern seen elsewhere in HH, but a genuinely fast tidal-race reading
       can't be ruled out -- kept in range rather than excluded, unlike the more
       clear-cut cases above.
-  - name: WindDirection
+  - name: WindDir
     type: number(quantity)
     description: |-
       Direction of wind in degrees. Calm = 0,  direction from north to south = 360,
@@ -727,7 +727,7 @@ tables:
       exceed it, tailing off smoothly with no clean gap up to 342 m/s; the count jumps
       from a thin 1-7-row-per-value tail above 28 to 357 rows right at 28, consistent
       with a real distribution below and noise above.
-  - name: SwellDirection
+  - name: SwellDir
     type: number(quantity)
     description: |-
       Direction of swell in degrees. No movement=0, direction from south to north =
@@ -750,28 +750,28 @@ tables:
       values (0.0-2.0+ metres), not categorical codes. Archive and ICES specification
       disagree on whether this is a measured quantity or a categorized class.
       Candidate for DATRAS-known-issues.yaml formal escalation to imbus/ICES.
-  - name: SurfaceTemperature
+  - name: SurTemp
     type: number(quantity)
     description: Temperature at the surface water layer in Celsius degrees.
     units: degC
     range:
     - -1.5
     - 36.0
-  - name: BottomTemperature
+  - name: BotTemp
     type: number(quantity)
     description: Temperature at the bottom water layer in degrees Celsius
     units: degC
     range:
     - -1.0
     - 35.4
-  - name: SurfaceSalinity
+  - name: SurSal
     type: number(quantity)
     description: Salinity at the surface water layer in Practical Salinity Units (PSU).
     units: PSU
     range:
     - 0.0
     - 38.52
-  - name: BottomSalinity
+  - name: BotSal
     type: number(quantity)
     description: Salinity at the bottom water layer in Practical Salinity Units (PSU).
     units: PSU
@@ -787,7 +787,7 @@ tables:
     - '-9'
     - 'N'
     - 'Y'
-  - name: ThermoClineDepth
+  - name: ThClineDepth
     type: number(quantity)
     description: |-
       Depth (metres, measured from water surface) at which the thermocline was found.
@@ -847,7 +847,7 @@ tables:
     range:
     - 0.0
     - 7.0
-  - name: PelagicSamplingType
+  - name: PelSampType
     type: enum
     description: Pelagic trawl sampling type
     values:
@@ -905,10 +905,10 @@ tables:
     and obus::dr_add_id for the composite ID construction logic.'
   origin: data-raw/spec_02_curate_dict.R
   source:
-    parquet: HH.parquet
+    parquet: HH_legacy.parquet
 - name: HL
   columns:
-  - name: RecordHeader
+  - name: RecordType
     type: enum
     description: |-
       Definition of the data type recorded, affecting the layout of the data fields
@@ -961,7 +961,7 @@ tables:
       Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different
       scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by
       checking real codes against it directly. Not used.
-  - name: Platform
+  - name: Ship
     type: string
     description: SeaDataNet Ship and Platform Codes
     examples:
@@ -1083,7 +1083,7 @@ tables:
       ICES definitions (may be used in future submissions or by other surveys). Each
       code has a full description in icesVocab. Validation: enum restricts submissions
       to these codes.
-  - name: SweepLength
+  - name: SweepLngt
     type: number(quantity)
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
@@ -1092,7 +1092,7 @@ tables:
     range:
     - 0.0
     - 850.0
-  - name: GearExceptions
+  - name: GearEx
     type: enum
     description: |-
       Deviations of the standard gear. Depends on survey, see survey manuals for
@@ -1127,7 +1127,7 @@ tables:
     - T6
     - V
     - WR
-  - name: StationName
+  - name: StNo
     type: string
     description: Station number. National coding system, not defined by ICES.
     examples:
@@ -1142,7 +1142,7 @@ tables:
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
       the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
       unpopulated.
-  - name: HaulNumber
+  - name: HaulNo
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     range:
@@ -1162,7 +1162,7 @@ tables:
     - 2026.0
     constraints:
     - required
-  - name: SpeciesCodeType
+  - name: SpecCodeType
     type: enum
     description: |-
       Type of species code used for species definition at the record. Use 'W' for
@@ -1170,7 +1170,7 @@ tables:
     values:
     - T
     - W
-  - name: SpeciesCode
+  - name: SpecCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
     examples:
@@ -1186,7 +1186,7 @@ tables:
       Valid_Aphia, the ICES Datacenter's own validated/corrected version of the same
       concept, inserted server-side (see Valid_Aphia's own details below).
     label: Species (WoRMS AphiaID)
-  - name: SpeciesValidity
+  - name: SpecVal
     type: enum
     description: |-
       Validity of species records, e.g. to specify if species has only been counted,
@@ -1202,7 +1202,7 @@ tables:
     - '7'
     - '8'
     - '9'
-  - name: SpeciesSex
+  - name: Sex
     type: enum
     description: |-
       Gender of the described species category. In CA-records should be defined by
@@ -1216,7 +1216,7 @@ tables:
     - 'N'
     - T
     - U
-  - name: TotalNumber
+  - name: TotalNo
     type: number(quantity)
     description: |-
       Total number of specimens per category (unique combination of cruise haul,
@@ -1232,7 +1232,7 @@ tables:
       which can inflate very abundant small-bodied catches to large, non-integer
       counts. Top values all have real support (9-30 occurrences each, a smooth tail),
       not isolated errors.
-  - name: SpeciesCategory
+  - name: CatIdentifier
     type: number(id)
     description: |-
       Subsampling category by size for same species in the haul. If DataType is C,
@@ -1248,7 +1248,7 @@ tables:
       Real values are {1-5, 11-14, 21-23, 31} -- a coded scheme (verified 2026-07-29
       against the full archive), not a sequence, despite 'category' sounding ordinal.
     label: Species Category
-  - name: SubsampledNumber
+  - name: NoMeas
     type: number(quantity)
     description: |-
       Number of measured specimens per category (unique combination of cruise haul,
@@ -1261,7 +1261,7 @@ tables:
     details: |-
       Same DataType C standardisation basis as TotalNo above; top values are all
       well-supported (4-10 occurrences each), not isolated errors.
-  - name: SubsamplingFactor
+  - name: SubFactor
     type: number(quantity)
     description: |-
       Sub-sampling factor. If 1/6 of the catch was measured, report 6. If DataType is
@@ -1278,14 +1278,14 @@ tables:
       (4096 recurs 133 times; 8192, 5120, 6144 also recur with real support),
       consistent with repeatedly halving a very abundant catch to reach a manageable
       subsample.
-  - name: SubsampleWeight
+  - name: SubWgt
     type: number(quantity)
     description: Weight of the subsample in grams.
     units: g
     range:
     - 0.0
     - 3519200.0
-  - name: SpeciesCategoryWeight
+  - name: CatCatchWgt
     type: number(quantity)
     description: |-
       For datatype R or S: Catch weight in grams per category (for the unique
@@ -1299,7 +1299,7 @@ tables:
       -900 (2562 rows) and -100 (1 row) are excluded as a 'not weighed' placeholder,
       the same pattern seen in several HH fields. The high end is genuine: top values
       all have real support (3-18 occurrences each).
-  - name: LengthCode
+  - name: LngtCode
     type: enum
     description: |-
       Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm). Survey and
@@ -1314,7 +1314,7 @@ tables:
     - '2'
     - '5'
     - '9'
-  - name: LengthClass
+  - name: LngtClass
     type: number(quantity)
     description: |-
       Lower length boundary of the Length class. In cm or mm depending on the
@@ -1334,7 +1334,7 @@ tables:
       separately (a different sampling population, not assumed identical -- see CA's
       own pass).
     label: Length Class (cm)
-  - name: NumberAtLength
+  - name: HLNoAtLngt
     type: number(quantity)
     description: |-
       Number of measured fish for the length class per category (unique combination of
@@ -1351,7 +1351,7 @@ tables:
       population -- aged individuals only, not the whole catch -- so not assumed
       identical).
     label: Count at Length
-  - name: DevelopmentStage
+  - name: DevStage
     type: enum
     description: Development or maturity stage defined by non-invasive observations
     values:
@@ -1359,7 +1359,7 @@ tables:
     - B
     - E
     - J
-  - name: LengthType
+  - name: LenMeasType
     type: enum
     description: Type of length measurement
     values:
@@ -1417,10 +1417,10 @@ tables:
     key is required for correct joins regardless.'
   origin: data-raw/spec_02_curate_dict.R
   source:
-    parquet: HL.parquet
+    parquet: HL_legacy.parquet
 - name: CA
   columns:
-  - name: RecordHeader
+  - name: RecordType
     type: enum
     description: |-
       Definition of the data type recorded, affecting the layout of the data fields
@@ -1473,7 +1473,7 @@ tables:
       Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different
       scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by
       checking real codes against it directly. Not used.
-  - name: Platform
+  - name: Ship
     type: string
     description: SeaDataNet Ship and Platform Codes
     examples:
@@ -1595,7 +1595,7 @@ tables:
       ICES definitions (may be used in future submissions or by other surveys). Each
       code has a full description in icesVocab. Validation: enum restricts submissions
       to these codes.
-  - name: SweepLength
+  - name: SweepLngt
     type: number(quantity)
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
@@ -1604,7 +1604,7 @@ tables:
     range:
     - 0.0
     - 850.0
-  - name: GearExceptions
+  - name: GearEx
     type: enum
     description: |-
       Deviations of the standard gear. Depends on survey, see survey manuals for
@@ -1639,7 +1639,7 @@ tables:
     - T6
     - V
     - WR
-  - name: StationName
+  - name: StNo
     type: string
     description: Station number. National coding system, not defined by ICES.
     examples:
@@ -1654,7 +1654,7 @@ tables:
       exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
       the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
       unpopulated.
-  - name: HaulNumber
+  - name: HaulNo
     type: number(ordinal)
     description: Sequential numbering of hauls during cruise.
     range:
@@ -1674,7 +1674,7 @@ tables:
     - 2026.0
     constraints:
     - required
-  - name: SpeciesCodeType
+  - name: SpecCodeType
     type: enum
     description: |-
       Type of species code used for species definition at the record. Use 'W' for
@@ -1682,7 +1682,7 @@ tables:
     values:
     - T
     - W
-  - name: SpeciesCode
+  - name: SpecCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
     examples:
@@ -1732,7 +1732,7 @@ tables:
       LngtClass/LngtCode. Codes mix ICES-area style (VIIg) and rectangle-like style
       (38G3). 635 distinct values, 1,898,151 of 5,966,950 rows unpopulated. Verified
       2026-07-29 against the full CA archive.
-  - name: LengthCode
+  - name: LngtCode
     type: enum
     description: |-
       Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm). Survey and
@@ -1747,7 +1747,7 @@ tables:
     - '2'
     - '5'
     - '9'
-  - name: LengthClass
+  - name: LngtClass
     type: number(quantity)
     description: |-
       Lower length boundary of the Length class. In cm or mm depending on the
@@ -1764,7 +1764,7 @@ tables:
       subset from HL's whole-catch length-frequency tally, so the two are not assumed
       identical (Working principles, rule 12).
     label: Length Class (cm)
-  - name: IndividualSex
+  - name: Sex
     type: enum
     description: |-
       Gender of the described species category. In CA-records should be defined by
@@ -1778,7 +1778,7 @@ tables:
     - 'N'
     - T
     - U
-  - name: IndividualMaturity
+  - name: Maturity
     type: string
     description: |-
       Sexual maturation of the individual(s) measured. Often needs dissection, but not
@@ -1796,7 +1796,7 @@ tables:
       of numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales
       using different code sets, not an inconsistency. 48 distinct values, 3,173,580
       of 5,966,950 rows unpopulated. Verified 2026-07-29 against the full CA archive.
-  - name: AgePlusGroup
+  - name: PlusGr
     type: enum
     description: |-
       Records with high age categories can be grouped into the Plus group. If the plus
@@ -1822,7 +1822,7 @@ tables:
       response; the real field is 'Age', used here). Since that row's old-name half is
       already wrong, its proposed new name isn't trusted either. Filed with ICES; not
       yet resolved upstream.
-  - name: NumberAtLength
+  - name: CANoAtLngt
     type: number(quantity)
     description: |-
       Amount of fish at the given category (per haul, species, length class, sex,
@@ -1834,7 +1834,7 @@ tables:
       Distinct population from HL's own NumberAtLength (HLNoAtLngt): this counts aged
       individuals only, not the whole catch, hence the much smaller scale -- not
       assumed identical (Working principles, rule 12).
-  - name: IndividualWeight
+  - name: IndWgt
     type: number(quantity)
     description: Measured individual weight of the fish (grams)
     units: g
@@ -1855,7 +1855,7 @@ tables:
       integers-as-strings), open-ended and illustrative only, not an exhaustive domain
       -- 170,774 distinct values, only 1,118,002 of 5,966,950 rows populated (~18.7%).
       Verified 2026-07-29 against the full CA archive.
-  - name: GeneticSamplingFlag
+  - name: GenSamp
     type: enum
     description: Flag whether genetic sample was taken
     values:
@@ -1866,7 +1866,7 @@ tables:
       boolean intent; verified 100% clean two-value split against the full archive,
       2026-07-29 (N: 829,547 rows; Y: 13,793; zero other values across 843,340
       non-null rows, 5,123,610 unpopulated).
-  - name: StomachSamplingFlag
+  - name: StomSamp
     type: enum
     description: Flag whether stomach sampling was performed
     values:
@@ -1887,7 +1887,7 @@ tables:
     - SC
     - VR
     label: Age Determination Method
-  - name: AgePreparationMethod
+  - name: AgePrepMet
     type: enum
     description: Preparation method of the sampled tissue
     values:
@@ -1899,7 +1899,7 @@ tables:
     - WA
     - WO
     label: Specimen Preparation for Aging
-  - name: OtolithGrading
+  - name: OtGrading
     type: enum
     description: Grading of the otolith reading
     values:
@@ -1908,7 +1908,7 @@ tables:
     - '2'
     - '3'
     - '4'
-  - name: ParasiteSamplingFlag
+  - name: ParSamp
     type: enum
     description: Flag whether parasites sampling was performed
     values:
@@ -1973,20 +1973,20 @@ tables:
     the catch; linked to HH via the composite haul identifier.
   details: 'Grain: each row is one biological specimen (a single aged fish) from a
     haul. Population: individual organisms sampled and measured from hauls within
-    covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the
-    composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship +
-    Gear + StationName/StNo + HaulNumber). Critical note (corrected 2026-08-07; see
-    DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo
-    contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead carry a -9
-    sentinel, which violates the column''s declared range ([0, 82483]; a D04_range
-    violation, confirmed via op_flag_violations()), not the required constraint (D01
-    never fires here). These rows match no HH haul on the full 8-field composite key,
-    or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely
-    orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with
-    a plausible HaulNumber also fails to match HH; cause not yet diagnosed.'
+    covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the composite
+    haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo
+    + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml
+    issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls --
+    288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates
+    the column''s declared range ([0, 82483]; a D04_range violation, confirmed via
+    op_flag_violations()), not the required constraint (D01 never fires here). These
+    rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber
+    fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate,
+    much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails
+    to match HH; cause not yet diagnosed.'
   origin: data-raw/spec_02_curate_dict.R
   source:
-    parquet: CA.parquet
+    parquet: CA_legacy.parquet
 - name: LT
   columns:
   - name: Survey
@@ -2023,7 +2023,7 @@ tables:
     - 2026.0
     constraints:
     - required
-  - name: Platform
+  - name: Ship
     type: string
     examples:
     - '74E9'
@@ -2162,7 +2162,7 @@ tables:
       Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different
       scheme entirely from this field's own 2-letter-plus-region codes -- confirmed by
       checking real codes against it directly. Not used.
-  - name: StationName
+  - name: StNo
     type: string
     examples:
     - '1'
@@ -2177,7 +2177,7 @@ tables:
       the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
       unpopulated.
     description: Station number. National coding system, not defined by ICES.
-  - name: HaulNumber
+  - name: HaulNo
     type: number(ordinal)
     range:
     - 0.0
@@ -2189,14 +2189,14 @@ tables:
       cruise or runs continuously -- the archive-wide range spans many cruises' own
       counts pooled together, not one cruise's own haul tally.
     description: Sequential numbering of hauls during cruise.
-  - name: ShootLatitude
+  - name: ShootLat
     type: number(quantity)
     units: decimal degrees
     range:
     - 36.0013
     - 76.2117
     description: Decimal latitude position on the shooting location
-  - name: ShootLongitude
+  - name: ShootLong
     type: number(quantity)
     units: decimal degrees
     range:
@@ -2209,7 +2209,7 @@ tables:
       not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R's
       header.
     description: Decimal longitude position on the shooting location
-  - name: HaulLatitude
+  - name: HaulLat
     type: number(quantity)
     units: decimal degrees
     range:
@@ -2220,7 +2220,7 @@ tables:
       survey area -- excluded; the lower bound instead matches ShootLat's own clean
       minimum for the same archive.
     description: Decimal latitude position on the hauling location
-  - name: HaulLongitude
+  - name: HaulLong
     type: number(quantity)
     units: decimal degrees
     range:
@@ -2355,7 +2355,7 @@ tables:
       observed here; not retyped enum since 41 exceeds the seed's VOCAB_CODE_LIMIT of
       20. 16,508 of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT
       archive.
-  - name: UnitWeight
+  - name: UnitWgt
     type: string
     examples:
     - kg/haul
@@ -2465,7 +2465,7 @@ tables:
       seed's VOCAB_CODE_LIMIT of 20, and the combinable form isn't a plain enum shape
       regardless. 58,349 of 79,451 rows unpopulated. Verified 2026-07-29 against the
       full LT archive.
-  - name: SweepLength
+  - name: SweepLngt
     type: number(quantity)
     units: m
     range:
@@ -2474,7 +2474,7 @@ tables:
     description: |-
       Length of sweep in metres. Recommended values depend on survey and quarter, see
       survey manuals for further details
-  - name: GearExceptions
+  - name: GearEx
     type: enum
     values:
     - '-9'
@@ -2530,7 +2530,7 @@ tables:
     constraints:
     - required
     description: Sampling day, as part of the calendar date
-  - name: StartTime
+  - name: TimeShot
     type: string
     examples:
     - '730'
@@ -2545,7 +2545,7 @@ tables:
       documented here rather than silently assumed. Only present in HH and LT
       (confirmed 2026-07-29), same as StatRec above.
     description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
-  - name: HaulDuration
+  - name: HaulDur
     type: number(quantity)
     units: min
     range:
@@ -2562,7 +2562,7 @@ tables:
       Haul duration in minutes. Start time is the moment when the gear settles at the
       bottom at the stated towing speed. Stop is defined as the start of hauling of
       the gear.
-  - name: StatisticalRectangle
+  - name: StatRec
     type: string
     examples:
     - '37F8'
@@ -2595,7 +2595,7 @@ tables:
       2026-08-06 (see data-raw/ICES_ISSUE_REPORT.md, Issue 6). Given the same
       type/units/range as BottomDepth here rather than re-derived independently, since
       it is BottomDepth.
-  - name: HaulValidity
+  - name: HaulVal
     type: enum
     values:
     - A
@@ -2619,7 +2619,7 @@ tables:
       TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw), S (subsample of
       the entire catch): data as recorded during the cruise, and P (pseudocategory
       sampling, only used by Scotland).
-  - name: NetOpening
+  - name: Netopening
     type: number(quantity)
     units: m
     range:
@@ -2655,7 +2655,7 @@ tables:
     - 0.0
     - 27.0
     description: Amount of ticklers connected to the gear.
-  - name: WarpLength
+  - name: Warplngt
     type: number(quantity)
     units: m
     range:
@@ -2664,7 +2664,7 @@ tables:
     description: |-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
       on survey, for further details see survey manuals.
-  - name: WarpDiameter
+  - name: Warpdia
     type: number(quantity)
     units: mm
     range:
@@ -2676,7 +2676,7 @@ tables:
       88mm) sit apart from it with no comparable support and are treated as data-entry
       errors, excluded here.
     description: Warp diametre in millimetres.
-  - name: WarpDensity
+  - name: WarpDen
     type: number(quantity)
     units: kg/m
     range:
@@ -2692,14 +2692,14 @@ tables:
     - 0.0
     - 20.2
     description: Door surface area in square metres.
-  - name: DoorWeight
+  - name: DoorWgt
     type: number(quantity)
     units: kg
     range:
     - 0.0
     - 1720.0
     description: Door weight in kilograms.
-  - name: TowDirection
+  - name: TowDir
     type: number(quantity)
     units: degrees
     range:
@@ -2713,7 +2713,7 @@ tables:
       not investigated further (would need correlating with Country/Survey). Both
       groups are outside the documented 0-360 domain and excluded here.
     description: Direction of towing in degrees. 360=direction from south to north.
-  - name: SpeedGround
+  - name: GroundSpeed
     type: number(quantity)
     units: knots
     range:
@@ -2733,7 +2733,7 @@ tables:
     - 0.0
     - 22.0
     description: Trawl speed on water in knots.
-  - name: WindDirection
+  - name: WindDir
     type: number(quantity)
     units: degrees
     range:
@@ -2759,7 +2759,7 @@ tables:
       from a thin 1-7-row-per-value tail above 28 to 357 rows right at 28, consistent
       with a real distribution below and noise above.
     description: Speed of wind in metres/sec.
-  - name: SwellDirection
+  - name: SwellDir
     type: number(quantity)
     units: degrees
     range:
@@ -2849,7 +2849,7 @@ tables:
     checked. The full 8-field composite key is required for correct joins regardless.'
   origin: data-raw/spec_02_curate_dict.R
   source:
-    parquet: LT.parquet
+    parquet: LT_legacy.parquet
 glossary:
   Haul: 'A single deployment of a trawl net. The primary unit of observation in DATRAS:
     one haul''s catch (HH record) is subsampled and analyzed into length frequencies

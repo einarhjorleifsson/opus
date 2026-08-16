@@ -92,10 +92,12 @@ for (tbl in legacy$tables) {
 ## ---- Rename every column -----------------------------------------------
 
 translated <- legacy
+rename_maps <- list()  # accumulated per table, reused below to translate `relationships`
 for (ti in seq_along(translated$tables)) {
   tname <- translated$tables[[ti]]$name
   xw <- crosswalk[crosswalk$RecordHeader == tname, ]
   rename_map <- setNames(xw$new_name, xw$old_name)  # ground-truthed 1:1 above
+  rename_maps[[tname]] <- rename_map
 
   for (ci in seq_along(translated$tables[[ti]]$columns)) {
     col <- translated$tables[[ti]]$columns[[ci]]
@@ -106,6 +108,82 @@ for (ti in seq_along(translated$tables)) {
   # New-named parquet, matching this yaml's own (new) column names.
   translated$tables[[ti]]$source <- list(parquet = paste0(tname, ".parquet"))
 }
+
+## ---- Translate `relationships`' join expressions -----------------------
+# Same crosswalk data as the column rename above, applied to `join` text
+# instead of a `name` field -- not a second source of truth. A join
+# expression is `table.column` tokens joined by `AND`/comparison operators
+# (see site/spec.md's Relationships section); this rewrites every such
+# token in place, wherever it appears in the expression.
+if (!is.null(translated$relationships)) {
+  token_pattern <- "([A-Za-z_][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*)"
+
+  translate_join <- function(join_expr) {
+    m <- gregexpr(token_pattern, join_expr, perl = TRUE)
+    tokens <- regmatches(join_expr, m)[[1]]
+    regmatches(join_expr, m)[[1]] <- vapply(tokens, function(tok) {
+      parts <- strsplit(tok, ".", fixed = TRUE)[[1]]
+      new_col <- rename_maps[[parts[1]]][[parts[2]]]
+      if (is.null(new_col)) {
+        stop("No rename mapping for '", tok, "' in a relationship's join -- ",
+             "crosswalk/relationships have drifted apart.", call. = FALSE)
+      }
+      paste0(parts[1], ".", new_col)
+    }, character(1))
+    join_expr
+  }
+
+  for (ri in seq_along(translated$relationships)) {
+    translated$relationships[[ri]]$join <- translate_join(translated$relationships[[ri]]$join)
+  }
+
+  # Ground-truth, same rigor as the column-rename check above: every
+  # translated reference must actually exist on its (already-renamed) table.
+  for (rel in translated$relationships) {
+    tokens <- regmatches(rel$join, gregexpr(token_pattern, rel$join, perl = TRUE))[[1]]
+    for (tok in tokens) {
+      parts <- strsplit(tok, ".", fixed = TRUE)[[1]]
+      tbl <- translated$tables[[which(map_chr(translated$tables, "name") == parts[1])]]
+      if (!(parts[2] %in% map_chr(tbl$columns, "name"))) {
+        stop("Translated relationship references '", tok, "', not a real column of ", parts[1], call. = FALSE)
+      }
+    }
+  }
+  message("Translated ", length(translated$relationships), " relationship join(s) to curated names")
+}
+
+## ---- Translate table `definitions`' expressions -------------------------
+# Same idea as relationships' join translation above, but a definition's
+# `expr` is single-table (bare column names, not table.column-qualified) --
+# this replaces whole-word identifier tokens that match one of THAT table's
+# own legacy column names, via its own rename_map. A token that isn't a real
+# column name for that table (an operator keyword, a function name) never
+# matches a rename_map entry, so it's left untouched automatically -- no
+# separate keyword list needed.
+identifier_pattern <- "[A-Za-z_][A-Za-z0-9_]*"
+
+translate_definition_expr <- function(expr, rename_map) {
+  m <- gregexpr(identifier_pattern, expr, perl = TRUE)
+  tokens <- regmatches(expr, m)[[1]]
+  regmatches(expr, m)[[1]] <- vapply(tokens, function(tok) {
+    new_col <- rename_map[[tok]]
+    if (is.null(new_col)) tok else new_col
+  }, character(1))
+  expr
+}
+
+n_defs <- 0
+for (ti in seq_along(translated$tables)) {
+  tbl <- translated$tables[[ti]]
+  if (is.null(tbl$definitions)) next
+  rename_map <- rename_maps[[tbl$name]]
+  for (di in seq_along(tbl$definitions)) {
+    tbl$definitions[[di]]$expr <- translate_definition_expr(tbl$definitions[[di]]$expr, rename_map)
+  }
+  translated$tables[[ti]] <- tbl
+  n_defs <- n_defs + length(tbl$definitions)
+}
+if (n_defs > 0) message("Translated ", n_defs, " table definition(s) to curated names")
 
 ## ---- Top-level metadata: point at the new-named parquet, describe origin ----
 

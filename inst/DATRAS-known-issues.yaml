@@ -4,7 +4,7 @@
 # Documents: sentinels, known violations, data quality issues
 #
 # Version: 0.1.0 (draft)
-# Last updated: 2026-08-05
+# Last updated: 2026-08-16
 
 # Sentinel values that mean "missing/not recorded"
 # Applied during Phase 2 parsing before type casting
@@ -25,8 +25,28 @@ sentinels:
       values: ["-1", "-5", "-95"]
       meaning: "Not determined age source"
 
+    - field: Tickler
+      table: "HH, LT"
+      values: ["-9"]
+      meaning: "No ticklers are allowed (icesVocab TS_Tickler code -- a real, meaningful answer, not a missing value). Dominant, not rare: 113,645 of 145,958 HH rows (78%) and 30,690 of 75,310 LT rows (41%)."
+
+    - field: Age
+      table: "CA"
+      values: ["-9", "-1", "-5", "-95"]
+      meaning: "'-9' (1,995,814 rows, 34% of all CA rows) is the dominant, standard 'not recorded' case -- not visible until 2026-08-16 (see known_violations: sentinel_replacement_data_loss). '-1' (1,757 rows) is a smaller, systematic 'not determined' sentinel, undocumented by ICES; '-5'/'-95' (1 row each) are isolated anomalies."
+
 # Known Data Quality Issues (Tier 1 validation, 2026-07-29)
 known_violations:
+  - id: "sentinel_replacement_data_loss"
+    severity: "opus-internal"
+    field: "all numeric columns"
+    table: "HH, HL, CA, LT"
+    issue: "Archive-building pipeline (data-raw/archive_04_parse_phase2.R, archive_05_backfill_lt_partitions.R) applied a blanket -9/-99/-999/-1/-5/-95/-100/-900/88888888 -> NA conversion, unconditionally, across every column, before any curation could see the real values."
+    extent: "101 (table, column, sentinel) combinations found with real, non-zero counts in a full re-scan of .datras/*.parquet after the fix. Confirmed materially destructive for at least: HH.Tickler (113,645 of 145,958 rows, 78% -- icesVocab's own '-9 = No ticklers are allowed' code, not a missing value), LT.Tickler (30,690 of 75,310, 41%), and CA's composite-key fields HaulNo/StNo (the sentinel this pipeline bug directly caused to be misdocumented below as a null in the interim, see ca_haulno_unlinkable_to_hh)."
+    implication: "This is not an ICES-side issue -- it was opus's own archive-building code, introduced between 2026-08-05 and 2026-08-08 (confirmed via git history), after several curation passes (e.g. the 2026-08-10 Tickler/CatIdentifier vocab-coverage 'zero gaps' finding) had already run against the silently-scrubbed archive. Fixed 2026-08-16 by removing the blanket conversion entirely (same architectural reasoning as the enum-detection fix: sentinel meaning is a curation conclusion, not a type-casting one, and can't be decided at the parsing stage without erasing the evidence needed to decide it correctly downstream). Full archive rebuilt from raw XML afterward. See vignettes/articles/technical-notes.md section 4 for the full discovery/fix/verification story and the quantity-vs-ordinal/id/enum triage for telling 'standard missing' fields apart from 'field-specific meaning' ones."
+    discovered: "2026-08-16"
+    resolved: "2026-08-16"
+
   - id: "ca_haulno_unlinkable_to_hh"
     severity: "D"
     field: "HaulNo"
@@ -34,8 +54,17 @@ known_violations:
     issue: "-9 sentinel (not null); affected rows unlinkable to HH via any key"
     extent: "288,581 rows (4.92% of 5,865,076) carry HaulNo == -9; 0 true nulls in either table"
     implication: "Rows do not match any HH haul on the documented composite key (Survey, Year, Quarter, Country, Ship, Gear, StNo, HaulNo), even with HaulNo dropped -- not a join-key problem, genuinely orphaned CA records. Surfaces as a D04_range violation (declared range [0, 82483] excludes -9), not D01_required (confirmed via op_flag_violations(), 2026-08-07)."
-    verified: "2026-08-07, against full local archive (.datras/parquet/{HH,CA}.parquet)"
+    verified: "2026-08-07, against full local archive (.datras/parquet/{HH,CA}.parquet). Re-verified 2026-08-16 against the rebuilt .datras/{HH,CA}.parquet after fixing sentinel_replacement_data_loss above -- this exact sentinel had been silently misrepresented as a null in the archive between ~2026-08-08 and 2026-08-16 (the pipeline bug's own doing); the underlying fact (4.92%, -9, not null) is unchanged from the original finding, only the interim archive's own representation of it was ever wrong."
     discovered: "2026-07-29 (mechanism corrected 2026-08-07; originally miscategorized as 305,276 null values / D01_required)"
+
+  - id: "lt_bts_2025_q1_orphaned"
+    severity: "D"
+    field: "composite key (Survey, Year, Quarter, Country, Platform, Gear, StationName, HaulNumber)"
+    table: "LT"
+    issue: "2,026 of 75,310 LT rows (2.7%) do not match any HH haul on the composite key"
+    extent: "2,010 of the 2,026 (99.2%) are Survey=BTS, Year=2025, Quarter=1; the remaining 16 are Survey=NS-IBTS (10 at Year=2026/Quarter=1, 6 at Year=2025/Quarter=3), diagnosed 2026-08-16."
+    implication: "Two distinct causes, not one. BTS/2025/Q1: HH's own submission is genuinely empty (0 rows -- matches the EMPTY_RECORDS issue already recorded for that exact cell during the 2026-08-16 archive rebuild), while LT independently has real litter-assessment records for that same survey/year/quarter -- a genuine ICES-side submission gap on HH's side, not an LT or opus data-quality problem. The 16 NS-IBTS rows are NOT the same mechanism: HH has abundant real data for both exact cells (357 rows for 2025/Q3, 331 for 2026/Q1), so this isn't a missing-submission gap -- cause not yet diagnosed, same class of open question as ca_haulno_tail_mismatch below."
+    discovered: "2026-08-16"
 
   - id: "ca_haulno_tail_mismatch"
     severity: "D"
@@ -46,12 +75,24 @@ known_violations:
     implication: "Cause not yet diagnosed; distinct from the -9 sentinel issue above."
     discovered: "2026-08-07"
 
-  - id: "swell_height_numeric"
+  - id: "swell_height_type_mismatch"
     severity: "D"
     field: "SwellHeight"
-    table: "HH"
-    issue: "Possible encoding issues"
-    discovered: "2026-07-29"
+    table: "HH, LT"
+    issue: "icesVocab declares this field an enum (codes H/L/M/N/NR/VH, an unprefixed 'SwellHeight' key); real archive data in both tables is continuous numeric, not categorical codes."
+    extent: "HH: 0 true nulls; 108,698 of 145,958 rows (74.47%) carry the standard -9 'not recorded' sentinel; 37,260 are real measurements (0-60m). LT: 17,370 true nulls; 19,005 of 57,940 non-null (32.80%) carry -9; 38,935 are real measurements (0-25m). LT's SwellHeight is confirmed a byte-for-byte copy of HH's own value for the same haul (55,914 of 55,914 matched non-null rows identical, 2026-08-16)."
+    implication: "opus's own spec retyped both as number(quantity), range 0-13m (WindSpeed used as an independent co-parameter check: median WindSpeed rises smoothly with SwellHeight through 13m, consistent with genuine rough-weather readings, but breaks down sharply above it -- e.g. 15m/5 m/s, 20m/4 m/s -- matching the wind speeds already seen at the values these look like decimal-shifted versions of, e.g. 1.5m, 2.0m). 23 rows above 13m excluded as data-entry errors on this evidence."
+    verified: "2026-08-16, against full local archive (.datras/{HH,LT}.parquet, rebuilt after fixing sentinel_replacement_data_loss above)"
+    discovered: "2026-07-29 (HH only); LT's own instance never independently checked until 2026-08-12"
+    resolved: "2026-08-16"
+
+  - id: "swell_height_vocab_unused"
+    severity: "C"
+    field: "SwellHeight"
+    issue: "icesVocab's own single 'SwellHeight' code list (H/L/M/N/NR/VH height classes) is used by neither HH's nor LT's real submissions."
+    extent: "0 of 37,260 real (non-sentinel) HH values and 0 of 38,935 real LT values use any of the vocab's 6 codes; both tables submit a continuous metric measurement instead. Exhaustively confirmed no second, differently-named vocab key exists for this concept: checked all 580 registered icesVocab keys by substring match on both Key and Description, 2026-08-16."
+    implication: "Not a data-quality problem on ICES's side -- a candidate for institutional-governance escalation: either this vocabulary is aspirational/unused for DATRAS's own Tier 1 exchange, or it is genuinely used by some other DATRAS table or submission context not covered here. Candidate for data-raw/ICES_ISSUE_REPORT.md."
+    discovered: "2026-08-16"
 
   - id: "icesVocab_gaps"
     severity: "C"
@@ -62,7 +103,9 @@ known_violations:
 # Processing directives
 processing:
   phase2:
-    apply_sentinels: true
+    apply_sentinels: false  # removed 2026-08-16 (see sentinel_replacement_data_loss above) --
+                             # this stage now preserves raw values unchanged; sentinel
+                             # interpretation happens downstream, per-field, in curation
     strict_type_casting: true
     record_issues: true
 

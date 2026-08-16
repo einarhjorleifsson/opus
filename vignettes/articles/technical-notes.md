@@ -267,6 +267,67 @@ Fields with >20 enum codes are stored as `examples` instead of full value maps. 
 
 ---
 
+## 4. Global Sentinel Replacement: A Silent Data-Destruction Bug, and Why -9 Doesn't Mean the Same Thing Everywhere
+
+**Date:** 2026-08-16  
+**Status:** Implemented
+
+### The Discovery
+
+Investigating a `SwellHeight` type mismatch (icesVocab declares it an enum; opus's curated spec had HH correctly typed as a numeric quantity, but LT was still wrongly typed `enum`) led to checking `LT.SwellHeight`'s real archive values directly. They were continuous numbers, not the vocab's six codes — consistent with HH. But cross-checking `CA.HaulNo`, a field with an *already-documented* known issue (`ca_haulno_unlinkable_to_hh`: 288,581 rows carry a `-9` sentinel, explicitly "not null"), the real archive showed the opposite: 288,581 **true nulls**, zero literal `-9` values. Same count, contradictory representation.
+
+### Root Cause
+
+`data-raw/archive_04_parse_phase2.R` and `archive_05_backfill_lt_partitions.R` each carried a `GLOBAL_SENTINELS` list (`-9, -99, -999, -1, -5, -95, -100, -900, 88888888`) and a `replace_sentinels()` function applying it **unconditionally, across every column**, before type casting. Git history confirms this did not exist in the pipeline's original 2026-08-05 commit; it appears by the 2026-08-08 reorg commit — i.e. it was introduced *after* the `-9` sentinel had already been verified as real, non-null data on 2026-08-07. Nobody connected the two changes until this investigation.
+
+Checking raw XML directly confirmed the mechanism: `CA_BTS_2004_Q3`'s own file has 513 literal `<HaulNo>-9</HaulNo>` tags. The archive-building pipeline was silently converting every one of them to `NA`.
+
+### The Scale
+
+Not confined to one field. A full re-scan of the archive for all 9 sentinel values across every numeric column, once the values were recoverable, found **101 (table, column, sentinel) combinations with real, non-zero counts**. Most dramatically: `HH.Tickler` — `-9` is icesVocab's own documented code for *"No ticklers are allowed"*, a real, meaningful answer, not a missing value — was `-9` for **113,645 of 145,958 rows (78%)**. Not a rare edge case; it was the modal value for the entire column, and the bug had been silently erasing it.
+
+### Why This Was Architecturally Wrong
+
+`archive_00_wsdl_types.R`'s own design already establishes the relevant principle, just applied to a different question: type-casting relies solely on live WSDL and *deliberately doesn't know the word "enum" exists*, because enum-ness is a curation conclusion reached by analyzing real data — depending on it at the parsing stage is circular (you can't discover a field is a clean enum before you can reliably read it at all).
+
+Sentinel *meaning* is the same kind of curation conclusion. Whether `-9` means "genuinely absent" or a real, specific code is something you decide by looking at real data (or icesVocab) — not something the raw XML→parquet stage should decide for you. Worse: if that stage erases the value before anyone can look, curation can never discover it was meaningful later, no matter how carefully it's done. That's exactly what happened to `Tickler`: a 2026-08-10 vocab-coverage check concluded "zero gaps" for its enum — correctly, given what it could see — but it was checking an archive that had already lost every `-9` row. The conclusion wasn't wrong; the data it was drawn from was incomplete in a way nobody knew about.
+
+### The Fix
+
+Removed `GLOBAL_SENTINELS`/`replace_sentinels()` entirely from both scripts. Validated on a single known file first (`HaulNo` in `CA_BTS_2004_Q3` now shows all 513 real `-9` values, correctly typed `integer`, not silently `NA`). Then rebuilt the full archive from raw XML for all four tables (`Success: 2968 | Error: 813`, identical to the already-documented 2026-08-08/09 run; all 813 "errors" confirmed still the known-benign `EMPTY_RECORDS` case — no new failure mode introduced).
+
+### Telling "Standard Missing" Apart from "Field-Specific Meaning"
+
+Not every field needs the same scrutiny. There's a principled shortcut:
+
+- **`number(quantity)` fields** (continuous physical measurements — temperatures, depths, speeds, directions, weights, distances) **can only plausibly mean "not recorded"** for a sentinel value. A continuous quantity has no way to encode a specific *meaning* the way a discrete code can — there's no such thing as "`-9` degrees means something specific" the way "`-9` ticklers means none were used." This matches the global sentinel convention already documented in `DATRAS-known-issues.yaml`'s `sentinels: global`.
+- **`number(ordinal)`/`number(id)`/`enum` fields are where a real, field-specific meaning is actually possible**, because these are code-like by nature. A much shorter list to check individually.
+
+Verified so far, each against real archive data (not assumed): `Tickler` (HH, LT) — `-9` = "No ticklers are allowed", a real code, not missing. `SpeciesCategory` (HL) — `-9` = "Unknown", already correctly declared. `Age` (CA) — `-9` (1,995,814 rows, 34%) reads as standard "not recorded", same basis as the smaller, already-documented `-1`/`-5`/`-95` cluster. `DateofCalculation` (HH/HL/CA) — `-9` reads as "not yet (re)calculated", a server-side processing fact, standard "not recorded" in spirit. `SwellHeight` (HH, LT) — see `swell_height_type_mismatch`/`swell_height_vocab_unused` in `DATRAS-known-issues.yaml`.
+
+**Not yet individually verified:** roughly 26 more enum fields declare `-9` as one of their own curated codes (`GearExceptions`, `DoorType`, `DataType`, `Rigging`, `ThermoCline`, `PelagicSamplingType`, `SpeciesSex`, `LengthCode`, `DevelopmentStage`, `LengthType`, `IndividualSex`, `AgePlusGroup`, `AgeSource`, `AgePreparationMethod`, `OtolithGrading`, `MaturityScale`, `LTSRC`, and others) — structurally similar to `Tickler`, but only `Tickler` has had the raw-XML/icesVocab cross-check actually done.
+
+### A Useful Cross-Check: Co-Parameters
+
+Where a value's plausibility is ambiguous (e.g., deciding whether an extreme `SwellHeight` reading is real or a decimal-point entry error), a physically-related co-parameter can corroborate or refute it independently. `WindSpeed` at the same haul turned out to be exactly this for `SwellHeight`: median `WindSpeed` rises smoothly with `SwellHeight` for values later confirmed genuine (8m→24 m/s, 9m→26, 12m→28, 13m→24), and drops implausibly low for values later excluded as errors (15m→5 m/s, 20m→4) — a real discontinuity, not an arbitrary cutoff. Worth remembering as a technique, not just a one-off fix.
+
+### Shared Fields Are Sometimes Literal Copies, Not Independent Observations
+
+A related discovery along the way: `LT.SwellHeight` isn't independently measured at all — it's HH's own value, recorded again on the LT record for the same haul (confirmed by joining on the full composite key: 55,914 of 55,914 matched non-null rows identical, zero exceptions). The same check across ~35 other "shared-name" fields in HL/CA/LT found the same pattern holds almost everywhere (gear geometry, positions, environmental readings — all 100% or near-100% identical to HH), with a few real exceptions worth their own look: `RecordHeader` (0% match — a record-type discriminator, correctly different by design), `CA.GearExceptions` (92.27%), and `LT.Rigging`/`HaulValidity` (95.33%/99.97%). Where a field is confirmed a literal copy, its spec (type/range/units) should be forced identical to HH's rather than independently re-derived per table — that divergence is exactly what had gone unnoticed for `SwellHeight` before this investigation.
+
+### Practical Guidance for Anyone Reading `.datras/*.parquet` Directly
+
+Before computing statistics on this archive without going through the curated spec: `-9` (and the other 8 sentinel values) are now **real, literal values**, not silently removed. A naive `mean(Turbidity)` today would be badly wrong — 99.86% of that column's "measurements" are the sentinel, not real turbidity. Always check the field's declared `range`/`values` in `inst/DATRAS-data-dict.yaml` first, or use `op_flag_violations()`, which already treats declared out-of-range/non-enum values as violations.
+
+### References
+
+- `data-raw/archive_04_parse_phase2.R`, `data-raw/archive_05_backfill_lt_partitions.R` — the fix and its own header commentary
+- `data-raw/archive_00_wsdl_types.R` — the earlier enum-detection precedent this fix mirrors
+- `inst/DATRAS-known-issues.yaml` — `sentinel_replacement_data_loss`, `ca_haulno_unlinkable_to_hh`, `swell_height_type_mismatch`, `swell_height_vocab_unused`, and the `sentinels: field_specific` entries for `Tickler`/`Age`
+- AGENTS.md Working Principle 8 ("Verify empirically") and Principle 9 ("Audit exhaustively")
+
+---
+
 ## How to Contribute Technical Notes
 
 When you discover something worth documenting that doesn't fit other docs:

@@ -54,6 +54,7 @@ apply_col_update <- function(dict, table, field, updates) {
   if (!is.null(updates$details)) {
     col$details <- if (is.null(col$details)) updates$details else paste(col$details, updates$details)
   }
+  if (!is.null(updates$todo))        col$todo <- updates$todo
   dict$tables[[ti]]$columns[[ci]] <- col
   dict
 }
@@ -67,6 +68,8 @@ apply_table_update <- function(dict, table, updates) {
   if (!is.null(updates$details))     tbl$details <- updates$details
   if (!is.null(updates$origin))      tbl$origin <- updates$origin
   if (!is.null(updates$constraints)) tbl$constraints <- updates$constraints
+  if (!is.null(updates$todo))        tbl$todo <- updates$todo
+  if (!is.null(updates$definitions)) tbl$definitions <- updates$definitions
   dict$tables[[ti]] <- tbl
   dict
 }
@@ -90,7 +93,7 @@ get_vocab_enum_values <- function(key) {
 # One row per correction. Add to this list as curation finds more; nothing
 # here is inferred or guessed -- each entry traces to a specific, verified
 # disagreement between what ICES's WSDL declares and what the field
-# actually is/contains (see `mechanism`). All four of these fields happen
+# actually is/contains (see `mechanism`). All five of these fields happen
 # to be unrenamed (legacy name == curated name), so no key changed here
 # during the 2026-08-09 legacy-keying restructure.
 corrections <- list(
@@ -127,15 +130,47 @@ corrections <- list(
   list(
     table = "HH", field = "SwellHeight", type = "number(quantity)",
     units = "m",
-    range = list(0.0, 3.0),
+    range = list(0.0, 13.0),
     values = NULL,
     issue_id = "swell_height_type_mismatch",
     mechanism = paste(
-      "icesVocab declares this an enum (codes H/L/M/N/NR/VH for height classes).",
-      "Real HH archive data (verified 2026-07-30) contains continuous numeric values",
-      "(0.0-2.0+ metres), not categorical codes. Archive and ICES specification",
-      "disagree on whether this is a measured quantity or a categorized class.",
-      "Candidate for DATRAS-known-issues.yaml formal escalation to imbus/ICES."
+      "icesVocab declares this an enum (codes H/L/M/N/NR/VH for height classes),",
+      "but real HH archive data shows this is a measured quantity, not a",
+      "categorized class. Full picture (rechecked 2026-08-16 after removing an",
+      "unrelated archive-pipeline bug that had been silently converting this",
+      "field's own -9 sentinel to NA): 0 true nulls; 108,698 rows (74.47% of all",
+      "145,958) carry the standard DATRAS -9 'not recorded' sentinel; the",
+      "remaining 37,260 are real, continuous numeric measurements (0-60m).",
+      "Range set to 0-13m using WindSpeed as an independent co-parameter check:",
+      "median WindSpeed rises smoothly with SwellHeight through 13m (8m/24,",
+      "9m/26, 10m/22, 12m/28, 13m/24 m/s), consistent with genuine rough-weather",
+      "readings, but breaks down sharply above it (15m/5, 16m/8, 20m/4, 25m/13,",
+      "30m/7, 60m/16 m/s -- implausibly calm for the claimed swell height, and",
+      "matching the wind speeds already seen at 1.5m/1.6m/2.0m/2.5m/3.0m/6.0m,",
+      "the values these look like decimal-shifted versions of). The 23 rows",
+      "above 13m are excluded as data-entry errors on this evidence, not",
+      "genuine extreme swells. Candidate for DATRAS-known-issues.yaml formal",
+      "escalation to imbus/ICES -- both the type mismatch and the fact that",
+      "neither table's real data uses icesVocab's own declared code scheme at all."
+    )
+  ),
+  list(
+    table = "LT", field = "SwellHeight", type = "number(quantity)",
+    units = "m",
+    range = list(0.0, 13.0),
+    values = NULL,
+    issue_id = "swell_height_type_mismatch",
+    mechanism = paste(
+      "Same known issue as HH's own SwellHeight above (icesVocab declares a single",
+      "unprefixed 'SwellHeight' key, an enum of H/L/M/N/NR/VH height classes -- the",
+      "seed stage applies it here too since the key resolves the same way for LT).",
+      "This field is not independently observed by LT: it is HH's own SwellHeight,",
+      "recorded again on the LT record for the same haul (confirmed 2026-08-16 by",
+      "joining LT to HH on the full 8-field composite key -- 55,914 of 55,914",
+      "rows where both are non-null carry an identical value, zero exceptions).",
+      "Range, exclusion boundary, and evidence (including the WindSpeed",
+      "co-parameter check) are therefore HH's, not independently re-derived here --",
+      "see HH's own SwellHeight entry above for the full reasoning."
     )
   )
 )
@@ -273,6 +308,18 @@ field_specs <- list(
   list(table = "HH", field = "MaxTrawlDepth", type = "number(quantity)", units = "m", range = c(0, 712),
        details = "Same inferred-unit caveat as MinTrawlDepth above."),
 
+  list(table = "LT", field = "Rigging",
+       details = paste(
+         "Mostly a copy of HH's own Rigging for the same haul, but 3,419 of",
+         "73,284 matched non-null rows (4.67%, checked 2026-08-16) diverge --",
+         "almost entirely a near-symmetric swap between just two codes",
+         "(FB<->FW: 1,978 and 1,441 rows respectively), consistent with",
+         "independent recording variance between HH's haul-time entry and",
+         "LT's own litter-assessment-time entry, not a one-directional error."
+       )),
+  list(table = "LT", field = "HaulVal",
+       details = "Near-total copy of HH's own HaulVal for the same haul: only 21 of 73,263 matched non-null rows differ (0.03%, checked 2026-08-16), a small A<->I swap, negligible."),
+
   # ---- HH's BottomDepth concept / LT's own BottomDepth (see below) --------
   # The only one of 40 shared-concept fields whose LEGACY name diverges by
   # table (checked exhaustively 2026-08-09, all 40 shared_field_specs
@@ -306,11 +353,11 @@ field_specs <- list(
   # Unrenamed on every table (legacy name == curated name), so this key is
   # unchanged by the 2026-08-09 restructure.
   list(table = "HH", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
-       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later)."),
+       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (11,574 rows, 7.93% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
   list(table = "HL", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
-       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later)."),
+       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (1,050,496 rows, 7.64% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
   list(table = "CA", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
-       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later)."),
+       details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (337,562 rows, 5.76% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
   list(table = "LT", field = "DateofCalculation", type = "number(ordinal)", range = list(20151127L, Inf),
        details = "Same open-upper-bound, ICES-Datacenter-inserted basis as HH/HL/CA's DateofCalculation, but this table's OWN verified minimum (2015-11-27) is genuinely years later than theirs (2012-04-19) -- consistent with LT/litter reporting being a newer addition to DATRAS than the main haul/length/age exchange."),
 
@@ -321,7 +368,25 @@ field_specs <- list(
        details = "Official WoRMS AphiaID as submitted by the data provider -- contrast with Valid_Aphia, the ICES Datacenter's own validated/corrected version of the same concept, inserted server-side (see Valid_Aphia's own details below)."),
   list(table = "HL", field = "CatIdentifier", type = "enum",
        values = get_vocab_enum_values("TS_CatIdentifier"),
-       details = "icesVocab's TS_CatIdentifier resolves this as a controlled, leveled code list (56 active codes: '1. Level' through '55. Level', plus a '-9'/'Unknown' sentinel) -- not an open numeric ID, confirming this field's own already-documented shape (real values {1-5, 11-14, 21-23, 31}, a coded scheme, not a sequence, verified 2026-07-29 against the full archive; not this field's own values map until the full-field vocab sweep found it, data-raw/build_vocab_field_audit.R, Issue 9). Re-checked 2026-08-10 directly against the real archive: all 13 real distinct values fully covered, zero gaps either direction. 43 of the 56 codes are valid ICES definitions not yet observed in this archive."),
+       details = paste(
+         "icesVocab's TS_CatIdentifier resolves this as a controlled, leveled code",
+         "list (56 active codes: '1. Level' through '55. Level', plus a",
+         "'-9'/'Unknown' sentinel) -- not an open numeric ID, confirming this",
+         "field's own already-documented shape (a coded scheme, not a sequence,",
+         "verified 2026-07-29 against the full archive; not this field's own",
+         "values map until the full-field vocab sweep found it,",
+         "data-raw/build_vocab_field_audit.R, Issue 9). Re-checked 2026-08-10 --",
+         "but against data an archive-pipeline bug (known-issues.yaml's",
+         "sentinel_replacement_data_loss) had already silently scrubbed -9 out of:",
+         "at the time, 13 real distinct values were found, not including -9.",
+         "Re-verified 2026-08-16 after that bug's fix: 14 real distinct values",
+         "(-9, 1-5, 11-14, 21-23, 31), still zero gaps against the vocab's 56",
+         "codes either direction; 42 of the 56 are valid ICES definitions not yet",
+         "observed in this archive. Live WSDL (getHLdata) declares this field int,",
+         "not string -- an accepted, permanent M01 divergence between the",
+         "WSDL-driven archive and this curated enum spec (see Valid_Aphia's own",
+         "note for the general pattern), not a bug to fix by changing either side."
+       )),
   list(table = "HL", field = "TotalNo", type = "number(quantity)", range = c(0, 3581592),
        details = "Per the field's own description, TotalNo=SUM(HLNoAtLngt); values in the hundreds of thousands and non-integer values (7.7% of populated rows) both trace to the same documented mechanism -- DataType C records are standardised to 60 minutes, which can inflate very abundant small-bodied catches to large, non-integer counts. Top values all have real support (9-30 occurrences each, a smooth tail), not isolated errors."),
   list(table = "HL", field = "NoMeas", type = "number(quantity)", range = c(0, 578731),
@@ -332,7 +397,8 @@ field_specs <- list(
   list(table = "HL", field = "CatCatchWgt", type = "number(quantity)", units = "g", range = c(0, 35568000),
        details = "-900 (2562 rows) and -100 (1 row) are excluded as a 'not weighed' placeholder, the same pattern seen in several HH fields. The high end is genuine: top values all have real support (3-18 occurrences each)."),
   list(table = "HL", field = "LngtClass", type = "number(quantity)", range = c(0, 4500),
-       details = "Unit varies by the sibling LngtCode field (mm or cm; see LngtCode's own values map), so no fixed units here. Two isolated outliers excluded, 2026-07-29: 11930 (LngtCode '.', i.e. 11.93m) and 900 (LngtCode '1', i.e. 9m) -- each a lone occurrence far above the next-highest real value. Everything else, including a cluster around 420-460 under LngtCode '1' (4.2-4.6m -- large but not implausible for occasional large elasmobranch/tuna bycatch), is kept as-is: this is a first curation pass from data patterns alone, not a domain-expert review, and a tighter bound wasn't asserted without one. CA's own LngtClass is curated separately (a different sampling population, not assumed identical -- see CA's own pass)."),
+       details = "Unit varies by the sibling LngtCode field (mm or cm; see LngtCode's own values map), so no fixed units here. Two isolated outliers excluded, 2026-07-29: 11930 (LngtCode '.', i.e. 11.93m) and 900 (LngtCode '1', i.e. 9m) -- each a lone occurrence far above the next-highest real value. Everything else, including a cluster around 420-460 under LngtCode '1' (4.2-4.6m -- large but not implausible for occasional large elasmobranch/tuna bycatch), is kept as-is: this is a first curation pass from data patterns alone, not a domain-expert review, and a tighter bound wasn't asserted without one. CA's own LngtClass is curated separately (a different sampling population, not assumed identical -- see CA's own pass).",
+       todo = "Confirm with a domain expert whether the 420-460 (4.2-4.6m) cluster is genuinely plausible occasional large elasmobranch/tuna bycatch, or should be excluded like the two isolated outliers above it."),
   list(table = "HL", field = "HLNoAtLngt", type = "number(quantity)", range = c(0, 940339.35),
        details = "Same DataType C standardisation basis as TotalNo above. Top values are each a unique one-off but decline smoothly with no marker/gap pattern, consistent with genuine (if rare) very large hauls of abundant small-bodied species. CA's own NumberAtLength (CANoAtLngt) is curated separately (a different sampling population -- aged individuals only, not the whole catch -- so not assumed identical)."),
   list(table = "HL", field = "Valid_Aphia",
@@ -375,14 +441,20 @@ field_specs <- list(
        examples = list("1", "2", "3", "4", "5"),
        details = "Reads as a sequential per-sample identifier (dense run of small integers-as-strings), open-ended and illustrative only, not an exhaustive domain -- 170,774 distinct values, only 1,118,002 of 5,966,950 rows populated (~18.7%). Verified 2026-07-29 against the full CA archive."),
   list(table = "CA", field = "GenSamp", type = "enum",
-       values = list("Y", "N"),
-       details = "Field's own description ('Flag whether genetic sample was taken') confirms boolean intent; verified 100% clean two-value split against the full archive, 2026-07-29 (N: 829,547 rows; Y: 13,793; zero other values across 843,340 non-null rows, 5,123,610 unpopulated)."),
+       values = list("-9", "Y", "N"),
+       details = "Field's own description ('Flag whether genetic sample was taken') confirms boolean intent. Originally verified 2026-07-29 as a clean two-value Y/N split with zero -9 -- but that check ran against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE) unconditionally scrubs literal -9 to NA for every numeric-looking column regardless of whether -9 is that field's own documented sentinel (see this file's own header, and known-issues.yaml's sentinel_replacement_data_loss for the analogous bug in opus's own now-fixed pipeline). Re-verified 2026-08-16 directly against the independently-built .datras/CA.parquet (5,865,076 rows): -9 is present and dominant (5,021,736 rows, 85.6%), not absent; N: 829,547 (14.1%); Y: 13,793 (0.24%); zero other values. No icesVocab entry exists for this field under either name (ICES_ISSUE_REPORT.md Issue 8's own table already records this as 'no vocab exists') -- -9 reads as the standard generic-missing sentinel, the only meaning a simple boolean flag has room for."),
   list(table = "CA", field = "StomSamp", type = "enum",
-       values = list("Y", "N"),
-       details = "Field's own description ('Flag whether stomach sampling was performed') confirms boolean intent; verified 100% clean two-value split against the full archive, 2026-07-29 (N: 1,018,036 rows; Y: 39,403; zero other values across 1,057,439 non-null rows, 4,909,511 unpopulated)."),
+       values = list("-9", "Y", "N"),
+       details = "Field's own description ('Flag whether stomach sampling was performed') confirms boolean intent. Originally verified 2026-07-29 as a clean two-value Y/N split with zero -9 -- same obus/icesDatras fix_types=TRUE scrubbing caveat as GenSamp above. Re-verified 2026-08-16 directly against .datras/CA.parquet: -9 is present and dominant (4,861,583 rows, 82.9%); N: 964,090 (16.4%); Y: 39,403 (0.67%); zero other values. Same 'no vocab exists' / generic-missing reasoning as GenSamp above."),
   list(table = "CA", field = "ParSamp", type = "enum",
-       values = list("Y", "N"),
-       details = "Field's own description ('Flag whether parasites sampling was performed') confirms boolean intent; verified 100% clean two-value split against the full archive, 2026-07-29 (N: 893,790 rows; Y: 76,620; zero other values across 970,410 non-null rows, 4,996,540 unpopulated)."),
+       values = list("-9", "Y", "N"),
+       details = "Field's own description ('Flag whether parasites sampling was performed') confirms boolean intent. Originally verified 2026-07-29 as a clean two-value Y/N split with zero -9 -- same obus/icesDatras fix_types=TRUE scrubbing caveat as GenSamp above. Re-verified 2026-08-16 directly against .datras/CA.parquet: -9 is present and dominant (4,948,612 rows, 84.4%); N: 839,844 (14.3%); Y: 76,620 (1.31%); zero other values. Same 'no vocab exists' / generic-missing reasoning as GenSamp above."),
+  list(table = "CA", field = "AgeSource", type = "enum",
+       values = get_vocab_enum_values("SampleType"),
+       details = "Seeded from TS_AgeSource (name-match to the field, per ICES_ISSUE_REPORT.md Issue 8's own table -- '-9, LB, OT, SC, VR'), but that key's OWN icesVocab description is a redirect: 'see SampleType', not an authoritative code list in its own right. Real CA archive data (verified 2026-08-16): only -9 (4,757,200 rows) and the literal word 'otolith' (1,107,876 rows, lowercase) appear -- zero overlap with TS_AgeSource's LB/OT/SC/VR codes, contradicting Issue 8's 'full match' verdict for this field (that check evidently name-matched TS_AgeSource without testing per-code archive coverage). SampleType (bare prefix, the redirect target) resolves the discrepancy exactly: its own code list includes 'otolith' verbatim, lowercase, as the code itself (not just the description) -- an exact match, not a coincidence. Candidate for correcting Issue 8's table and inst/DATRAS-vocab-correction.csv; not an ICES-reportable gap in the vocab's actual coverage, since icesVocab does have the right codes once the redirect is followed."),
+  list(table = "CA", field = "AgePrepMet", type = "enum",
+       values = get_vocab_enum_values("PreparationMethod"),
+       details = "Same redirect pattern as AgeSource above: seeded from TS_AgePrepMet (name-match, Issue 8's table -- '-9, BK, BR, CP, NO, WA, WO'), but that key's own icesVocab description says 'see PreparationMethod', not an authoritative list itself. Real CA archive data (verified 2026-08-16): -9, AL, ALEt, ALR, BB, Br, SS, Se -- zero overlap with TS_AgePrepMet's codes, contradicting Issue 8's 'full match' verdict here too. PreparationMethod (bare prefix, the redirect target, 48 codes) contains every one of these real values exactly. Same candidate-for-correction note as AgeSource above -- an opus-side vocab-key resolution fix, not an ICES-reportable gap."),
   list(table = "CA", field = "SpecCode", type = "number(id)",
        examples = c(213L, 126326L, 127118L, 158513L, 1667212L),
        constraints = list("required"),
@@ -392,9 +464,24 @@ field_specs <- list(
        details = "CA's own instance was missed when HL's Valid_Aphia was originally filled (found 2026-07-29 via validate-spec's S07 check) -- same concept as HL's Valid_Aphia (ICES Datacenter's validated AphiaID) but a different sampling population (aged individuals only), so queried independently rather than assumed identical (Working principles, rule 12). 667 distinct values, 0 unpopulated (always present). Verified 2026-07-29 against the full CA archive."),
   list(table = "CA", field = "LngtClass", type = "number(quantity)", range = c(0, 5630),
        details = "Unit varies by the sibling LngtCode field (mm or cm; see LngtCode's own values map), so no fixed units here. One isolated outlier excluded, 2026-07-29: 932 (LngtCode '1', i.e. 9.32m) -- a lone occurrence with a 2.3x gap to the next-highest value (405). Curated separately from HL's own LngtClass: CA's population is aged individuals only, a different (and differently distributed) subset from HL's whole-catch length-frequency tally, so the two are not assumed identical (Working principles, rule 12)."),
+  list(table = "CA", field = "GearEx",
+       details = paste(
+         "Mostly a copy of HH's own GearExceptions for the same haul (92.27% of",
+         "5,563,036 matched non-null rows identical, checked 2026-08-16), but in",
+         "430,289 rows (7.73%) CA carries a real code (S, SB, B, D, MY, R, or",
+         "MN) where HH has only the generic '-9' placeholder for the same",
+         "haul -- CA never contradicts a real HH code, only supplements HH's",
+         "own '-9' with something more specific. Not forced identical to HH's",
+         "spec as a result (contrast SwellHeight above, a genuine byte-for-byte",
+         "copy): this field carries real information HH's own copy doesn't have."
+       )),
   list(table = "CA", field = "Age", type = "number(quantity)", units = "years", range = c(0, 99),
        details = paste(
-         "-1 (1757 rows) reads as a systematic, undocumented 'not determined' sentinel; -5 and -95 (1 row",
+         "-9 (1,995,814 rows, 34.03% of all 5,865,076 CA rows -- not visible until an unrelated",
+         "archive-pipeline bug that had been silently converting it to NA was fixed 2026-08-16) reads as",
+         "the standard DATRAS 'not recorded' convention and is excluded on the same basis as the -1/-5/-95",
+         "cluster below, just far larger. -1 (1757 rows) reads as a systematic, undocumented 'not",
+         "determined' sentinel; -5 and -95 (1 row",
          "each) are isolated anomalies -- all three excluded. 99 (54 rows) is kept: real, repeated support,",
          "not a fluke -- reads like a plus-group/max-age reporting convention, though that mechanism isn't",
          "confirmed here, just noted as an observation.",
@@ -403,7 +490,8 @@ field_specs <- list(
          "and getCAdata's own live ASMX response; the real field is 'Age', used here). Since that row's",
          "old-name half is already wrong, its proposed new name isn't trusted either. Filed with ICES;",
          "not yet resolved upstream."
-       )),
+       ),
+       todo = "Confirm with a domain expert whether Age=99 (54 rows) is a genuine plus-group/max-age reporting convention, or should be treated as a placeholder like the -1/-5/-9/-95 sentinels above."),
   list(table = "CA", field = "CANoAtLngt", type = "number(quantity)", range = c(1, 218),
        details = "Distinct population from HL's own NumberAtLength (HLNoAtLngt): this counts aged individuals only, not the whole catch, hence the much smaller scale -- not assumed identical (Working principles, rule 12)."),
   list(table = "CA", field = "IndWgt", type = "number(quantity)", units = "g", range = c(0, 97000)),
@@ -431,7 +519,8 @@ field_specs <- list(
        details = "Marine Strategy Framework Directive region name; only 2 distinct values observed, 4,295 of 79,451 rows unpopulated. The EU MSFD framework has more than two regions overall -- DATRAS's own survey coverage may simply never reach the others, so not treated as a closed/exhaustive set. Verified 2026-07-29 against the full LT archive."),
   list(table = "LT", field = "PARAM",
        examples = list("A2", "LT-TOT", "A5", "A7", "A14"),
-       details = "Litter parameter/category code, no description present. icesVocab resolves a PARAM list (checked 2026-07-29, data-raw/datras_vocabulary.R) -- 'LT-TOT'='Litter - total' confirmed there among 1,938 total codes -- but 'A2'/'A3'/'A5'/'A6'/'A7'/'A14' do NOT appear in it under any description, despite being common real values here (checked directly, not just absent from a sample). A real discrepancy between this archive's own PARAM usage and icesVocab's published list, not investigated further -- candidate for DATRAS-known-issues.yaml once that registry exists (see AGENTS.md). Not retyped enum regardless: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT of 20. 50 distinct values, 2 of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT archive."),
+       details = "Litter parameter/category code, no description present. icesVocab resolves a PARAM list (checked 2026-07-29, data-raw/datras_vocabulary.R) -- 'LT-TOT'='Litter - total' confirmed there among 1,938 total codes -- but 'A2'/'A3'/'A5'/'A6'/'A7'/'A14' do NOT appear in it under any description, despite being common real values here (checked directly, not just absent from a sample). A real discrepancy between this archive's own PARAM usage and icesVocab's published list. Not retyped enum regardless: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT of 20. 50 distinct values, 2 of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT archive.",
+       todo = "File A2/A3/A5/A6/A7/A14 (undocumented in icesVocab's 1,938-code PARAM list despite being common real values) as a DATRAS-known-issues.yaml entry and ICES_ISSUE_REPORT.md candidate."),
   list(table = "LT", field = "LTSZC",
        examples = list("A", "B", "C", "D", "13"),
        details = "Litter size class code (mix of letter and numeric codes), no description present. icesVocab's LTSZC list confirms all five (checked 2026-07-29): 'A'='squared centimetre <5*5cm=25cm2' through 'D'='<50*50cm=2500cm2' (area-based classes), '13'='centimetre 15-49.99cm' (a length-based class) -- two different measurement bases coexisting under one code list. 23 of 41 official codes observed here; not retyped enum since 41 exceeds the seed's VOCAB_CODE_LIMIT of 20. 16,508 of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT archive."),
@@ -459,7 +548,28 @@ field_specs <- list(
   list(table = "LT", field = "LT_Weight", type = "number(quantity)", range = c(0, 1600000),
        details = "Unit varies by the sibling UnitWgt field (kg/haul for 46,673 rows, g/haul for 24,383, unspecified for 276), so no fixed units here. Two exclusions, 2026-07-29: -99 (3 rows, kg/haul) as an isolated sentinel-like anomaly, and 46,318,000 (1 row, g/haul) as a lone outlier roughly 29x the next-highest real value (1,600,000) -- an implausible ~46 tonnes of litter in one haul, almost certainly a data-entry error. The rest of the g/haul group's own large values (up to 1,600,000g = 1.6 tonnes) are kept: rare, but large litter catches (e.g. old fishing gear, major debris items) are plausible."),
   list(table = "LT", field = "LT_Items", type = "number(quantity)", range = c(0, 2323),
-       details = "UnitItem is 'items/haul' for all but 36 of 76,882 populated rows -- effectively a fixed count, no exclusions needed: no isolated outlier or repeating marker pattern, just a smooth decline from the max.")
+       details = "UnitItem is 'items/haul' for all but 36 of 76,882 populated rows -- effectively a fixed count, no exclusions needed: no isolated outlier or repeating marker pattern, just a smooth decline from the max."),
+
+  # Four fields whose seed-stage `values` already include -9, at high real
+  # prevalence (70-99.9%), but where a live icesVocab check (2026-08-16,
+  # via each field's own resolved key) finds either no vocab key at all or
+  # a resolved key with no -9 code -- unlike the ~20 other enum fields
+  # checked the same day, where -9 resolves to a real, if generic,
+  # "missing/unknown"-style label. -9 has never been externally confirmed
+  # as a genuine code for these four; it may simply be the raw archive's
+  # standard sentinel, swept into the seed's observed-values list without
+  # anyone distinguishing "real code" from "generic missing value" -- see
+  # vignettes/articles/technical-notes.md's own note on this sweep.
+  list(table = "HL", field = "DevStage",
+       todo = "Confirm whether -9 (99.80% of non-null rows) is a genuine DevelopmentStage code or just the generic missing-value sentinel -- no icesVocab key resolves for this field under either name, so nothing external confirms it either way."),
+  list(table = "HL", field = "LenMeasType",
+       todo = "Confirm whether -9 (71.59% of non-null rows) is a genuine LengthType code or just the generic missing-value sentinel -- no icesVocab key resolves for this field under either name, so nothing external confirms it either way."),
+  list(table = "CA", field = "PlusGr",
+       todo = "Confirm whether -9 (99.92% of non-null rows) is a genuine AgePlusGroup code or just the generic missing-value sentinel -- the resolved vocab key (AC_AgePlusGroup) has no -9 code at all, so nothing external confirms it either way."),
+  list(table = "HL", field = "LngtCode",
+       todo = "Confirm whether -9 (2.69% of non-null rows) is a genuine LengthCode code or just the generic missing-value sentinel -- no icesVocab key resolves for this field under either name, so nothing external confirms it either way."),
+  list(table = "CA", field = "LngtCode",
+       todo = "Confirm whether -9 is a genuine LengthCode code or just the generic missing-value sentinel -- no icesVocab key resolves for this field under either name, so nothing external confirms it either way.")
 )
 
 apply_field_spec <- function(dict, spec) {
@@ -560,7 +670,24 @@ shared_field_specs <- list(
        details = "Same -9-as-missing caveat as ShootLong above (0 degrees, the Prime Meridian, is a genuine North Sea value here and is kept)."),
   list(field = "Netopening", type = "number(quantity)", units = "m", range = c(0, 76)),
   list(field = "Tickler", type = "enum", values = get_vocab_enum_values("TS_Tickler"),
-       details = "icesVocab's TS_Tickler resolves this as a controlled tickler-chain count code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed' sentinel) -- not an open numeric quantity, found via the full-field vocab sweep (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly against the real archive: HH's 9 distinct values and LT's 3 (0, 5, 8; a subset of HH's own) are both fully covered, zero gaps either direction. 9 of the 32 codes are confirmed used across HH+LT (0, 1, 4, 5, 8, 10, 20, 21, 27); the rest are valid ICES definitions not yet observed in this archive."),
+       details = paste(
+         "icesVocab's TS_Tickler resolves this as a controlled tickler-chain count",
+         "code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed'",
+         "sentinel) -- not an open numeric quantity, found via the full-field vocab",
+         "sweep (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10",
+         "directly against the real archive -- but against data an archive-pipeline",
+         "bug (known-issues.yaml's sentinel_replacement_data_loss) had already",
+         "silently scrubbed -9 out of: at the time HH showed 9 distinct values and",
+         "LT 3, neither including -9. Re-verified 2026-08-16 after that bug's fix:",
+         "HH now shows 10 distinct values (-9, 0, 1, 4, 5, 8, 10, 20, 21, 27) and",
+         "LT 4 (-9, 0, 5, 8, a subset of HH's own); -9 turns out to be the",
+         "DOMINANT value in both (78% of HH, 41% of LT), not absent -- still zero",
+         "gaps against the vocab's 32 codes, either direction. Live WSDL",
+         "(getHHdata) declares this field int, not string -- an accepted,",
+         "permanent M01 divergence between the WSDL-driven archive and this",
+         "curated enum spec (see Valid_Aphia's own note for the general pattern),",
+         "not a bug to fix by changing either side."
+       )),
   list(field = "Distance", type = "number(quantity)", units = "m", range = c(0, 59995)),
   list(field = "Warplngt", type = "number(quantity)", units = "m", range = c(0, 4065)),
   list(field = "Warpdia", type = "number(quantity)", units = "mm", range = c(16, 30),
@@ -573,7 +700,8 @@ shared_field_specs <- list(
   list(field = "WingSpread", type = "number(quantity)", units = "m", range = c(4, 50),
        details = "0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value with real support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real value (50m) and is treated as a data-entry error, excluded."),
   list(field = "TowDir", type = "number(quantity)", units = "degrees", range = c(0, 360),
-       details = "999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker, the same pattern confirmed for WindDir below. A further cluster -- 450 deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg); plausible but not investigated further (would need correlating with Country/Survey). Both groups are outside the documented 0-360 domain and excluded here."),
+       details = "999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker, the same pattern confirmed for WindDir below. A further cluster -- 450 deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg). Both groups are outside the documented 0-360 domain and excluded here.",
+       todo = "Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine data-entry pattern by correlating with Country/Survey -- same class of check already confirmed for SwellHeight via its WindSpeed co-parameter."),
   list(field = "GroundSpeed", type = "number(quantity)", units = "knots", range = c(0, 10),
        details = "Ceiling is a domain judgment (real trawling ground speed), not an observed cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean gap, all excluded."),
   list(field = "SpeedWater", type = "number(quantity)", units = "knots", range = c(0, 22)),
@@ -584,6 +712,18 @@ shared_field_specs <- list(
   list(field = "SwellDir", type = "number(quantity)", units = "degrees", range = c(0, 360)),
   list(field = "CodendMesh", type = "number(quantity)", units = "mm", range = c(9, 100),
        details = "0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows) and is treated as a data-entry error, excluded."),
+  list(field = "Quarter",
+       details = paste(
+         "Live WSDL (getHHdata and getCAdata, checked 2026-08-16) declares this",
+         "field int, not string. An accepted, permanent M01 divergence between",
+         "the WSDL-driven archive (which stays int, per",
+         "archive_00_wsdl_types.R's own WSDL-only design) and this curated enum",
+         "spec (whose values must be quoted strings per the data-dict spec's own",
+         "S24 rule) -- the same class of divergence already accepted for",
+         "Valid_Aphia (number(id) vs WSDL's own 'character') and",
+         "Tickler/CatIdentifier above (enum vs WSDL's own 'int'), not a bug to",
+         "fix by changing either side."
+       )),
 
   # ---- Confirmed shared (WSDL-verified 2026-08-07), needing no correction --
   # DoorType/Month/HaulVal/DataType/Rigging/SwellHeight: HH's and LT's
@@ -593,9 +733,24 @@ shared_field_specs <- list(
   # added here until add_shared_field_descriptions() (below) needed a
   # complete shared-field list to reproduce HH's description onto LT.
   list(field = "DoorType"),
-  list(field = "Month"),
+  list(field = "Month",
+       details = paste(
+         "Live WSDL (getHHdata, checked 2026-08-16) declares this field int,",
+         "not string -- the same accepted, permanent M01 divergence as",
+         "Quarter above (curated enum vs WSDL's own 'int'), not a bug to fix",
+         "by changing either side."
+       )),
   list(field = "HaulVal"),
-  list(field = "DataType"),
+  list(field = "DataType",
+       details = paste(
+         "icesVocab's TS_DataType gives -9 its own specific meaning: 'Invalid",
+         "hauls' -- not a generic missing-value placeholder like most of this",
+         "field's sibling enums (checked 2026-08-16, part of a full sweep of",
+         "every enum field with -9 as a declared code; see",
+         "vignettes/articles/technical-notes.md). Low prevalence in both",
+         "tables that carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310,",
+         "0.03%)."
+       )),
   list(field = "Rigging"),
   list(field = "SwellHeight")
 )
@@ -713,12 +868,20 @@ table_specs <- list(
        label = "Age Composition (Individual)",
        description = "Each row is one aged fish specimen from a haul. Contains individual-level biological measurements (length, weight, age, sex, maturity) on a subsample of the catch; linked to HH via the composite haul identifier.",
        origin = "data-raw/spec_02_curate_dict.R",
-       details = "Grain: each row is one biological specimen (a single aged fish) from a haul. Population: individual organisms sampled and measured from hauls within covered surveys, not the full catch — a subsample. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates the column's declared range ([0, 82483]; a D04_range violation, confirmed via op_flag_violations()), not the required constraint (D01 never fires here). These rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails to match HH; cause not yet diagnosed."),
+       details = "Grain: each row is one biological specimen (a single aged fish) from a haul. Population: individual organisms sampled and measured from hauls within covered surveys, not the full catch — a subsample. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates the column's declared range ([0, 82483]; a D04_range violation, confirmed via op_flag_violations()), not the required constraint (D01 never fires here). These rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails to match HH.",
+       todo = "Diagnose the 700-row (0.01%) HaulNumber tail-mismatch residual (known-issues.yaml: ca_haulno_tail_mismatch) -- distinct from the -9 sentinel issue above, cause not yet found.",
+       definitions = list(
+         list(
+           name = "linkable_to_hh",
+           description = "Rows whose HaulNo is a real value, not the -9 'unlinkable' sentinel (known-issues.yaml: ca_haulno_unlinkable_to_hh) -- i.e. rows that can actually be joined back to HH via the composite key.",
+           expr = "HaulNo != -9"
+         )
+       )),
   list(table = "LT",
        label = "Litter Assessment",
        description = "Each row is one litter observation from a haul. Contains types and counts of marine debris (plastics, fishing gear, natural/organic material) recorded during the catch review; a separate thematic addition to the HH/HL/CA exchange.",
        origin = "data-raw/spec_02_curate_dict.R",
-       details = "Grain: each row is one litter assessment/observation recorded during a haul's catch review. Population: litter records from hauls in covered surveys; a thematic addition to the HH/HL/CA core exchange tables with a separate collection protocol and scope. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table details); whether LT's own HaulNumber has a similar issue has not been separately checked. The full 8-field composite key is required for correct joins regardless.")
+       details = "Grain: each row is one litter assessment/observation recorded during a haul's catch review. Population: litter records from hauls in covered surveys; a thematic addition to the HH/HL/CA core exchange tables with a separate collection protocol and scope. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table details); LT's own HaulNumber has no equivalent gap -- checked 2026-08-16, zero nulls and zero -9 values. The full 8-field composite key is required for correct joins regardless: 2,026 of 75,310 LT rows (2.7%) don't match any HH haul on it, but for an unrelated, diagnosed reason (known-issues.yaml: lt_bts_2025_q1_orphaned) -- HH's own submission is genuinely missing for that survey/year/quarter, not an LT-side data-quality problem.")
 )
 
 for (spec in table_specs) {
@@ -748,6 +911,52 @@ col_labels <- list(
 for (spec in col_labels) {
   curated <- apply_col_update(curated, spec$table, spec$field, list(label = spec$label))
 }
+
+# Composite haul-identifier key: HL/CA/LT all reference haul-level data in
+# HH via the same 8-field composite identifier (see each table's own
+# `details` above, previously the only place this was recorded). HH's own
+# 8 columns become `primary_key` (implies required+unique, satisfying the
+# `many-to-one` cardinality below); HL/CA/LT's matching columns become
+# `required, foreign_key` -- still required, since a haul-linking record is
+# not meaningful without them (matching what these columns already had
+# before this step, for Year/HaulNo; the other six had no constraint
+# declared at all until now). Legacy names throughout, matching this
+# script's own keying convention; data-raw/spec_03_translate_new_names.R
+# translates the relationships' join expressions to new names the same way
+# it already translates every column's `name`.
+composite_key_fields <- c("Survey", "Year", "Quarter", "Country", "Ship", "Gear", "StNo", "HaulNo")
+for (f in composite_key_fields) {
+  curated <- apply_col_update(curated, "HH", f, list(constraints = list("primary_key")))
+  for (t in c("HL", "CA", "LT")) {
+    curated <- apply_col_update(curated, t, f, list(constraints = list("required", "foreign_key")))
+  }
+}
+
+# `relationships`: formalizes the composite-key join above as the spec's
+# own structural feature, so it's checked by validate-spec (typos in any
+# of the 24 column references across the 3 joins become S01-S06 errors,
+# not silent) and machine-resolvable via export-spec/export-data (`pairs`)
+# instead of only readable as prose. Table-level `details` above are left
+# as-is rather than trimmed -- this is additive, not a replacement.
+relationship_join <- function(child_table) {
+  paste(
+    sprintf("%s.%s = HH.%s", child_table, composite_key_fields, composite_key_fields),
+    collapse = " AND "
+  )
+}
+relationships <- list(
+  list(join = relationship_join("HL"), cardinality = "many-to-one"),
+  list(
+    join = relationship_join("CA"), cardinality = "many-to-one",
+    description = paste(
+      "Known gap (see CA table's own details and DATRAS-known-issues.yaml's",
+      "ca_haulno_unlinkable_to_hh): 4.92% of CA rows (288,581 of 5,865,076)",
+      "carry a -9 sentinel in HaulNo and match no HH row on this key --",
+      "genuinely orphaned CA records, not a join-key problem."
+    )
+  ),
+  list(join = relationship_join("LT"), cardinality = "many-to-one")
+)
 
 # Add sources to each table (pointers to parquet test data) -- points at the
 # LEGACY-named parquet, matching this yaml's own (legacy) column names.
@@ -789,6 +998,7 @@ curated <- list(
   origin = "data-raw/spec_01_seed_dict.R → data-raw/spec_02_curate_dict.R",
   version = list(date = as.character(Sys.Date())),
   tables = curated$tables,
+  relationships = relationships,
   glossary = glossary
 )
 

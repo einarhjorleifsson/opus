@@ -7,6 +7,7 @@
 op_render_spec(
   dict_path = "inst/DATRAS-data-dict.yaml",
   output = NULL,
+  data_dir = NULL,
   cli_bin = "~/garbage/data-dict/target/release/data-dict"
 )
 }
@@ -16,6 +17,16 @@ op_render_spec(
 
 \item{output}{Path to write the HTML page. Default `NULL` writes to a
 tempfile and opens it in the browser; pass a path to keep a copy instead.}
+
+\item{data_dir}{Optional directory holding `TABLE.parquet` files (e.g.
+`.datras/`) to profile against instead of `dict_path`'s own declared
+`source:`. A table whose name has no matching file in `data_dir` keeps
+its original declared source unchanged. Implemented as a text
+substitution on a temp copy of the YAML (not a `yaml::read_yaml()` /
+`write_yaml()` round-trip), deliberately -- see
+`data-raw/spec_03_translate_new_names.R`'s own comment on
+`rewrap_singleton_arrays()` for the round-trip bug that mechanism
+would otherwise risk reintroducing.}
 
 \item{cli_bin}{Path to data-dict CLI binary}
 }
@@ -27,4 +38,16 @@ Thin wrapper around data-dict CLI's `render` command: one HTML file with
 a relationship diagram, a searchable index of tables and columns, and the
 glossary. Profiles each table's `source` data (row counts, histograms,
 missing values) when present.
+}
+\details{
+Nothing rendered by this function is shipped or committed -- opus's own
+documentation-architecture decision (2026-08-16) is to keep `render` an
+on-demand tool, not a checked-in artifact, matching the same "ship the
+YAML, not a rendered copy" philosophy the hand-rolled Quarto generator it
+replaced already had. `dict_path`'s own declared `source:` fields point
+at the small, shippable `inst/*.parquet` samples; pass `data_dir` (e.g.
+`"~/R/Pakkar/opus/.datras"`) to profile against the full real archive
+instead -- that archive is local and gitignored, so a page built from it
+can only ever be a point-in-time export you generate and share yourself,
+never something the repo keeps in sync.
 }

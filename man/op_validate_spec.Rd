@@ -6,16 +6,25 @@
 \usage{
 op_validate_spec(
   dict_path = "inst/DATRAS-data-dict.yaml",
+  json = FALSE,
   cli_bin = "~/garbage/data-dict/target/release/data-dict"
 )
 }
 \arguments{
 \item{dict_path}{Path to YAML dictionary (default: inst/DATRAS-data-dict.yaml)}
 
+\item{json}{Logical: also request the structured JSON report (steps +
+problems + run info), parsed into `$report`? (default: FALSE, plain-text
+`$output` only, for backward compatibility). `validate-spec --json` is a
+newer CLI capability (not available when this function was first
+written); `op_validate_meta()`/`op_validate_data()` have exposed the
+equivalent structured report via their own `$result` all along.}
+
 \item{cli_bin}{Path to data-dict CLI binary}
 }
 \value{
-List: (valid = TRUE/FALSE, errors = character vector, raw_output = lines)
+List: (valid = TRUE/FALSE, exit_status, output = plain-text lines,
+  report = parsed JSON report when json=TRUE (NULL otherwise), command)
 }
 \description{
 Thin R wrappers around the data-dict CLI for building and validating

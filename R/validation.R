@@ -13,11 +13,19 @@
 #' Check YAML dictionary conformance to data-dict.yaml spec
 #'
 #' @param dict_path Path to YAML dictionary (default: inst/DATRAS-data-dict.yaml)
+#' @param json Logical: also request the structured JSON report (steps +
+#'   problems + run info), parsed into `$report`? (default: FALSE, plain-text
+#'   `$output` only, for backward compatibility). `validate-spec --json` is a
+#'   newer CLI capability (not available when this function was first
+#'   written); `op_validate_meta()`/`op_validate_data()` have exposed the
+#'   equivalent structured report via their own `$result` all along.
 #' @param cli_bin Path to data-dict CLI binary
 #'
-#' @return List: (valid = TRUE/FALSE, errors = character vector, raw_output = lines)
+#' @return List: (valid = TRUE/FALSE, exit_status, output = plain-text lines,
+#'   report = parsed JSON report when json=TRUE (NULL otherwise), command)
 #' @export
 op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+                             json = FALSE,
                              cli_bin = "~/garbage/data-dict/target/release/data-dict") {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
@@ -30,15 +38,21 @@ op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     stop("Dictionary not found at ", dict_path, call. = FALSE)
   }
 
-  output <- system2(cli_bin, c("validate-spec", dict_path),
-                    stdout = TRUE, stderr = TRUE)
+  args <- c("validate-spec", dict_path, if (json) "--json")
+  output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
   status <- attr(output, "status") %||% 0L
+
+  report <- if (json) {
+    tryCatch(jsonlite::fromJSON(paste(output, collapse = "\n"), simplifyVector = FALSE),
+             error = function(e) NULL)
+  } else NULL
 
   list(
     valid       = (status == 0L),
     exit_status = status,
     output      = output,
-    command     = paste(cli_bin, "validate-spec", dict_path)
+    report      = report,
+    command     = paste(c(cli_bin, args), collapse = " ")
   )
 }
 
@@ -187,11 +201,17 @@ op_validate_full <- function(data_path, table,
     stop("Table '", table, "' not found in dictionary", call. = FALSE)
   }
 
-  # Find the end of this table's definition
+  # Find the end of this table's definition. Every table's content is
+  # indented (>= 2 spaces); the next boundary -- another table's `- name:`,
+  # or a top-level key that follows `tables:` entirely (`relationships:`,
+  # `glossary:`, etc.) -- always starts at column 0. Scanning for any
+  # unindented line (not just the next `- name:`) is what makes this work
+  # for the LAST table too, whose block would otherwise run to EOF and
+  # swallow `relationships:`/`glossary:` into the reconstructed temp YAML.
   start_idx <- table_idx
   end_idx <- length(dict_lines)
   for (i in (start_idx + 1):length(dict_lines)) {
-    if (grepl("^- name: ", dict_lines[i])) {
+    if (grepl("^\\S", dict_lines[i])) {
       end_idx <- i - 1
       break
     }
@@ -212,11 +232,22 @@ op_validate_full <- function(data_path, table,
     tmp_dict <- tempfile(fileext = ".yaml")
     on.exit(unlink(tmp_dict), add = TRUE)
 
-    # Remove existing source if present, then inject new one
+    # Remove existing source if present, then inject new one. `source:`
+    # itself is a 2-space-indented key, but its value (`    parquet: ...`)
+    # lives on its own, more-indented line(s) below -- dropping only the
+    # `source:` line orphans those, producing invalid YAML ("mapping values
+    # are not allowed in this context"). Walk forward while lines stay
+    # nested (>= 3 leading spaces) to remove the whole block.
     if (has_source) {
       source_idx <- which(grepl("^  source:", table_text))
-      # Remove the source section
-      table_text <- table_text[-source_idx]
+      source_end <- source_idx
+      if (source_idx < length(table_text)) {
+        for (i in (source_idx + 1):length(table_text)) {
+          if (!grepl("^   ", table_text[i])) break
+          source_end <- i
+        }
+      }
+      table_text <- table_text[-(source_idx:source_end)]
     }
 
     # Reconstruct with injected source
@@ -269,9 +300,21 @@ op_validate_full <- function(data_path, table,
 
 #' Flag rows with violations against dictionary constraints
 #'
-#' Adds a `.flag` column to parquet data, marking rows that violate constraints.
-#' Since data-dict CLI v0.0.1 reports violations but doesn't list row numbers,
-#' this function computes violating rows by checking each constraint in the YAML.
+#' Adds a `.flag` column to parquet data, marking EVERY row that violates
+#' `required`/`enum`/`range` constraints for a given table.
+#'
+#' The data-dict CLI's own JSON report (see `op_validate_data()`'s `$result`,
+#' or `op_validate_spec(json = TRUE)`'s `$report`) now covers this ground too
+#' -- and more check kinds (D01/D02/D04/D05/D07) -- but each report `problem`
+#' caps its listed `rows`/`values` at the first 5 (see
+#' `site/report.md#counting-and-capping` in the data-dict repo; there is no
+#' CLI flag to raise this), by design, so a production pipeline's report
+#' doesn't balloon on a wholly-broken column. This function exists
+#' specifically for the case the capped report can't serve: marking every
+#' single violating row (not just a sample) so they can all be filtered or
+#' inspected downstream. Prefer the CLI's own report for anything that only
+#' needs a count and a sample; keep using this for exhaustive, uncapped
+#' row-level marking.
 #'
 #' @param data_path Path to parquet file
 #' @param table Table name to check
@@ -374,6 +417,59 @@ op_flag_violations <- function(data_path, table,
   }
 
   df
+}
+
+#' Flatten a data-dict validation report's problems into a data frame
+#'
+#' A pure reshaping helper: takes the already-parsed JSON report from
+#' `op_validate_spec(json = TRUE)$report`, `op_validate_meta()$result`, or
+#' `op_validate_data()$result` (all three levels share the same report
+#' shape -- see `site/report.md` in the data-dict repo) and flattens its
+#' `problems` array into a data frame, one row per problem. No new checks,
+#' no re-evaluation of the dictionary or the data -- everything here was
+#' already decided by the CLI; this only makes it easier to work with from
+#' R (`table()`, `dplyr::filter()`, etc.) than a nested list.
+#'
+#' @param report Parsed report list (has a `problems` element), as returned
+#'   by `op_validate_spec(json = TRUE)$report`, `op_validate_meta()$result`,
+#'   or `op_validate_data()$result`.
+#'
+#' @return Data frame with one row per problem: code, severity, kind, table,
+#'   columns (comma-joined), message, count, rows (comma-joined -- capped at
+#'   the first 5 by the CLI itself, see `op_flag_violations()`'s own docs
+#'   for when that cap matters), redacted. Empty (0-row) data frame if the
+#'   report has no problems, or `report`/`report$problems` is NULL.
+#'
+#' @examples
+#' \dontrun{
+#'   res <- op_validate_data("inst/CA.parquet", "CA")
+#'   op_validation_problems(res$result)
+#' }
+#'
+#' @export
+op_validation_problems <- function(report) {
+  cols <- c("code", "severity", "kind", "table", "columns", "message", "count", "rows", "redacted")
+  empty <- as.data.frame(stats::setNames(lapply(cols, function(x) character(0)), cols))
+
+  if (is.null(report) || is.null(report$problems) || length(report$problems) == 0) {
+    return(empty)
+  }
+
+  rows_list <- lapply(report$problems, function(p) {
+    data.frame(
+      code     = p$code %||% NA_character_,
+      severity = p$severity %||% NA_character_,
+      kind     = p$kind %||% NA_character_,
+      table    = p$table %||% NA_character_,
+      columns  = paste(unlist(p$columns), collapse = ", "),
+      message  = p$message %||% NA_character_,
+      count    = p$count %||% NA_integer_,
+      rows     = paste(unlist(p$rows), collapse = ", "),
+      redacted = if (is.null(p$redacted)) NA else p$redacted,
+      stringsAsFactors = FALSE
+    )
+  })
+  do.call(rbind, rows_list)
 }
 
 #' Describe columns of a parquet file
@@ -593,16 +689,37 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' glossary. Profiles each table's `source` data (row counts, histograms,
 #' missing values) when present.
 #'
+#' Nothing rendered by this function is shipped or committed -- opus's own
+#' documentation-architecture decision (2026-08-16) is to keep `render` an
+#' on-demand tool, not a checked-in artifact, matching the same "ship the
+#' YAML, not a rendered copy" philosophy the hand-rolled Quarto generator it
+#' replaced already had. `dict_path`'s own declared `source:` fields point
+#' at the small, shippable `inst/*.parquet` samples; pass `data_dir` (e.g.
+#' `"~/R/Pakkar/opus/.datras"`) to profile against the full real archive
+#' instead -- that archive is local and gitignored, so a page built from it
+#' can only ever be a point-in-time export you generate and share yourself,
+#' never something the repo keeps in sync.
+#'
 #' @param dict_path Path to data-dict.yaml or directory containing one
 #'   (default: `"inst/DATRAS-data-dict.yaml"`)
 #' @param output Path to write the HTML page. Default `NULL` writes to a
 #'   tempfile and opens it in the browser; pass a path to keep a copy instead.
+#' @param data_dir Optional directory holding `TABLE.parquet` files (e.g.
+#'   `.datras/`) to profile against instead of `dict_path`'s own declared
+#'   `source:`. A table whose name has no matching file in `data_dir` keeps
+#'   its original declared source unchanged. Implemented as a text
+#'   substitution on a temp copy of the YAML (not a `yaml::read_yaml()` /
+#'   `write_yaml()` round-trip), deliberately -- see
+#'   `data-raw/spec_03_translate_new_names.R`'s own comment on
+#'   `rewrap_singleton_arrays()` for the round-trip bug that mechanism
+#'   would otherwise risk reintroducing.
 #' @param cli_bin Path to data-dict CLI binary
 #'
 #' @return List: (valid = T/F, exit_status, output_path, raw_output, command)
 #' @export
 op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
                           output = NULL,
+                          data_dir = NULL,
                           cli_bin = "~/garbage/data-dict/target/release/data-dict") {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
@@ -615,6 +732,21 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     stop("Dictionary not found at ", dict_path, call. = FALSE)
   }
 
+  render_path <- dict_path
+  if (!is.null(data_dir)) {
+    data_dir <- path.expand(data_dir)
+    lines <- readLines(dict_path)
+    lines <- gsub(
+      "^(\\s*parquet:\\s*)([A-Za-z0-9_]+)\\.parquet\\s*$",
+      paste0("\\1", data_dir, "/\\2.parquet"),
+      lines
+    )
+    tmp_dict <- tempfile(fileext = ".yaml")
+    on.exit(unlink(tmp_dict), add = TRUE)
+    writeLines(lines, tmp_dict)
+    render_path <- tmp_dict
+  }
+
   open_in_browser <- is.null(output)
   if (open_in_browser) {
     output <- tempfile(fileext = ".html")
@@ -622,7 +754,7 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     output <- path.expand(output)
   }
 
-  args <- c("render", dict_path, "-o", output)
+  args <- c("render", render_path, "-o", output)
   raw_output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
   status <- attr(raw_output, "status") %||% 0L
 
@@ -635,7 +767,9 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     exit_status = status,
     output_path = output,
     raw_output  = raw_output,
-    command     = paste(c(cli_bin, args), collapse = " ")
+    command     = paste(c(cli_bin, "render", dict_path, "-o", output,
+                           if (!is.null(data_dir)) c("--data-dir", data_dir)),
+                         collapse = " ")
   )
 }
 

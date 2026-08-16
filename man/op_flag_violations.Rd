@@ -21,7 +21,20 @@ Data frame with `.flag` column. Value is NA for valid rows,
   Violations are separated by semicolons.
 }
 \description{
-Adds a `.flag` column to parquet data, marking rows that violate constraints.
-Since data-dict CLI v0.0.1 reports violations but doesn't list row numbers,
-this function computes violating rows by checking each constraint in the YAML.
+Adds a `.flag` column to parquet data, marking EVERY row that violates
+`required`/`enum`/`range` constraints for a given table.
+}
+\details{
+The data-dict CLI's own JSON report (see `op_validate_data()`'s `$result`,
+or `op_validate_spec(json = TRUE)`'s `$report`) now covers this ground too
+-- and more check kinds (D01/D02/D04/D05/D07) -- but each report `problem`
+caps its listed `rows`/`values` at the first 5 (see
+`site/report.md#counting-and-capping` in the data-dict repo; there is no
+CLI flag to raise this), by design, so a production pipeline's report
+doesn't balloon on a wholly-broken column. This function exists
+specifically for the case the capped report can't serve: marking every
+single violating row (not just a sample) so they can all be filtered or
+inspected downstream. Prefer the CLI's own report for anything that only
+needs a count and a sample; keep using this for exhaustive, uncapped
+row-level marking.
 }

@@ -237,17 +237,52 @@ Systematic check, not a sample: every one of Tier 1's 52 enum fields
 checked against icesVocab under both its legacy and current DATRAS name.
 Of the 27 fields that were ever renamed, 21 have a `TS_` key matching the
 legacy name and all 21 give a perfect bidirectional match against the real
-archive; 10 of those 27 *also* have an `AC_` key matching the field's
-*current* (opus-curated) name, and in every one of those 10 cases `AC_` is
-a clear subset, wrong for DATRAS. Across all 52 fields, `AC_` was never
-once the correct candidate for a DATRAS field -- not occasionally wrong,
-categorically inapplicable, for this database specifically.
+archive *by name and description* (see the correction below for two where
+that turned out not to mean a per-code data match); 10 of those 27 *also*
+have an `AC_` key matching the field's *current* (opus-curated) name, and
+in every one of those 10 cases `AC_` is a clear subset, wrong for DATRAS.
+Across all 52 fields, `AC_` was never once the correct candidate for a
+DATRAS field -- not occasionally wrong, categorically inapplicable, for
+this database specifically.
+
+**A second, independent ambiguity in the same prefix, found 2026-08-16:**
+`TS_` is not even reliably self-contained. At least two `TS_` keys --
+`TS_AgeSource` and `TS_AgePrepMet` -- are themselves non-authoritative:
+each one's own icesVocab `Description` field is a bare cross-reference
+("see SampleType", "see PreparationMethod") to a *different*, non-`TS_`-
+prefixed ("bare") domain, not a real code list in its own right. This
+wasn't caught by the systematic check above because that check verified
+plausibility by name/description match, not by testing the resolved key's
+codes against real archive values one-for-one -- `TS_AgeSource`'s and
+`TS_AgePrepMet`'s codes have **zero overlap** with what CA's real
+`AgeSource`/`AgePrepMet` columns actually contain, while the domains their
+own descriptions point to (`SampleType`, `PreparationMethod`) match
+exactly, code-for-code, including a literal lowercase `otolith` code in
+`SampleType` (not just its description). Two more `TS_` keys carry the
+same kind of redirect (`TS_Ship` -> `SHIPC`, `TS_Country` -> `ISO_3166`),
+found by scanning every `TS_` key's own Description for a "see "
+cross-reference -- neither affects opus's own resolution today, since
+`Ship`/`Country` are typed as open string codes in opus's spec, not small
+enums, so opus never attempts a vocab-key match for them. The general
+hazard remains for any future field, or any other consumer, that resolves
+by prefix and by name alone: a `TS_` match is necessary but was already
+known not to be sufficient (the `AC_` collision above), and now isn't even
+reliably a real code list rather than a pointer to one -- with nothing
+machine-readable distinguishing an authoritative `TS_` key from a redirect
+one, only a `Description` string a consumer has to already know to check.
+Opus's own proposed mapping table below is corrected for these two fields;
+`inst/DATRAS-vocab-correction.csv` and `op_vocab_resolve_datras_key()` were
+also fixed to point at the redirect targets, not the `TS_` aliases.
 
 **Recommendation:** Document each vocab domain prefix's scope in a
 machine-readable field (which ICES data collection(s) it applies to), and/or
 provide a way to scope a vocab lookup to a named collection (e.g. "DATRAS
 only") so a consumer cannot silently receive a different survey type's
-vocabulary for a same-sounding field name.
+vocabulary for a same-sounding field name. Separately: where one vocab key
+is superseded by or merely aliases another, represent that as a structured
+field (e.g. a `supersededBy`/`aliasOf` key) rather than free text inside
+`Description` -- a "see X" sentence is invisible to any automated
+consumer, including opus's own tooling until this was found by hand.
 
 ### Proposed correction (concrete, not just a request)
 
@@ -276,8 +311,8 @@ recommendation above.
 | Table | Field (current) | Legacy | Proposed key (name-match guess) | Fits real data? |
 |---|---|---|---|---|
 | CA | `AgePlusGroup` | `PlusGr` | `TS_PlusGr` | full match |
-| CA | `AgePreparationMethod` | `AgePrepMet` | `TS_AgePrepMet` | full match |
-| CA | `AgeSource` | `AgeSource` | `TS_AgeSource` | full match |
+| CA | `AgePreparationMethod` | `AgePrepMet` | `PreparationMethod` (not `TS_AgePrepMet`, a redirect -- see addendum above) | full match |
+| CA | `AgeSource` | `AgeSource` | `SampleType` (not `TS_AgeSource`, a redirect -- see addendum above) | full match |
 | CA | `DoorType` | `DoorType` | `TS_DoorType` | full match |
 | CA | `Gear` | `Gear` | `Gear` | full match |
 | CA | `GearExceptions` | `GearEx` | `TS_GearEx` | full match |
@@ -385,5 +420,85 @@ just what it risks.
 **Recommendation:** Same as Issue 7's -- publish the field-to-key
 crosswalk. Until then, these five matches (and any others like them) stay
 invisible to anyone who doesn't redo this exact full sweep themselves.
+
+---
+
+## Issue 10: icesVocab's own `SwellHeight` code list is used by neither HH's nor LT's real submissions
+
+**Severity: Institutional governance -- a maintained vocabulary that appears unused, not a data-quality problem on submitters' side**
+
+icesVocab has exactly one relevant key for this field: a single, unprefixed
+`SwellHeight` entry (not following the usual `TS_`/`AC_` domain-prefix
+convention), with 6 non-deprecated codes -- `N` (None, 0m), `L` (Low,
+0-1m), `M` (Medium, 1-2m), `H` (High, 2-3m), `VH` (Very high, 3+m), `NR`
+(Not recorded). Confirmed there is no second, differently-named key for
+the same concept: checked all 580 currently-registered icesVocab keys by
+substring match on both `Key` and `Description`, not just the obvious name.
+
+Both HH and LT carry a `SwellHeight` field (LT's own value is a verified
+byte-for-byte copy of HH's for the same haul -- 55,914 of 55,914 matched
+non-null rows identical, not an independent second measurement). Checked
+the full real archive for both, after correcting an unrelated
+archive-pipeline bug that had been silently converting this field's own
+`-9` sentinel to a null (see opus's own `known-issues.yaml`,
+`sentinel_replacement_data_loss` -- opus-internal, not an ICES-side issue):
+
+| Table | Rows | `-9` ("not recorded") | Real measurements | Using any of the 6 vocab codes |
+|---|---|---|---|---|
+| HH | 145,958 | 108,698 (74.47%) | 37,260 | **0** |
+| LT | 75,310 (57,940 non-null) | 19,005 (32.80% of non-null) | 38,935 | **0** |
+
+Every real (non-`-9`) value in both tables is a continuous metric
+measurement (HH: 0-60m; LT: 0-25m), never one of the vocab's 6 category
+codes. This is not a data-quality problem in the usual sense -- nothing
+here is wrong or missing from a submitter's perspective, since neither
+table ever attempts to use the coded scheme at all. It reads instead as
+ICES maintaining a controlled vocabulary that real DATRAS Tier 1
+submissions have never adopted in practice, in either of the two tables
+that carry this field.
+
+**Recommendation:** Confirm whether this vocabulary is genuinely intended
+for DATRAS Tier 1 submissions at all, or whether it was designed for a
+different DATRAS context (or a different ICES data product entirely) that
+never fed into HH/LT the way its presence here would suggest. If it is
+intended for Tier 1, DATRAS's own submission guidance doesn't appear to
+communicate it to data providers, since 100% of real submissions in both
+carrying tables use a continuous measurement instead.
+
+---
+
+## Suggestion for consideration (not a bug report)
+
+Everything above documents a confirmed error, gap, or unused feature in
+an existing ICES service. This section is different in kind: a design
+idea for ICES's own future consideration, not a defect being reported.
+
+### A single surrogate haul identifier, instead of an 8-field composite key
+
+HL, CA, and LT each reference haul-level data in HH via the same 8-field
+composite identifier (`Survey`, `Year`, `Quarter`, `Country`,
+`Platform`/`Ship`, `Gear`, `StationName`/`StNo`, `HaulNumber`/`HaulNo`).
+Beyond the join key itself, this analysis found HL/CA/LT also each carry
+a substantial number of additional columns that are literal copies of
+HH's own values for the same haul -- confirmed for roughly 30 fields
+across the three tables (gear geometry, positions, environmental
+readings), at 100% or near-100% match rates.
+
+A single, ICES-assigned surrogate identifier per haul -- present on HH and
+carried onto every haul-referencing record in HL/CA/LT -- would let the
+8-field composite key, and potentially some of the other repeated
+columns, be replaced by one join column. It would also sidestep
+composite-key edge cases this analysis found: CA's own well-documented
+`-9`/orphaned-record gap (opus's own known issues,
+`ca_haulno_unlinkable_to_hh`/`ca_haulno_tail_mismatch`) is a direct
+consequence of the
+composite key's correctness depending on several independently-submitted
+fields all agreeing at once, something a single assigned identifier would
+not be exposed to in the same way.
+
+This isn't something opus can adopt unilaterally -- it would require a
+real change to ICES's own submission format, not a documentation or
+vocabulary fix, so it is offered here as an idea for ICES's own future
+consideration rather than a request for immediate action.
 
 **Update, 2026-08-10:** two of the five real matches (`Tickler`, `CatIdentifier`) were re-verified and adopted into opus's own curated spec as `type: enum` -- `inst/DATRAS-data-dict.yaml` now reflects this directly. Included here for the record, not because it changes the finding: this is opus's own downstream reaction to a gap that's still ICES's to close. The other three were deliberately left as-is, each for a distinct, already-documented reason rather than a shared threshold: `Year` is a continuously-advancing ordinal (next year needs a code that doesn't exist yet), not a fixed closed set, regardless of icesVocab happening to enumerate past years as codes; `Maturity`'s own field description says its coding depends on the sibling `MaturityScale` field, so `TS_Maturity`'s 63 codes are plausibly a union across several distinct scales, not one flat list; `DepthStratum`'s own description says strata are survey-specific, in tension with treating one vocab key as universal. None of that applies to `Tickler` (a real gear-count code, not growing) or `CatIdentifier` (already independently documented as "a coded scheme, not a sequence" before this vocab match was even found).

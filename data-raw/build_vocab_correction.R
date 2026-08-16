@@ -68,6 +68,20 @@ get_codes_cached <- function(key) {
   get(key, envir = code_cache)
 }
 
+# Known TS_-prefix redirects: a TS_ key's own icesVocab Description can be a
+# bare "see X" cross-reference to a different, non-TS_ domain rather than an
+# authoritative code list itself -- name-matching alone can't discover this,
+# since the redirect target shares no name with the field (ICES_ISSUE_REPORT.md
+# Issue 8's 2026-08-16 addendum). Two confirmed cases, added as explicit
+# extra candidates (not a guess -- each verified as a full code-for-code
+# match against the real archive; pick_best_vocab_match() still does the
+# actual selection by data fit, this just makes the correct option visible
+# to it, since name-matching alone never would).
+KNOWN_REDIRECT_CANDIDATES <- list(
+  AgeSource = "SampleType",
+  AgePrepMet = "PreparationMethod"
+)
+
 rows <- list()
 
 for (tbl in y$tables) {
@@ -87,7 +101,8 @@ for (tbl in y$tables) {
 
     candidates <- unique(c(
       op_vocab_resolve_key(new_name, types)$candidates,
-      op_vocab_resolve_key(legacy_name, types)$candidates
+      op_vocab_resolve_key(legacy_name, types)$candidates,
+      KNOWN_REDIRECT_CANDIDATES[[legacy_name]]
     ))
     candidates <- candidates[!is.na(candidates) & nchar(candidates) > 0]
 

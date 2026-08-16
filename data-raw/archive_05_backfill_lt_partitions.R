@@ -35,6 +35,26 @@
 #' XML fails to parse at all, or has literally zero records to derive even
 #' a column list from.
 #'
+#' A blanket "global sentinel" replacement (-9, -99, etc. -> NA across
+#' every column) used to also live here -- removed 2026-08-16, same
+#' reasoning as the required-fields gate above: whether a sentinel means
+#' "genuinely absent" or a real, meaningful code is a curation conclusion,
+#' not a type-casting one, and it's circular to bake it in here -- you
+#' can't discover a code is meaningful from data this stage already erased.
+#' HH/LT's Tickler declares -9 as a real, labeled icesVocab code ("No
+#' ticklers are allowed"; confirmed 2,301+ real occurrences in a 30-file
+#' XML sample), and CA's HaulNo/StNo -9 (the already-filed
+#' ca_haulno_unlinkable_to_hh known issue) needs to survive as a real
+#' value, not become NA, for its declared range ([0, 82483], deliberately
+#' excluding -9) to flag it as the D04 violation it was designed to be.
+#' The blanket scrub silently converted both into indistinguishable nulls.
+#' At least 28 enum fields across all four tables declare "-9" as one of
+#' their own curated codes (data-raw/spec_02_curate_dict.R); sentinel
+#' interpretation for any of them now happens downstream, at curation
+#' time, informed by the real (unscrubbed) archive -- exactly where
+#' enum-ness already lives. See archive_04_parse_phase2.R's own header
+#' for the fuller reasoning (same fix applied there too).
+#'
 #' Usage:
 #'   Rscript data-raw/archive_05_backfill_lt_partitions.R        # all 4 tables
 #'   Rscript data-raw/archive_05_backfill_lt_partitions.R CA     # one table
@@ -46,7 +66,6 @@ suppressPackageStartupMessages({
 source("data-raw/archive_01_download_config.R")
 source("data-raw/archive_00_wsdl_types.R")
 
-GLOBAL_SENTINELS <- c("-9", "-99", "-999", "-1", "-5", "-95", "-100", "-900", "88888888")
 DATRAS_PARQUET_DIR <- file.path(WORKSPACE, "parquet")
 DATRAS_ISSUES_DIR <- file.path(WORKSPACE, "issues")
 dir.create(DATRAS_ISSUES_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -87,13 +106,6 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
     record_issue(rt, survey, year, quarter, "PARSE_ERROR", conditionMessage(e))
     NULL
   })
-}
-
-replace_sentinels <- function(df) {
-  for (col in names(df)) {
-    df[[col]][df[[col]] %in% GLOBAL_SENTINELS] <- NA_character_
-  }
-  df
 }
 
 t_total_start <- Sys.time()
@@ -143,7 +155,6 @@ for (rt in tables_to_run) {
       next
     }
 
-    df <- replace_sentinels(df)
     df <- apply_wsdl_types(df, rt)
 
     pq_dir <- file.path(DATRAS_PARQUET_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y))

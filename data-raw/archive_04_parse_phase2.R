@@ -5,8 +5,7 @@
 #'    hard technical failures only, not completeness judgments; a
 #'    "required fields" gate used to also live here and got removed
 #'    2026-08-08, see below)
-#' 2. Global sentinel replacement (-9, -99, etc. → NA)
-#' 3. Rigid type casting from live WSDL (physical type only -- string/int/
+#' 2. Rigid type casting from live WSDL (physical type only -- string/int/
 #'    decimal; deliberately not from the curated yaml, and deliberately
 #'    doesn't know "enum" exists -- see data-raw/archive_00_wsdl_types.R's
 #'    own header for why. Fixed 2026-08-08: the previous yaml-based caster
@@ -24,6 +23,26 @@
 #' do. See data-raw/archive_05_backfill_lt_partitions.R's header for the
 #' fuller reasoning (same fix applied there first).
 #'
+#' A blanket "global sentinel" replacement (-9, -99, etc. -> NA, applied
+#' unconditionally to every column) used to also live here -- removed
+#' 2026-08-16, same reasoning as the required-fields gate and enum removal
+#' above: whether a sentinel means "genuinely absent" or a real, meaningful
+#' code is a curation conclusion reached by analyzing real data (or
+#' icesVocab), not a type-casting one, and it's circular to bake it into
+#' this stage -- you can't discover that a code is meaningful from data
+#' this stage has already erased. Concretely: HH/LT's Tickler declares -9
+#' as a real, labeled icesVocab code ("No ticklers are allowed"; confirmed
+#' 2,301+ real occurrences in a 30-file sample of raw XML), and CA's own
+#' HaulNo/StNo -9 sentinel (the already-filed ca_haulno_unlinkable_to_hh
+#' known issue) depends on -9 surviving as a real value, not becoming NA,
+#' so its declared range ([0, 82483], deliberately excluding -9) can flag
+#' it as the D04 violation it was designed to be. The blanket scrub was
+#' silently converting both into indistinguishable nulls. At least 28 enum
+#' fields across all four tables declare "-9" as one of their own curated
+#' codes (data-raw/spec_02_curate_dict.R); sentinel interpretation for any
+#' of them now happens downstream, at curation time, informed by the real
+#' (unscrubbed) archive -- exactly where enum-ness already lives.
+#'
 #' Usage:
 #'   Rscript data-raw/archive_04_parse_phase2.R
 #'   Rscript data-raw/archive_04_parse_phase2.R HH  # specific record type
@@ -35,13 +54,6 @@ suppressPackageStartupMessages({
 
 source("data-raw/archive_01_download_config.R")
 source("data-raw/archive_00_wsdl_types.R")
-
-# ============================================================================
-# ---- CONFIGURATION ----
-# ============================================================================
-
-# Global sentinel values to replace with NA (before type casting)
-GLOBAL_SENTINELS <- c("-9", "-99", "-999", "-1", "-5", "-95", "-100", "-900", "88888888")
 
 # ============================================================================
 # ---- SETUP ----
@@ -132,18 +144,6 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
   })
 }
 
-# ============================================================================
-# ---- GLOBAL SENTINEL REPLACEMENT ----
-# ============================================================================
-
-replace_sentinels <- function(df) {
-  # Replace global sentinels with NA across all columns
-  for (col in names(df)) {
-    df[[col]][df[[col]] %in% GLOBAL_SENTINELS] <- NA_character_
-  }
-  return(df)
-}
-
 # Rigid type casting is now apply_wsdl_types(df, rt), from
 # data-raw/archive_00_wsdl_types.R (sourced above) -- physical type only,
 # straight from live WSDL. See that file's header for why the yaml-based
@@ -193,9 +193,6 @@ for (i in seq_len(nrow(cells_to_process))) {
   }
 
   n_rows <- nrow(df)
-
-  # Global sentinel replacement
-  df <- replace_sentinels(df)
 
   # Rigid type casting
   df <- apply_wsdl_types(df, rt)

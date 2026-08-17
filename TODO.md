@@ -23,7 +23,7 @@
 
 ## Backlog
 
-- [ ] **File `data-raw/ICES_ISSUE_REPORT.md` with ICES** — 10 confirmed issues, drafted but not yet sent (longest-standing open item in this project). Venue undecided (informal imbus discussion first, per existing strategy, or direct GitHub/DIG submission?).
+- [ ] **File `data-raw/ICES_ISSUE_REPORT.md` with ICES** — 12 confirmed issues, drafted but not yet sent (longest-standing open item in this project). Venue undecided (informal imbus discussion first, per existing strategy, or direct GitHub/DIG submission?) — and per the imbus/ICES liaison item below, the venue doesn't actually exist yet either.
 - [ ] **Decide `inst/*.parquet`'s fate (D1)** — stale relative to corrections made since its 2026-07-31 generation (e.g. `DateofCalculation`), provenance was unclear until traced to `data-raw/GENERATE_test_data_ns_ibts_2026q1.R` (a narrow single-survey/quarter extract from obus's own local files, not a broad sample). A draft resampling script, `data-raw/archive_07_build_test_samples.R`, exists on disk untracked, pending this decision — its own header comment is also wrong ("no script anywhere in this repo previously built these files") and needs fixing regardless of what else happens to it. Until resolved, treat `.datras/*.parquet` (not `inst/*.parquet`) as the only reliable source for yaml/issue-report/documentation work.
 - [ ] Decide `vignettes/articles/using-opus.qmd`'s fate (untracked, severely stale — rewrite from scratch or drop; `why-opus.qmd`/`technical-notes.md` may already cover the ground).
 - [ ] Fix `inst/DATRAS-data-dict-legacy.yaml`'s `source:` stanzas (point to nonexistent `{TABLE}_legacy.parquet`).

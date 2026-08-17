@@ -50,7 +50,15 @@ apply_col_update <- function(dict, table, field, updates) {
   if ("values" %in% names(updates)) {
     if (is.null(updates$values)) col$values <- NULL else col$values <- updates$values
   }
-  if (!is.null(updates$constraints)) col$constraints <- updates$constraints
+  # Union, not overwrite (fixed 2026-08-17): a field can pick up `required`
+  # from a Mandatory-driven pass and `foreign_key`/`primary_key` from the
+  # composite-key loop in either order -- overwriting would silently drop
+  # whichever constraint was already there. Verified this can't introduce
+  # duplicates or reorder-related diffs: union() de-dupes and yaml::as.yaml()
+  # renders any character vector the same way regardless of how it was built.
+  if (!is.null(updates$constraints)) {
+    col$constraints <- as.list(union(unlist(col$constraints), unlist(updates$constraints)))
+  }
   if (!is.null(updates$details)) {
     col$details <- if (is.null(col$details)) updates$details else paste(col$details, updates$details)
   }
@@ -951,6 +959,65 @@ for (f in composite_key_fields) {
   curated <- apply_col_update(curated, "HH", f, list(constraints = list("primary_key")))
   for (t in c("HL", "CA", "LT")) {
     curated <- apply_col_update(curated, t, f, list(constraints = list("required", "foreign_key")))
+  }
+}
+
+# ---- Mandatory-driven `required` constraints (2026-08-17) -----------------
+# ICES's field-description spreadsheet (found 2026-08-17 -- see AGENTS.md's
+# Data Sources) is the first source opus has ever had for field-level
+# mandatory-ness at all: WSDL, getDatrasFieldList, and icesVocab carry none
+# of them. This isn't fixing a prior mistake (there was never a source to
+# have used), so the fix is a general, automatic mechanism reading the
+# spreadsheet's Mandatory column programmatically -- not a hand list of the
+# ~35 affected fields, which would just be a bigger version of the one-off
+# patch this project has already twice rejected (WSDL-only type casting,
+# NAMESPACE-to-roxygen2). Checks each field's real current null rate first
+# (Working Principle 1: real data is ground truth): a "Mandatory" field
+# that's genuinely, substantially null in practice is itself a finding, not
+# something to paper over by adding a constraint op_flag_violations() would
+# then immediately flood with unexpected new violations. Uses
+# apply_col_update()'s union-not-overwrite constraints fix above -- without
+# it, this loop could silently drop a composite-key field's own
+# foreign_key/primary_key constraint set just above.
+{
+  schema_dir <- ".datras/ices-schemas"
+  excel_file <- sort(list.files(schema_dir, pattern = "^datras_field_descriptions_.*\\.xlsx$", full.names = TRUE), decreasing = TRUE)[1]
+  crosswalk <- op_datras_rename_crosswalk()
+  names(crosswalk)[1] <- "table_name"  # first column is mis-named "RecordHeader" by its own source
+
+  sheet_names <- c(HH = "HH-Unaggregated data", HL = "HL-Unaggregated data",
+                   CA = "CA-Unaggregated data", LT = "LT-Unaggregated litter data")
+  NULL_RATE_THRESHOLD <- 0.005  # 0.5% -- allow a tiny real-world gap, don't demand perfection
+
+  for (tname in names(sheet_names)) {
+    sheet <- suppressMessages(readxl::read_excel(excel_file, sheet = sheet_names[[tname]]))
+    mandatory_fields <- sheet$Field[which(sheet$Mandatory == "Yes")]
+    pq <- arrow::read_parquet(sprintf(".datras/%s_legacy.parquet", tname))
+
+    for (curated_name in mandatory_fields) {
+      xw_row <- crosswalk[crosswalk$table_name == tname & crosswalk$new_name == curated_name, ]
+      if (nrow(xw_row) != 1) next  # spreadsheet-only field, not yet in opus's spec (Issue 11)
+      legacy_name <- xw_row$old_name[1]
+
+      ti <- which(map_chr(curated$tables, "name") == tname)
+      ci <- which(map_chr(curated$tables[[ti]]$columns, "name") == legacy_name)
+      if (length(ci) == 0) next
+      existing <- unlist(curated$tables[[ti]]$columns[[ci]]$constraints)
+      if (any(c("required", "primary_key") %in% existing)) next  # already covered
+
+      if (!(legacy_name %in% names(pq))) next
+      null_rate <- mean(is.na(pq[[legacy_name]]))
+      if (null_rate <= NULL_RATE_THRESHOLD) {
+        curated <- apply_col_update(curated, tname, legacy_name, list(constraints = list("required")))
+      } else {
+        curated <- apply_col_update(curated, tname, legacy_name, list(
+          todo = sprintf(
+            "ICES's field-description spreadsheet marks this Mandatory, but %.1f%% of %s's real archive rows are null -- a genuine gap between documented and actual submission behavior, not yet added as `required` pending review (data-raw/build_field_gap_audit.R, 2026-08-17).",
+            100 * null_rate, tname
+          )
+        ))
+      }
+    }
   }
 }
 

@@ -23,6 +23,8 @@ tables:
     values:
       HH: Haul Information
     label: Record Type
+    constraints:
+    - required
   - name: Survey
     type: string
     examples:
@@ -285,6 +287,7 @@ tables:
     - 0.0
     - 82483.0
     constraints:
+    - required
     - primary_key
     details: |-
       Sequential per-cruise numbering, but countries vary in whether it resets each
@@ -304,6 +307,7 @@ tables:
     - 1965.0
     - 2026.0
     constraints:
+    - required
     - primary_key
   - name: Month
     type: enum
@@ -325,6 +329,8 @@ tables:
       Live WSDL (getHHdata, checked 2026-08-16) declares this field int, not string --
       the same accepted, permanent M01 divergence as Quarter above (curated enum vs
       WSDL's own 'int'), not a bug to fix by changing either side.
+    constraints:
+    - required
   - name: Day
     type: number(ordinal)
     description: Sampling day, as part of the calendar date
@@ -348,6 +354,8 @@ tables:
       10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
       documented here rather than silently assumed. Only present in HH and LT
       (confirmed 2026-07-29), same as StatRec above.
+    constraints:
+    - required
   - name: DepthStratum
     type: string
     description: |-
@@ -387,6 +395,8 @@ tables:
       high as 1470 min with no repeating marker pattern (i.e. not a clean sentinel,
       just unreliable). Verified 2026-07-29 against the full archive.
     label: Haul Duration (minutes)
+    constraints:
+    - required
   - name: DayNight
     type: enum
     description: |-
@@ -395,6 +405,8 @@ tables:
     values:
     - D
     - 'N'
+    constraints:
+    - required
   - name: ShootLat
     type: number(quantity)
     description: Decimal latitude position on the shooting location
@@ -402,6 +414,8 @@ tables:
     range:
     - 36.0013
     - 76.2117
+    constraints:
+    - required
   - name: ShootLong
     type: number(quantity)
     description: Decimal longitude position on the shooting location
@@ -415,6 +429,8 @@ tables:
       icesDatras's fetch pipeline scrubs literal -9 to NA for every numeric column,
       not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R's
       header.
+    constraints:
+    - required
   - name: HaulLat
     type: number(quantity)
     description: Decimal latitude position on the hauling location
@@ -426,6 +442,8 @@ tables:
       3 rows record exactly 0 degrees (the equator), categorically outside any DATRAS
       survey area -- excluded; the lower bound instead matches ShootLat's own clean
       minimum for the same archive.
+    constraints:
+    - required
   - name: HaulLong
     type: number(quantity)
     description: Decimal longitude position on the hauling location
@@ -436,6 +454,8 @@ tables:
     details: |-
       Same -9-as-missing caveat as ShootLong above (0 degrees, the Prime Meridian, is
       a genuine North Sea value here and is kept).
+    constraints:
+    - required
   - name: StatRec
     type: string
     description: |-
@@ -468,6 +488,8 @@ tables:
     range:
     - 1.0
     - 3098.0
+    constraints:
+    - required
   - name: HaulVal
     type: enum
     description: Haul validity code
@@ -479,6 +501,8 @@ tables:
     - 'N'
     - S
     - V
+    constraints:
+    - required
   - name: HydroStNo
     type: string
     description: |-
@@ -513,6 +537,8 @@ tables:
     - '2'
     - '3'
     - '4'
+    constraints:
+    - required
   - name: BySpecRecCode
     type: enum
     description: Information on which bycatch species have been recorded.
@@ -524,6 +550,8 @@ tables:
     - '4'
     - '5'
     - '6'
+    constraints:
+    - required
   - name: DataType
     type: enum
     description: |-
@@ -543,6 +571,8 @@ tables:
       (checked 2026-08-16, part of a full sweep of every enum field with -9 as a
       declared code; see vignettes/articles/technical-notes.md). Low prevalence in
       both tables that carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%).
+    constraints:
+    - required
   - name: Netopening
     type: number(quantity)
     description: |-
@@ -642,6 +672,8 @@ tables:
       (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
       23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in either
       table.
+    constraints:
+    - required
   - name: Warplngt
     type: number(quantity)
     description: |-
@@ -1110,6 +1142,8 @@ tables:
     values:
       HL: Length Frequency Distribution
     label: Record Type
+    constraints:
+    - required
   - name: Survey
     type: string
     examples:
@@ -1408,6 +1442,8 @@ tables:
     values:
     - T
     - W
+    constraints:
+    - required
   - name: SpecCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
@@ -1440,6 +1476,8 @@ tables:
     - '7'
     - '8'
     - '9'
+    constraints:
+    - required
   - name: Sex
     type: enum
     description: |-
@@ -1551,6 +1589,8 @@ tables:
       Valid_Aphia's own note for the general pattern), not a bug to fix by changing
       either side.
     label: Species Category
+    constraints:
+    - required
   - name: NoMeas
     type: number(quantity)
     description: |-
@@ -1564,6 +1604,8 @@ tables:
     details: |-
       Same DataType C standardisation basis as TotalNo above; top values are all
       well-supported (4-10 occurrences each), not isolated errors.
+    constraints:
+    - required
   - name: SubFactor
     type: number(quantity)
     description: |-
@@ -1581,6 +1623,8 @@ tables:
       (4096 recurs 133 times; 8192, 5120, 6144 also recur with real support),
       consistent with repeatedly halving a very abundant catch to reach a manageable
       subsample.
+    constraints:
+    - required
   - name: SubWgt
     type: number(quantity)
     description: Weight of the subsample in grams.
@@ -1602,6 +1646,8 @@ tables:
       -900 (2562 rows) and -100 (1 row) are excluded as a 'not weighed' placeholder,
       the same pattern seen in several HH fields. The high end is genuine: top values
       all have real support (3-18 occurrences each).
+    constraints:
+    - required
   - name: LngtCode
     type: enum
     description: |-
@@ -1620,6 +1666,8 @@ tables:
     todo: Confirm whether -9 (2.69% of non-null rows) is a genuine LengthCode code
       or just the generic missing-value sentinel -- no icesVocab key resolves for
       this field under either name, so nothing external confirms it either way.
+    constraints:
+    - required
   - name: LngtClass
     type: number(quantity)
     description: |-
@@ -1643,6 +1691,8 @@ tables:
       plausible occasional large elasmobranch/tuna bycatch, or should be excluded
       like the two isolated outliers above it.
     label: Length Class (cm)
+    constraints:
+    - required
   - name: HLNoAtLngt
     type: number(quantity)
     description: |-
@@ -1660,6 +1710,8 @@ tables:
       population -- aged individuals only, not the whole catch -- so not assumed
       identical).
     label: Count at Length
+    constraints:
+    - required
   - name: DevStage
     type: enum
     description: Development or maturity stage defined by non-invasive observations
@@ -1748,6 +1800,8 @@ tables:
     values:
       CA: individual fish recordings with biological information
     label: Record Type
+    constraints:
+    - required
   - name: Survey
     type: string
     examples:
@@ -2055,6 +2109,8 @@ tables:
     values:
     - T
     - W
+    constraints:
+    - required
   - name: SpecCode
     type: number(id)
     description: Official WoRMS AphiaID code of species reported at the record.
@@ -2093,6 +2149,8 @@ tables:
       2026-08-17 directly against .datras/CA.parquet (5,865,076 rows), -9 is present
       and substantial (1,968,019 rows, 33.55%), 0 true nulls -- not previously
       documented either way.
+    constraints:
+    - required
   - name: AreaCode
     type: string
     description: Area coding according to AreaType
@@ -2114,6 +2172,8 @@ tables:
       rows), -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No
       icesVocab entry exists for this field under any name (checked against all 580
       registered keys).
+    constraints:
+    - required
   - name: LngtCode
     type: enum
     description: |-
@@ -2132,6 +2192,8 @@ tables:
     todo: Confirm whether -9 is a genuine LengthCode code or just the generic missing-value
       sentinel -- no icesVocab key resolves for this field under either name, so nothing
       external confirms it either way.
+    constraints:
+    - required
   - name: LngtClass
     type: number(quantity)
     description: |-
@@ -2149,6 +2211,8 @@ tables:
       subset from HL's whole-catch length-frequency tally, so the two are not assumed
       identical (Working principles, rule 12).
     label: Length Class (cm)
+    constraints:
+    - required
   - name: Sex
     type: enum
     description: |-
@@ -2233,6 +2297,8 @@ tables:
       Distinct population from HL's own NumberAtLength (HLNoAtLngt): this counts aged
       individuals only, not the whole catch, hence the much smaller scale -- not
       assumed identical (Working principles, rule 12).
+    constraints:
+    - required
   - name: IndWgt
     type: number(quantity)
     description: Measured individual weight of the fish (grams)
@@ -2443,6 +2509,8 @@ tables:
     - R2
     - S6
     - SMSF
+    constraints:
+    - required
   - name: DateofCalculation
     type: number(ordinal)
     range:
@@ -2897,6 +2965,8 @@ tables:
     - TSG-ML
     - UNEP
     - UNEP-RLC
+    constraints:
+    - required
   - name: PARAM
     type: string
     examples:
@@ -2918,6 +2988,8 @@ tables:
     todo: File A2/A3/A5/A6/A7/A14 (undocumented in icesVocab's 1,938-code PARAM list
       despite being common real values) as a DATRAS-known-issues.yaml entry and ICES_ISSUE_REPORT.md
       candidate.
+    constraints:
+    - required
   - name: LTSZC
     type: string
     examples:

@@ -118,9 +118,16 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
       return(NULL)
     }
 
-    # Parse TSV output
+    # Parse TSV output. colClasses = "character" is load-bearing, not
+    # cosmetic: read.delim()'s default type-guessing recognizes bare "T"/"F"/
+    # "TRUE"/"FALSE" as logical, so any file where a column's real values
+    # happen to be only T/F (e.g. SpecCodeType with no "W" rows) silently
+    # becomes a logical vector here -- destroying the T-vs-TRUE distinction
+    # before apply_wsdl_types() ever runs, since as.character(TRUE) is
+    # "TRUE", not "T". Confirmed 2026-08-17 against 7 real (table, column)
+    # pairs, ~2.12M rows, HH/HL/CA only (never LT) -- see AGENTS.md.
     con <- textConnection(output)
-    df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "")
+    df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
     close(con)
 
     # Issue detection: check for malformed XML

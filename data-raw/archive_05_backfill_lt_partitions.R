@@ -92,8 +92,14 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
       return(NULL)
     }
 
+    # colClasses = "character" is load-bearing -- see archive_04_parse_phase2.R's
+    # matching comment. Without it, read.delim()'s default type-guessing turns
+    # any file where a column's real values happen to be only T/F into a
+    # logical vector, silently destroying the T-vs-TRUE distinction before
+    # apply_wsdl_types() ever runs (confirmed 2026-08-17, ~2.12M rows across
+    # HH/HL/CA, never LT -- see AGENTS.md).
     con <- textConnection(output)
-    df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "")
+    df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
     close(con)
 
     if (nrow(df) == 0) {

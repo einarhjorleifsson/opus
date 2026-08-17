@@ -467,6 +467,48 @@ carrying tables use a continuous measurement instead.
 
 ---
 
+## Issue 11: The December 2025 field-description spreadsheet declares two new fields that don't yet exist in live WSDL or any real submission
+
+**Severity: Institutional governance -- ICES's own sources disagree with each other about what the current schema is**
+
+The DATRAS field-description spreadsheet
+(`DATRAS_Field_descriptions_and_example_file_December2025.xlsx`, linked
+from
+`https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx`)
+states in its own version notes: "New field in HH ReasonHaulDisruption
+added" and "New field in CA PreservationMethod added." Checked both
+against opus's other two structural sources, live 2026-08-17:
+
+- Live WSDL (`getHHdata`, 69 fields; `getCAdata`, 34 fields) declares
+  neither field.
+- The real downloaded archive (`.datras/HH_legacy.parquet`,
+  `.datras/CA_legacy.parquet` -- both also 69/34 columns) contains zero
+  occurrences of either field name, anywhere in the full archive.
+
+So as of this date, ICES's own published schema description and ICES's
+own live service/submitted-data reality disagree: one source says these
+fields exist, the other two (both authoritative for what's actually
+implemented) say they don't. This isn't a data-quality problem on any
+submitter's side -- nobody can populate a field the live service doesn't
+ask for.
+
+`CA.PreservationMethod`'s spreadsheet entry does include one thing the
+other two sources never provide for any field: a direct icesVocab
+code-type GUID (`2f5a5876-c572-42bc-9348-3526ce413c59`), confirmed to
+resolve exactly to the real `PreservationMethod` code-type. Once this
+field actually appears in live WSDL and real submissions, that GUID link
+removes the name-matching guesswork every other vocab-key resolution in
+this project has had to do.
+
+**Recommendation:** Confirm whether these two fields are genuinely
+rolled out yet, or whether the spreadsheet's version notes describe an
+intended future addition rather than a completed one. If intended,
+align WSDL with the published spreadsheet so the two sources agree; if
+not yet live, consider noting that distinction in the spreadsheet
+itself (e.g. "planned" vs. "added").
+
+---
+
 ## Suggestion for consideration (not a bug report)
 
 Everything above documents a confirmed error, gap, or unused feature in

@@ -46,6 +46,15 @@
 #'   \item{stripped}{The key with any domain prefix removed}
 #'   \item{prefix}{Classification: "TS", "AC", or "bare" (unprefixed)}
 #'   \item{Description}{The key's description from ICES Vocabulary}
+#'   \item{Guid}{The code-type's ICES-assigned GUID. Unlike name-matching
+#'     (always a guess -- see [op_vocab_resolve_key()]), a GUID match is
+#'     exact: confirmed 2026-08-17 against the DATRAS field-description
+#'     spreadsheet's one Vocab-column entry (`PreservationMethod`), which
+#'     cites this exact GUID and resolves to this exact key, unambiguously.
+#'     Use [op_vocab_resolve_guid()] whenever an external source hands you
+#'     one.}
+#'   \item{Modified}{Last-modified timestamp for the code-type, as reported
+#'     by the service.}
 #' }
 #'
 #' @examples
@@ -64,14 +73,51 @@ op_vocab_get_types <- function() {
   types <- .ices_vocab_get("CodeType")
   if (nrow(types) == 0) {
     return(data.frame(Key = character(0), stripped = character(0),
-                       prefix = character(0), Description = character(0)))
+                       prefix = character(0), Description = character(0),
+                       Guid = character(0), Modified = character(0)))
   }
   types$Key <- types$key
   types$Description <- types$description
   types$prefix <- ifelse(grepl("^TS_", types$Key), "TS",
                    ifelse(grepl("^AC_", types$Key), "AC", "bare"))
   types$stripped <- sub("^(TS_|AC_)", "", types$Key)
-  types[, c("Key", "stripped", "prefix", "Description")]
+  types$Guid <- types$guid
+  types$Modified <- types$modified
+  types[, c("Key", "stripped", "prefix", "Description", "Guid", "Modified")]
+}
+
+
+#' Resolve an ICES Vocabulary GUID to Its Key -- an Exact Match, Not a Guess
+#'
+#' Companion to [op_vocab_resolve_key()], for the rarer case where an
+#' external source (e.g. the DATRAS field-description spreadsheet's `Vocab`
+#' column, when populated) hands you a code-type GUID directly instead of a
+#' name to guess from. Unlike every other vocabulary-resolution path in this
+#' package, a GUID match is exact and ICES-declared -- confirmed 2026-08-17:
+#' the spreadsheet's one such entry (`PreservationMethod`) resolves to
+#' exactly one code-type, with a matching key.
+#'
+#' @param guid Character scalar: the GUID to resolve (with or without a
+#'   surrounding `codetypeguid=` URL -- extracted automatically).
+#' @param types Data frame: output of [op_vocab_get_types()], with at
+#'   minimum a `Guid` column.
+#'
+#' @return Character scalar: the matching `Key`, or `NA_character_` if the
+#'   GUID doesn't match any registered code-type.
+#'
+#' @examples
+#' \dontrun{
+#'   types <- op_vocab_get_types()
+#'   op_vocab_resolve_guid("2f5a5876-c572-42bc-9348-3526ce413c59", types)
+#'   # "PreservationMethod" -- an exact match, not a name-based guess
+#' }
+#'
+#' @export
+op_vocab_resolve_guid <- function(guid, types) {
+  guid <- sub(".*codetypeguid=", "", guid)
+  match_row <- types[tolower(types$Guid) == tolower(guid), ]
+  if (nrow(match_row) == 0) return(NA_character_)
+  match_row$Key[1]
 }
 
 

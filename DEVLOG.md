@@ -617,3 +617,126 @@ items deleted outright rather than kept as struck-through paragraphs
 narrative above this entry was migrated from AGENTS.md's "Open Items"
 section and TODO.md's resolved-item explanations, not rewritten from
 memory.
+
+---
+
+## 2026-08-17 (continued) -- a fourth ICES data source found; full icesVocab snapshot built; Issue 11 filed
+
+Investigating why `CA.HaulNo` has no icesVocab entry (a side question
+during the AGENTS.md/TODO.md restructure above) led to a real, unplanned
+discovery. Checked all 580 registered icesVocab code-types for anything
+containing "haul" -- zero, confirming `HaulNo`/`HaulNumber` genuinely has
+no controlled vocabulary under any name, prefix, or key, consistent with
+it being a plain sequential identifier rather than a categorical code
+(same class as `RecordHeader`/`RecordType` and CA's Sampling Flag
+fields, already known to have none).
+
+**Found and fetched ICES's real field-description spreadsheet** --
+`DATRAS_Field_descriptions_and_example_file_December2025.xlsx`, linked
+from the DATRAS format-description page. This is the closest thing to
+the "Technical Reference" AGENTS.md has cited as one of opus's three
+consolidated sources since the project's earliest days, but which had
+literally never been fetched or checked against anything before this.
+Downloaded and cached (`data-raw/build_field_description_snapshot.R`,
+matching the existing hash-stamped snapshot convention).
+
+Key findings from its "General Notes" sheet: an ICES-wide documented
+convention -- **"for the fields with no information but header, please
+submit -9"** -- the first time opus has had an actual ICES citation for
+this, rather than inferring it field-by-field from icesVocab code
+descriptions. Applies even to `HaulNumber` despite it being marked
+`Mandatory: Yes` in the HH/CA field sheets ("mandatory" means "must be
+present," not "must be a known value"). `HaulNumber`'s own description
+is just "Sequential numbering of hauls during cruise" -- no key/
+uniqueness declaration, consistent with opus's own `relationships`
+treatment (part of an 8-field composite key, never unique alone) but
+silent on CA's specific row-grain question.
+
+`StatisticalRectangle`'s spreadsheet entry independently corroborates a
+decision opus already made on 2026-07-29 (`type: string`, not `enum`,
+with a `details:` note reading "not a fixed enum given the size of the
+grid") -- the spreadsheet describes it via a geometric rule (0.5°
+latitude x 1° longitude grid), not a code list, matching that reasoning
+exactly, from a completely independent source. Nothing to fix; good to
+have confirmed twice.
+
+**Two fields found that opus doesn't have at all:** `ReasonHaulDisruption`
+(HH) and `PreservationMethod` (CA), both explicitly called out as new in
+the spreadsheet's December-2025 version notes. Checked live WSDL
+(`getHHdata`: 69 fields, `getCAdata`: 34 fields) -- neither field
+present. Checked the real downloaded archive
+(`.datras/HH_legacy.parquet`/`CA_legacy.parquet`, also 69/34 columns) --
+zero occurrences anywhere. So the spreadsheet says these fields exist;
+the other two authoritative sources (live WSDL, real submitted data)
+both disagree. Per Working Principle 1 (real data is ground truth) and
+Principle 4 (don't guess; document), there is nothing to add to opus's
+production yaml yet -- no real data exists to characterize either field
+against. Filed as Issue 11 in `data-raw/ICES_ISSUE_REPORT.md` instead.
+
+**A genuinely better vocabulary-resolution mechanism, found by accident.**
+The spreadsheet's `Vocab` column is populated in exactly 1 of 154 field
+rows -- `CA.PreservationMethod`, with a direct icesVocab codetypeguid URL
+(`2f5a5876-c572-42bc-9348-3526ce413c59`). Checked the raw icesVocab
+`CodeType` API response directly: it carries `guid`/`id`/`modified`
+fields that `op_vocab_get_types()` had always silently discarded. The
+spreadsheet's GUID resolves to exactly one code-type
+(`key = "PreservationMethod"`, bare, no prefix) -- an exact,
+ICES-declared match, unlike every other vocab-key resolution in this
+project's history, which is explicitly caveated as a name-based guess
+(`op_vocab_resolve_datras_key()`'s own docs: "always a guess, never an
+ICES-declared fact"). Added `op_vocab_resolve_guid()` (R/vocab.R) and
+extended `op_vocab_get_types()` to retain the `Guid`/`Modified` columns
+(22 exported functions now, not 21). Not yet useful for
+`PreservationMethod` itself, since that field isn't live anywhere yet --
+but a real, reusable improvement for the next external source that
+hands opus a GUID instead of a name to guess from.
+
+**Built opus's own full icesVocab catalog snapshot**, at the user's
+suggestion: they'd been using a `library(icesVocab); map(types, getCodeList)`
+pattern for exactly this, which uses the real `icesVocab` package opus
+removed 2026-08-06. Same idea, opus's own direct-HTTP way instead
+(`data-raw/build_icesvocab_snapshot.R`): loop `op_vocab_get_types()`'s
+580 code-types through `op_vocab_get_codes()`, cache the result with the
+same hash-stamped provenance as every other ICES-source snapshot. Full
+run: 557/580 code-types have >=1 code, 147,271 total (type, code) rows,
+~5 minutes (580 live HTTP calls). Makes future audits that need many
+codes at once (like this session's own field-by-field checks) fast,
+offline, and reproducible against a fixed point in time, instead of
+hundreds of live round-trips per run. Doesn't replace
+`op_vocab_get_codes()`/`op_vocab_resolve_key()` for one-off live
+lookups -- those stay simple and correct for a single field.
+
+**Data Sources section in AGENTS.md now documents four sources, not
+three** -- the field-description spreadsheet added as source #4, with
+an explicit note that its `Vocab` column is nearly always empty (1/154
+rows), so it mostly doesn't double as an icesVocab cross-reference.
+`devtools::check()` clean (0 errors, 0 warnings, 0 notes) throughout.
+
+**`NAMESPACE` switched from hand-maintained to roxygen2-generated.**
+Having to manually add `op_vocab_resolve_guid()`'s export line moments
+after writing it (`devtools::document()` printed the same "Skipping
+NAMESPACE... not generated by roxygen2" message it always has) prompted
+fixing the root cause instead of continuing to patch around it -- this
+exact hand-maintenance gap is what let the six dead bootstrap-workflow
+functions carry a live `@export` tag with no real NAMESPACE entry for
+who knows how long, caught only by this session's own audit.
+
+Verified safety before touching anything, not assumed: cross-checked
+every `@export`-tagged function in `R/*.R` (22) against every
+`export()` line in the hand-written `NAMESPACE` (22) -- exact match,
+both directions, so the switch changes zero functions' export status.
+The two `importFrom(yaml, ...)`/`importFrom(jsonlite, ...)` lines had
+no corresponding `@importFrom` roxygen tag anywhere and zero bare
+(unprefixed) call sites in the actual code -- every real call is
+already fully-qualified (`yaml::read_yaml()`, `jsonlite::fromJSON()`)
+-- so they were dead NAMESPACE entries, safe to drop.
+
+Replaced `NAMESPACE`'s content with the `# Generated by roxygen2: do
+not edit by hand` header roxygen2 requires before it will touch a file,
+then ran `devtools::document()`: regenerated exactly the same 22
+exports (alphabetically sorted), zero `importFrom` lines, confirming
+the safety check above. `devtools::check()` clean. Going forward, any
+new `@export` tag becomes live automatically on the next
+`devtools::document()` -- the whole class of bug this session hit
+twice (dead files with orphaned tags, a new function needing a manual
+NAMESPACE edit) can't recur.

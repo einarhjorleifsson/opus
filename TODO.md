@@ -12,7 +12,7 @@
 
 ✓ **Bootstrap workflow** — Three-phase bootstrap (WSDL seed → parquet enrich → curate) with supporting R functions
 ✓ **Tier 1 (HH, HL, CA, LT)** — Curated YAML specs + descriptive/strict YAML variants + known-issues registry
-✓ **R package** — 21 exported functions (validation, vocabulary, field name utilities) + 5 vignettes
+✓ **R package** — 22 exported functions (validation, vocabulary, field name utilities) + 5 vignettes
 ✓ **Documentation** — why-opus, using-opus, technical-notes articles + Quarto reference site
 ✓ **Test data** — Parquet samples for each Tier 1 table
 ✓ **Git history** — Clean three-phase commits with milestone tags
@@ -31,7 +31,7 @@
 - [ ] Add `conflicts` to the three `relationships` entries where real overlapping non-key columns exist (e.g. `RecordHeader`'s meaning differs HH vs. HL).
 - [ ] Fix the literal `<U+2192>` text (not a real arrow) in both YAMLs' `origin:` field (line 10).
 - [ ] Fix `tests/testthat/test_validation.R`'s file-existence check (`file.exists("HH.parquet")` → `system.file(...)`) — 6 of 14 tests always silently skip right now.
-- [ ] Fix `DESCRIPTION`'s "Data-only package (no computational functions)" claim against its own 21 exported functions.
+- [ ] Fix `DESCRIPTION`'s "Data-only package (no computational functions)" claim against its own 22 exported functions.
 - [ ] Fix `HH.StartTime`'s details ("same as StatRec above" — wrong name, wrong direction; same bug in the legacy YAML).
 - [ ] Glossary: add `icesVocab`, `WSDL`, `WoRMS`/`AphiaID`, the internal rule codes (`M01`/`S24`/`D01`/`D04`), `CPUE`, `OSPAR`, `SeaDataNet` — all used repeatedly, never defined.
 - [ ] Minor cleanup pass: trailing `.0` on range values, flow-scalar vs. block-scalar inconsistency at the table/dataset level, `HL.SubsamplingFactor`'s stale row-count citation (and spot-check others for the same drift), two tiny case mismatches (`HH.ThermoCline`, `LT.LTSRC`), delete the now-fully-dead `scripts/build-dictionary.sh`.

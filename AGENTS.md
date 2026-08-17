@@ -37,7 +37,7 @@ See `vignettes/why-opus.qmd` for context and philosophy.
 
 **2. Consolidate scattered knowledge.** WSDL, icesVocab, Technical Reference, real submissions — bring together into one machine-readable place.
 
-**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation and curation tooling (21 R functions). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
+**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation and curation tooling (22 R functions). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
 
 **4. Don't guess; document.** Every range/constraint/enum needs evidence: real data, WSDL, or icesVocab. Borderline calls get flagged in `details:` for expert review.
 
@@ -114,7 +114,7 @@ Before starting work on opus, ask:
 
 ## Data Sources
 
-opus consolidates metadata from three ICES web services:
+opus consolidates metadata from four ICES sources:
 
 1. **WSDL (Web Services Definition Language)**
    - Source: `https://datras.ices.dk/WebServices/DATRASWebService.asmx`
@@ -134,9 +134,16 @@ opus consolidates metadata from three ICES web services:
    - Provides: Code definitions and meanings (e.g., Gear codes, species validation)
    - Authority: Cross-domain reference—used by multiple ICES data systems
    - Scope: Not DATRAS-exclusive; opus filters to vocabularies applicable to DATRAS fields
-   - Note: Provides code semantics only, not structural types. Keyed by each field's **legacy** (on-the-wire) name, not its current opus name — see the icesVocab field-name dependency note under Key Facts below.
+   - Note: Provides code semantics only, not structural types. Keyed by each field's **legacy** (on-the-wire) name, not its current opus name — see the icesVocab field-name dependency note under Key Facts below. Each code-type also carries a `Guid` (`op_vocab_get_types()`); a GUID match is exact and ICES-declared, unlike every name-based match in this package, which is always a guess (`op_vocab_resolve_guid()`, added 2026-08-17 — see `DEVLOG.md`).
 
-opus unifies these three sources into a single YAML specification, making inconsistencies visible and escalatable to ICES.
+4. **DATRAS field-description spreadsheet** (found 2026-08-17 — see `DEVLOG.md`)
+   - Source: linked from `https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx`, currently `DATRAS_Field_descriptions_and_example_file_December2025.xlsx`; fetched by `data-raw/build_field_description_snapshot.R`
+   - Provides: per-field `Mandatory`/`DataType`/`Description`, an ICES-wide general convention ("submit -9 for a field with no information"), and occasionally a direct icesVocab GUID
+   - Authority: Closest thing to a real Technical Reference opus has — but hand-maintained (dated filename, prose version notes), not an API, and not kept in sync with the other three sources (its `Vocab` column is populated in only 1 of 154 field rows)
+   - Scope: DATRAS-specific
+   - Note: A versioned document, not a stable endpoint — re-run the build script periodically rather than treating one snapshot as permanently current
+
+opus unifies these four sources into a single YAML specification, making inconsistencies visible and escalatable to ICES — the disparity between them (four sources, four formats, no single owner keeping them in sync) is itself part of what opus's known-issues registry exists to surface.
 
 **No R-package dependency on either `icesDatras` or `icesVocab`** (removed 2026-08-06): opus calls these two web services directly (`R/vocab.R`, `R/field_names.R`'s `op_datras_field_list()`), verifying every claim against at least two independent live sources rather than trusting either service's metadata blindly. Full history of this removal, and of a since-corrected attribution error that had described the real `icesDatras` package as hand-patching data it doesn't actually patch, in `DEVLOG.md` (2026-08-06, 2026-08-09).
 
@@ -144,7 +151,7 @@ opus unifies these three sources into a single YAML specification, making incons
 
 ## Implementation
 
-**User-facing exported functions** (21 total):
+**User-facing exported functions** (22 total):
 
 *Specification validation, parquet exploration, and drafting* (`R/validation.R` -- all of them; despite the name, `op_describe_parquet()`/`op_draft_from_parquet()` live here too, not in a separate file):
 - `op_validate_spec(dict_path, json)` — Check YAML spec conformation (uses data-dict CLI); `json=TRUE` also returns the structured report (`$report`)
@@ -163,6 +170,7 @@ opus unifies these three sources into a single YAML specification, making incons
 *ICES Vocabulary utilities* (`R/vocab.R`):
 - `op_vocab_get_types()` — Get all ICES vocabulary code-types with prefix metadata
 - `op_vocab_resolve_key(field_name, types)` — Find candidate vocabulary keys for a field, given the full domain table from `op_vocab_get_types()`
+- `op_vocab_resolve_guid(guid, types)` — Resolve an ICES Vocabulary GUID to its key. Exact and ICES-declared, unlike every name-based match in this package — use whenever an external source (e.g. the field-description spreadsheet's `Vocab` column) hands you one.
 - `op_vocab_get_codes(vocab_key)` — Fetch code:description pairs for a vocabulary
 - `op_vocab_first_usable(vocab_keys)` — Select first non-empty vocabulary from candidates
 - `op_vocab_resolve_datras_key(table, field)` — Look up opus's own audited vocab-key proposal for a Tier 1 field from the pre-computed correction table (`inst/DATRAS-vocab-correction.csv`)
@@ -176,6 +184,8 @@ opus unifies these three sources into a single YAML specification, making incons
 These wrappers enable the curation loop: build YAML → validate against real data → identify issues → refine YAML. The **descriptive YAML** (DATRAS-data-dict.yaml) is the reference for what exists in practice, including both icesVocab-defined codes and undocumented variants observed in submissions.
 
 **Development-only functions:** none. The original three-phase bootstrap workflow's six functions were removed 2026-08-17, superseded by the `data-raw/spec_00`-`03` scripts since 2026-08-05/08 (see [[project_bootstrap_yaml_workflow]] for the original rationale, `DEVLOG.md` 2026-08-17 for the removal).
+
+**`NAMESPACE` is roxygen2-generated** (since 2026-08-17 — see `DEVLOG.md`): every `@export`-tagged function is live automatically; `devtools::document()` regenerates the file completely, so it never needs hand-editing and can never again silently drift from what's actually tagged `@export` in the source (the exact failure mode behind the six dead functions above, and behind `op_vocab_resolve_guid()` needing a manual NAMESPACE edit just before this).
 
 **Source scripts** (`data-raw/`, spec-building pipeline, keyed by legacy field names throughout except the final translate step):
 - `spec_00_operation_types.R` — WSDL operation-page crawler (`.fetch_datras_operation_fields()`'s data source); sourced by `spec_01_seed_dict.R`

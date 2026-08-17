@@ -13,6 +13,15 @@ A data frame with columns:
   \item{stripped}{The key with any domain prefix removed}
   \item{prefix}{Classification: "TS", "AC", or "bare" (unprefixed)}
   \item{Description}{The key's description from ICES Vocabulary}
+  \item{Guid}{The code-type's ICES-assigned GUID. Unlike name-matching
+    (always a guess -- see [op_vocab_resolve_key()]), a GUID match is
+    exact: confirmed 2026-08-17 against the DATRAS field-description
+    spreadsheet's one Vocab-column entry (`PreservationMethod`), which
+    cites this exact GUID and resolves to this exact key, unambiguously.
+    Use [op_vocab_resolve_guid()] whenever an external source hands you
+    one.}
+  \item{Modified}{Last-modified timestamp for the code-type, as reported
+    by the service.}
 }
 }
 \description{

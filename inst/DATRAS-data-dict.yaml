@@ -9,7 +9,7 @@ description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length)
   own curated names, in place of ICES''s legacy on-the-wire names) differ.'
 origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R <U+2192> data-raw/spec_03_translate_new_names.R
 version:
-  date: '2026-08-16'
+  date: '2026-08-17'
 tables:
 - name: HH
   columns:
@@ -99,7 +99,12 @@ tables:
     description: Gear type code
     values:
       AAL: Bottom trawl net Aalhopser
+      ABD: Aberdeen 18 ft trawl
+      BAK: Baka trawl
       BLACK854: Pelagic trawl Blacksprutte 854#
+      BMT: Beam trawl
+      BOT: Bottom Trawl
+      BOX: Boris 'Goshawk' Box Trawl
       BT12: Beam Trawl 12 meters
       BT2: Beam trawl 2 meters
       BT3: Beam trawl 3 meters
@@ -111,93 +116,88 @@ tables:
       BT6: Beam trawl 6 meters
       BT7: Seven m Beam trawl
       BT8: Eight m Beam trawl
+      CAM: Unspecified Gear
       CAR: Bottom trawl FGAV019
+      CHP: Cod Hopper
+      COM: Commercial trawl with sprat bag
+      D40: Dutch Herring Trawl 40 feet
       D45: Dutch Herring Trawl 45 feet
       D48: Dutch Herring Trawl 48 feet
       D63: Dutch Herring Trawl 63 feet
       D73: Dutch Herring Trawl 73 feet
       D8: Dutch Herring Trawl 8 feet
+      DBT: Danish bottom trawl
+      DHT: Dutch Herring Trawl
+      DIV: Collected by diver
       DSD: Danish Sandeel dredge, used at the Danish Sandeel survey
+      DT: Russian bottom trawl
+      EGY: Unspecified Gear
       ENG1600: Pelagic trawl gear Engelnetz 1600#
+      ESB: Estonian small bottom trawl
+      EXP: EXPO trawl - winged midwater trawl
       FIN1600: Pelagic trawl Finflyder combi 1600'
+      FOT: Foto midwater trawl
       FOT32: Pelagic trawl Fotoe 3.2
+      GIL: Gill nets
+      GOS: GOV small
+      GOV: GOV Trawl
+      GRT: Granton trawl
+      H12: Herring Bottom Trawl 120 feet
+      H18: Herring Bottom Trawl 180 feet
+      H20: Herring ground trawl (HG20/25)
+      HAK: Hake-4M
+      HAN: Collected by hand
+      HOB: High Opening Bottom Trawl
+      HT: Herring Bottom Trawl
+      INT: Industrial Trawl
+      JDT: Jackson Trawl, modified otter trawl
       JTDS: Jackson Trawl Downscaled
       JTFS: Jackson Trawl Full Scale
       KAB: Pelagic trawl net Kabeljaubomber
+      LBT: Latvian Bottom Trawl
+      LCT: Lithuanian Cod Trawl
+      LPT: Latvian Pelagic Trawl
       MACRO5A: Pelagic trawl Macro 5A:1
+      MWT: Mid water trawl 664
+      NCT: Norwegian Campell Trawl 1800/96
+      P20: Herring Bottom Trawl (P20/25)
+      PAR: Pair trawl
+      PEL: Pelagic midwater trawl
       PG1: Pelagic trawl Gloria 1024 SW
       PG2: Pelagic trawl Gloria 2048 HO
       PG3: Pelagic trawl Gloria 2560 HO
       PG4: Pelagic trawl Gloria  4096
+      PG5: Pelagic Trawl Gloria Helix 358
       PG6: Pelagic Trawl Gloria Helix 224
+      PHT: Potuguese High Headline Trawl
       PMT_57x52: Pelagic midwater trawl 57x52
       PMT_76x70: Pelagic midwater trawl 76x70
       PORB: Porcupine Baka
       PRL: Pelagic trawl Red Lion 3072
+      PRS: Purse seines
       PRT: Russian pelagic trawl (75/448)
       PSN205: PSN205 pelagic trawl gear applied on Walther Herwig III
       PSN388: Pelagic trawl PSN388 Krake
       PT154: Young Gadoid Pelagic Trawl PT154
       RAPIA: Modified beam trawl with a rigid mouth (Width-3.5 m Weight-225 kg Four
         120-mm wide skids 46-mm codend mesh size)
+      ROT: Rock hopper otter trawl
       RTA: Pelagic trawl 70/300 project 0495
       RTM33S: Pelagic trawl RTM33S
+      SCT: Scraping tool
+      SON: Sonderborg trawl
       SOV: SOV-NET
+      SRN: Seines and ring nets
       TV3: Bottom trawl TV-3 930#
       TVCOD: Trawl model TV112-24-646
+      TVL: Large TV trawl
       TVM: Bottom trawl TV3-280x80
+      TVS: Small TV trawl
       US4: US 4 Seam 3 Bridle
+      VIN: Vinge trawl
       W2A: Western IIA
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
-      VIN: Vinge trawl
-      TVS: Small TV trawl
-      TVL: Large TV trawl
-      SRN: Seines and ring nets
-      SON: Sonderborg trawl
-      SCT: Scraping tool
-      PRS: Purse seines
-      PHT: Potuguese High Headline Trawl
-      PEL: Pelagic midwater trawl
-      PAR: Pair trawl
-      P20: Herring Bottom Trawl (P20/25)
-      NCT: Norwegian Campell Trawl 1800/96
-      MWT: Mid water trawl 664
-      LPT: Latvian Pelagic Trawl
-      LCT: Lithuanian Cod Trawl
-      LBT: Latvian Bottom Trawl
-      INT: Industrial Trawl
-      HT: Herring Bottom Trawl
-      HOB: High Opening Bottom Trawl
-      HAN: Collected by hand
-      HAK: Hake-4M
-      H20: Herring ground trawl (HG20/25)
-      H18: Herring Bottom Trawl 180 feet
-      H12: Herring Bottom Trawl 120 feet
-      GRT: Granton trawl
-      GOV: GOV Trawl
-      GOS: GOV small
-      GIL: Gill nets
-      FOT: Foto midwater trawl
-      EXP: EXPO trawl - winged midwater trawl
-      ESB: Estonian small bottom trawl
-      EGY: Unspecified Gear
-      DT: Russian bottom trawl
-      DIV: Collected by diver
-      DHT: Dutch Herring Trawl
-      DBT: Danish bottom trawl
-      D40: Dutch Herring Trawl 40 feet
-      COM: Commercial trawl with sprat bag
-      CHP: Cod Hopper
-      CAM: Unspecified Gear
-      BOX: Boris 'Goshawk' Box Trawl
-      BOT: Bottom Trawl
-      BMT: Beam trawl
-      BAK: Baka trawl
-      ABD: Aberdeen 18 ft trawl
-      ROT: Rock hopper otter trawl
-      PG5: Pelagic Trawl Gloria Helix 358
-      JDT: Jackson Trawl, modified otter trawl
     details: |-
       All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
       2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
@@ -262,9 +262,20 @@ tables:
     details: |-
       Field's own description says this is a national coding system, not defined by
       ICES -- examples show the common shape (short numeric-looking strings), not an
-      exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
-      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
-      unpopulated.
+      exhaustive domain; not a coded field, so no icesVocab entry is expected
+      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
+      2026-07-29 against obus's own icesDatras-fetched archive, whose
+      parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus ever sees it
+      (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as
+      '6,899 of 150,262 rows unpopulated', which was really the same sentinel misread:
+      re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows, 20,319
+      distinct values), -9 accounts for exactly those 6,899 rows, not a null. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms the ICES-wide '-9 = no information' convention applies here, same as
+      HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning problem:
+      CA's own matching StNo=-9 rows for these same hauls (191,893 rows, verified
+      2026-08-17) join HH successfully via the other 7 composite-key fields, since
+      both sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - primary_key
   - name: HaulNumber
@@ -278,7 +289,14 @@ tables:
     details: |-
       Sequential per-cruise numbering, but countries vary in whether it resets each
       cruise or runs continuously -- the archive-wide range spans many cruises' own
-      counts pooled together, not one cruise's own haul tally.
+      counts pooled together, not one cruise's own haul tally. No icesVocab entry
+      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
+      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms Mandatory: Yes and documents an ICES-wide convention applicable to any
+      field with a header: submit -9 for 'no information' -- so the -9 sentinel seen
+      in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
+      value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: Cruise year (YYYY)
@@ -344,9 +362,12 @@ tables:
     details: |-
       Field's own description says depth strata are survey-specific, not an ICES-wide
       vocabulary -- examples illustrate the shape seen in practice (mix of
-      letter-prefixed and bare-number codes), not an exhaustive domain. Verified
-      2026-07-29 against the full HH archive: 194 distinct values, only 75,753 of
-      150,262 rows populated (roughly half of surveys don't report it).
+      letter-prefixed and bare-number codes), not an exhaustive domain. Originally
+      verified 2026-07-29 against obus's own pre-fix icesDatras archive (same
+      sentinel-scrubbing caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed
+      then as 'only half of surveys report it'. Re-verified 2026-08-17 directly
+      against .datras/HH.parquet (145,958 rows): -9 is present and dominant (74,509
+      rows, 51.05%), not a null -- 0 true nulls in the current archive.
     label: Depth Stratum
   - name: HaulDuration
     type: number(quantity)
@@ -427,11 +448,19 @@ tables:
     - '32F3'
     - '36F6'
     details: |-
-      701 distinct values in HH's archive (verified 2026-07-29); real ICES statistical
-      rectangle codes (0.5 deg lat x 1 deg lon grid), not a fixed enum given the size
-      of the grid. 12,235 of 150,262 HH rows unpopulated. Only present in HH and LT
-      (confirmed 2026-07-29) -- consistent with the Open items note that LT's
-      assessment output joins in a set of HH-style columns.
+      Real ICES statistical rectangle codes (0.5 deg lat x 1 deg lon grid), not a
+      fixed enum given the size of the grid -- independently corroborated 2026-08-17
+      by ICES's own field-description spreadsheet, which describes this field via the
+      same geometric grid rule rather than a code list
+      (data-raw/build_field_description_snapshot.R). Only present in HH and LT
+      (confirmed 2026-07-29) -- consistent with LT's assessment output joining in a
+      set of HH-style columns. Originally verified 2026-07-29 against obus's own
+      icesDatras-fetched archive, whose parseDatras(fix_types=TRUE) scrubs literal -9
+      to NA before opus ever sees it (same caveat as
+      GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as '12,235 of 150,262
+      HH rows unpopulated', which was really the same sentinel misread: re-verified
+      2026-08-17 directly against .datras/HH.parquet (145,958 rows, 685 distinct
+      values), -9 accounts for exactly those 12,235 rows, not a null.
   - name: BottomDepth
     type: number(quantity)
     description: Sampling depth in metres, measured from the water surface.
@@ -463,13 +492,16 @@ tables:
     - '3'
     details: |-
       National station numbering (field's own description), so examples are
-      illustrative only, not an exhaustive domain -- 18,373 distinct values, only
-      79,371 of 150,262 rows populated. '88888888' recurs 1,635 times and reads like
-      an undocumented all-8s placeholder/sentinel (the same kind of pattern seen
+      illustrative only, not an exhaustive domain. '88888888' recurs and reads like an
+      undocumented all-8s placeholder/sentinel (the same kind of pattern seen
       elsewhere in HH, e.g. HaulDuration's zeros) rather than a real station ID, but
       is kept in `examples` (unlike a `range` exclusion, `examples` isn't a validity
-      gate) since a reader should know it's a real recurring value. Verified
-      2026-07-29 against the full archive.
+      gate) since a reader should know it's a real recurring value. Originally
+      verified 2026-07-29 against obus's own pre-fix icesDatras archive (same
+      sentinel-scrubbing caveat as GenSamp below) -- framed then as 'only 79,371 of
+      150,262 rows populated'. Re-verified 2026-08-17 directly against
+      .datras/HH.parquet (145,958 rows): 0 true nulls -- 69,762 rows (47.79%) carry
+      either -9 or the 88888888 placeholder, the rest a real station ID.
   - name: StandardSpeciesCode
     type: enum
     description: |-
@@ -520,6 +552,11 @@ tables:
     range:
     - 0.0
     - 76.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
   - name: Rigging
     type: enum
     description: |-
@@ -600,6 +637,11 @@ tables:
     range:
     - 0.0
     - 59995.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in either
+      table.
   - name: WarpLength
     type: number(quantity)
     description: |-
@@ -609,6 +651,11 @@ tables:
     range:
     - 0.0
     - 4065.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in either
+      table.
   - name: WarpDiameter
     type: number(quantity)
     description: Warp diametre in millimetres.
@@ -620,7 +667,11 @@ tables:
       A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated
       single-occurrence values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85,
       88mm) sit apart from it with no comparable support and are treated as data-entry
-      errors, excluded here.
+      errors, excluded here. -9 is the ICES-wide sanctioned 'no information'
+      convention (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17:
+      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception (already
+      excluded by the range above, [16,30]).
   - name: WarpDensity
     type: number(quantity)
     description: |-
@@ -630,6 +681,11 @@ tables:
     range:
     - 0.0
     - 26.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
   - name: DoorSurface
     type: number(quantity)
     description: Door surface area in square metres.
@@ -637,6 +693,11 @@ tables:
     range:
     - 0.0
     - 20.2
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls in
+      either table.
   - name: DoorWeight
     type: number(quantity)
     description: Door weight in kilograms.
@@ -644,6 +705,11 @@ tables:
     range:
     - 0.0
     - 1720.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls in
+      either table.
   - name: DoorSpread
     type: number(quantity)
     description: Mean value in metres of door spread measurements.
@@ -656,7 +722,10 @@ tables:
       zero door spread. Three single-occurrence values (762, 767, 778m) sit far above
       everything else in the archive (next highest is 250m) and are treated as
       data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
-      likely a fixed beam-trawl spread) is kept.
+      likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
+      information' convention (data-raw/build_field_description_snapshot.R), confirmed
+      2026-08-17: HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%), 0
+      true nulls in either table -- already excluded by the range above.
   - name: WingSpread
     type: number(quantity)
     description: |-
@@ -670,7 +739,11 @@ tables:
       0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value with real
       support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed
       beam-trawl spread). 142m (1 row) sits far above the next-highest real value
-      (50m) and is treated as a data-entry error, excluded.
+      (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
+      sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls in
+      either table -- already excluded by the range above.
   - name: Buoyancy
     type: number(quantity)
     description: |-
@@ -711,7 +784,11 @@ tables:
       same pattern confirmed for WindDir below. A further cluster -- 450 deg (62
       rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes
       ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg). Both groups
-      are outside the documented 0-360 domain and excluded here.
+      are outside the documented 0-360 domain and excluded here. -9 is the ICES-wide
+      sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls in
+      either table -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -727,7 +804,10 @@ tables:
     details: |-
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
-      gap, all excluded.
+      gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      56,805/145,958 rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in
+      either table -- already excluded by the range above.
   - name: SpeedWater
     type: number(quantity)
     description: Trawl speed on water in knots.
@@ -735,6 +815,11 @@ tables:
     range:
     - 0.0
     - 22.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
   - name: SurfaceCurrentDirection
     type: number(quantity)
     description: |-
@@ -791,7 +876,12 @@ tables:
     details: |-
       -1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented
       out-of-domain 'not recorded' marker; a handful of further single-occurrence
-      values just above 360 (711, 504, 420, 365, 361) are also excluded.
+      values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
+      present and is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls in
+      either table -- already excluded by the range above (unlike -1, which the range
+      explicitly keeps).
   - name: WindSpeed
     type: number(quantity)
     description: Speed of wind in metres/sec.
@@ -814,6 +904,11 @@ tables:
     range:
     - 0.0
     - 360.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
   - name: SwellHeight
     type: number(quantity)
     description: Height of (swell) waves, in metres
@@ -896,7 +991,11 @@ tables:
     details: |-
       0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh
       size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows)
-      and is treated as a data-entry error, excluded.
+      and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned
+      'no information' convention (data-raw/build_field_description_snapshot.R),
+      confirmed 2026-08-17: HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows
+      (30.11%), 0 true nulls in either table -- the modal value in both tables,
+      already excluded by the range above.
   - name: SecchiDepth
     type: number(quantity)
     description: Secchi depth in metres
@@ -1091,7 +1190,12 @@ tables:
     description: Gear type code
     values:
       AAL: Bottom trawl net Aalhopser
+      ABD: Aberdeen 18 ft trawl
+      BAK: Baka trawl
       BLACK854: Pelagic trawl Blacksprutte 854#
+      BMT: Beam trawl
+      BOT: Bottom Trawl
+      BOX: Boris 'Goshawk' Box Trawl
       BT12: Beam Trawl 12 meters
       BT2: Beam trawl 2 meters
       BT3: Beam trawl 3 meters
@@ -1103,93 +1207,88 @@ tables:
       BT6: Beam trawl 6 meters
       BT7: Seven m Beam trawl
       BT8: Eight m Beam trawl
+      CAM: Unspecified Gear
       CAR: Bottom trawl FGAV019
+      CHP: Cod Hopper
+      COM: Commercial trawl with sprat bag
+      D40: Dutch Herring Trawl 40 feet
       D45: Dutch Herring Trawl 45 feet
       D48: Dutch Herring Trawl 48 feet
       D63: Dutch Herring Trawl 63 feet
       D73: Dutch Herring Trawl 73 feet
       D8: Dutch Herring Trawl 8 feet
+      DBT: Danish bottom trawl
+      DHT: Dutch Herring Trawl
+      DIV: Collected by diver
       DSD: Danish Sandeel dredge, used at the Danish Sandeel survey
+      DT: Russian bottom trawl
+      EGY: Unspecified Gear
       ENG1600: Pelagic trawl gear Engelnetz 1600#
+      ESB: Estonian small bottom trawl
+      EXP: EXPO trawl - winged midwater trawl
       FIN1600: Pelagic trawl Finflyder combi 1600'
+      FOT: Foto midwater trawl
       FOT32: Pelagic trawl Fotoe 3.2
+      GIL: Gill nets
+      GOS: GOV small
+      GOV: GOV Trawl
+      GRT: Granton trawl
+      H12: Herring Bottom Trawl 120 feet
+      H18: Herring Bottom Trawl 180 feet
+      H20: Herring ground trawl (HG20/25)
+      HAK: Hake-4M
+      HAN: Collected by hand
+      HOB: High Opening Bottom Trawl
+      HT: Herring Bottom Trawl
+      INT: Industrial Trawl
+      JDT: Jackson Trawl, modified otter trawl
       JTDS: Jackson Trawl Downscaled
       JTFS: Jackson Trawl Full Scale
       KAB: Pelagic trawl net Kabeljaubomber
+      LBT: Latvian Bottom Trawl
+      LCT: Lithuanian Cod Trawl
+      LPT: Latvian Pelagic Trawl
       MACRO5A: Pelagic trawl Macro 5A:1
+      MWT: Mid water trawl 664
+      NCT: Norwegian Campell Trawl 1800/96
+      P20: Herring Bottom Trawl (P20/25)
+      PAR: Pair trawl
+      PEL: Pelagic midwater trawl
       PG1: Pelagic trawl Gloria 1024 SW
       PG2: Pelagic trawl Gloria 2048 HO
       PG3: Pelagic trawl Gloria 2560 HO
       PG4: Pelagic trawl Gloria  4096
+      PG5: Pelagic Trawl Gloria Helix 358
       PG6: Pelagic Trawl Gloria Helix 224
+      PHT: Potuguese High Headline Trawl
       PMT_57x52: Pelagic midwater trawl 57x52
       PMT_76x70: Pelagic midwater trawl 76x70
       PORB: Porcupine Baka
       PRL: Pelagic trawl Red Lion 3072
+      PRS: Purse seines
       PRT: Russian pelagic trawl (75/448)
       PSN205: PSN205 pelagic trawl gear applied on Walther Herwig III
       PSN388: Pelagic trawl PSN388 Krake
       PT154: Young Gadoid Pelagic Trawl PT154
       RAPIA: Modified beam trawl with a rigid mouth (Width-3.5 m Weight-225 kg Four
         120-mm wide skids 46-mm codend mesh size)
+      ROT: Rock hopper otter trawl
       RTA: Pelagic trawl 70/300 project 0495
       RTM33S: Pelagic trawl RTM33S
+      SCT: Scraping tool
+      SON: Sonderborg trawl
       SOV: SOV-NET
+      SRN: Seines and ring nets
       TV3: Bottom trawl TV-3 930#
       TVCOD: Trawl model TV112-24-646
+      TVL: Large TV trawl
       TVM: Bottom trawl TV3-280x80
+      TVS: Small TV trawl
       US4: US 4 Seam 3 Bridle
+      VIN: Vinge trawl
       W2A: Western IIA
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
-      VIN: Vinge trawl
-      TVS: Small TV trawl
-      TVL: Large TV trawl
-      SRN: Seines and ring nets
-      SON: Sonderborg trawl
-      SCT: Scraping tool
-      PRS: Purse seines
-      PHT: Potuguese High Headline Trawl
-      PEL: Pelagic midwater trawl
-      PAR: Pair trawl
-      P20: Herring Bottom Trawl (P20/25)
-      NCT: Norwegian Campell Trawl 1800/96
-      MWT: Mid water trawl 664
-      LPT: Latvian Pelagic Trawl
-      LCT: Lithuanian Cod Trawl
-      LBT: Latvian Bottom Trawl
-      INT: Industrial Trawl
-      HT: Herring Bottom Trawl
-      HOB: High Opening Bottom Trawl
-      HAN: Collected by hand
-      HAK: Hake-4M
-      H20: Herring ground trawl (HG20/25)
-      H18: Herring Bottom Trawl 180 feet
-      H12: Herring Bottom Trawl 120 feet
-      GRT: Granton trawl
-      GOV: GOV Trawl
-      GOS: GOV small
-      GIL: Gill nets
-      FOT: Foto midwater trawl
-      EXP: EXPO trawl - winged midwater trawl
-      ESB: Estonian small bottom trawl
-      EGY: Unspecified Gear
-      DT: Russian bottom trawl
-      DIV: Collected by diver
-      DHT: Dutch Herring Trawl
-      DBT: Danish bottom trawl
-      D40: Dutch Herring Trawl 40 feet
-      COM: Commercial trawl with sprat bag
-      CHP: Cod Hopper
-      CAM: Unspecified Gear
-      BOX: Boris 'Goshawk' Box Trawl
-      BOT: Bottom Trawl
-      BMT: Beam trawl
-      BAK: Baka trawl
-      ABD: Aberdeen 18 ft trawl
-      ROT: Rock hopper otter trawl
-      PG5: Pelagic Trawl Gloria Helix 358
-      JDT: Jackson Trawl, modified otter trawl
     details: |-
       All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
       2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
@@ -1255,9 +1354,20 @@ tables:
     details: |-
       Field's own description says this is a national coding system, not defined by
       ICES -- examples show the common shape (short numeric-looking strings), not an
-      exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
-      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
-      unpopulated.
+      exhaustive domain; not a coded field, so no icesVocab entry is expected
+      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
+      2026-07-29 against obus's own icesDatras-fetched archive, whose
+      parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus ever sees it
+      (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as
+      '6,899 of 150,262 rows unpopulated', which was really the same sentinel misread:
+      re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows, 20,319
+      distinct values), -9 accounts for exactly those 6,899 rows, not a null. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms the ICES-wide '-9 = no information' convention applies here, same as
+      HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning problem:
+      CA's own matching StNo=-9 rows for these same hauls (191,893 rows, verified
+      2026-08-17) join HH successfully via the other 7 composite-key fields, since
+      both sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - required
     - foreign_key
@@ -1273,7 +1383,14 @@ tables:
     details: |-
       Sequential per-cruise numbering, but countries vary in whether it resets each
       cruise or runs continuously -- the archive-wide range spans many cruises' own
-      counts pooled together, not one cruise's own haul tally.
+      counts pooled together, not one cruise's own haul tally. No icesVocab entry
+      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
+      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms Mandatory: Yes and documents an ICES-wide convention applicable to any
+      field with a header: submit -9 for 'no information' -- so the -9 sentinel seen
+      in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
+      value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: Cruise year (YYYY)
@@ -1711,7 +1828,12 @@ tables:
     description: Gear type code
     values:
       AAL: Bottom trawl net Aalhopser
+      ABD: Aberdeen 18 ft trawl
+      BAK: Baka trawl
       BLACK854: Pelagic trawl Blacksprutte 854#
+      BMT: Beam trawl
+      BOT: Bottom Trawl
+      BOX: Boris 'Goshawk' Box Trawl
       BT12: Beam Trawl 12 meters
       BT2: Beam trawl 2 meters
       BT3: Beam trawl 3 meters
@@ -1723,93 +1845,88 @@ tables:
       BT6: Beam trawl 6 meters
       BT7: Seven m Beam trawl
       BT8: Eight m Beam trawl
+      CAM: Unspecified Gear
       CAR: Bottom trawl FGAV019
+      CHP: Cod Hopper
+      COM: Commercial trawl with sprat bag
+      D40: Dutch Herring Trawl 40 feet
       D45: Dutch Herring Trawl 45 feet
       D48: Dutch Herring Trawl 48 feet
       D63: Dutch Herring Trawl 63 feet
       D73: Dutch Herring Trawl 73 feet
       D8: Dutch Herring Trawl 8 feet
+      DBT: Danish bottom trawl
+      DHT: Dutch Herring Trawl
+      DIV: Collected by diver
       DSD: Danish Sandeel dredge, used at the Danish Sandeel survey
+      DT: Russian bottom trawl
+      EGY: Unspecified Gear
       ENG1600: Pelagic trawl gear Engelnetz 1600#
+      ESB: Estonian small bottom trawl
+      EXP: EXPO trawl - winged midwater trawl
       FIN1600: Pelagic trawl Finflyder combi 1600'
+      FOT: Foto midwater trawl
       FOT32: Pelagic trawl Fotoe 3.2
+      GIL: Gill nets
+      GOS: GOV small
+      GOV: GOV Trawl
+      GRT: Granton trawl
+      H12: Herring Bottom Trawl 120 feet
+      H18: Herring Bottom Trawl 180 feet
+      H20: Herring ground trawl (HG20/25)
+      HAK: Hake-4M
+      HAN: Collected by hand
+      HOB: High Opening Bottom Trawl
+      HT: Herring Bottom Trawl
+      INT: Industrial Trawl
+      JDT: Jackson Trawl, modified otter trawl
       JTDS: Jackson Trawl Downscaled
       JTFS: Jackson Trawl Full Scale
       KAB: Pelagic trawl net Kabeljaubomber
+      LBT: Latvian Bottom Trawl
+      LCT: Lithuanian Cod Trawl
+      LPT: Latvian Pelagic Trawl
       MACRO5A: Pelagic trawl Macro 5A:1
+      MWT: Mid water trawl 664
+      NCT: Norwegian Campell Trawl 1800/96
+      P20: Herring Bottom Trawl (P20/25)
+      PAR: Pair trawl
+      PEL: Pelagic midwater trawl
       PG1: Pelagic trawl Gloria 1024 SW
       PG2: Pelagic trawl Gloria 2048 HO
       PG3: Pelagic trawl Gloria 2560 HO
       PG4: Pelagic trawl Gloria  4096
+      PG5: Pelagic Trawl Gloria Helix 358
       PG6: Pelagic Trawl Gloria Helix 224
+      PHT: Potuguese High Headline Trawl
       PMT_57x52: Pelagic midwater trawl 57x52
       PMT_76x70: Pelagic midwater trawl 76x70
       PORB: Porcupine Baka
       PRL: Pelagic trawl Red Lion 3072
+      PRS: Purse seines
       PRT: Russian pelagic trawl (75/448)
       PSN205: PSN205 pelagic trawl gear applied on Walther Herwig III
       PSN388: Pelagic trawl PSN388 Krake
       PT154: Young Gadoid Pelagic Trawl PT154
       RAPIA: Modified beam trawl with a rigid mouth (Width-3.5 m Weight-225 kg Four
         120-mm wide skids 46-mm codend mesh size)
+      ROT: Rock hopper otter trawl
       RTA: Pelagic trawl 70/300 project 0495
       RTM33S: Pelagic trawl RTM33S
+      SCT: Scraping tool
+      SON: Sonderborg trawl
       SOV: SOV-NET
+      SRN: Seines and ring nets
       TV3: Bottom trawl TV-3 930#
       TVCOD: Trawl model TV112-24-646
+      TVL: Large TV trawl
       TVM: Bottom trawl TV3-280x80
+      TVS: Small TV trawl
       US4: US 4 Seam 3 Bridle
+      VIN: Vinge trawl
       W2A: Western IIA
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
-      VIN: Vinge trawl
-      TVS: Small TV trawl
-      TVL: Large TV trawl
-      SRN: Seines and ring nets
-      SON: Sonderborg trawl
-      SCT: Scraping tool
-      PRS: Purse seines
-      PHT: Potuguese High Headline Trawl
-      PEL: Pelagic midwater trawl
-      PAR: Pair trawl
-      P20: Herring Bottom Trawl (P20/25)
-      NCT: Norwegian Campell Trawl 1800/96
-      MWT: Mid water trawl 664
-      LPT: Latvian Pelagic Trawl
-      LCT: Lithuanian Cod Trawl
-      LBT: Latvian Bottom Trawl
-      INT: Industrial Trawl
-      HT: Herring Bottom Trawl
-      HOB: High Opening Bottom Trawl
-      HAN: Collected by hand
-      HAK: Hake-4M
-      H20: Herring ground trawl (HG20/25)
-      H18: Herring Bottom Trawl 180 feet
-      H12: Herring Bottom Trawl 120 feet
-      GRT: Granton trawl
-      GOV: GOV Trawl
-      GOS: GOV small
-      GIL: Gill nets
-      FOT: Foto midwater trawl
-      EXP: EXPO trawl - winged midwater trawl
-      ESB: Estonian small bottom trawl
-      EGY: Unspecified Gear
-      DT: Russian bottom trawl
-      DIV: Collected by diver
-      DHT: Dutch Herring Trawl
-      DBT: Danish bottom trawl
-      D40: Dutch Herring Trawl 40 feet
-      COM: Commercial trawl with sprat bag
-      CHP: Cod Hopper
-      CAM: Unspecified Gear
-      BOX: Boris 'Goshawk' Box Trawl
-      BOT: Bottom Trawl
-      BMT: Beam trawl
-      BAK: Baka trawl
-      ABD: Aberdeen 18 ft trawl
-      ROT: Rock hopper otter trawl
-      PG5: Pelagic Trawl Gloria Helix 358
-      JDT: Jackson Trawl, modified otter trawl
     details: |-
       All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
       2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
@@ -1884,9 +2001,20 @@ tables:
     details: |-
       Field's own description says this is a national coding system, not defined by
       ICES -- examples show the common shape (short numeric-looking strings), not an
-      exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
-      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
-      unpopulated.
+      exhaustive domain; not a coded field, so no icesVocab entry is expected
+      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
+      2026-07-29 against obus's own icesDatras-fetched archive, whose
+      parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus ever sees it
+      (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as
+      '6,899 of 150,262 rows unpopulated', which was really the same sentinel misread:
+      re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows, 20,319
+      distinct values), -9 accounts for exactly those 6,899 rows, not a null. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms the ICES-wide '-9 = no information' convention applies here, same as
+      HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning problem:
+      CA's own matching StNo=-9 rows for these same hauls (191,893 rows, verified
+      2026-08-17) join HH successfully via the other 7 composite-key fields, since
+      both sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - required
     - foreign_key
@@ -1902,7 +2030,14 @@ tables:
     details: |-
       Sequential per-cruise numbering, but countries vary in whether it resets each
       cruise or runs continuously -- the archive-wide range spans many cruises' own
-      counts pooled together, not one cruise's own haul tally.
+      counts pooled together, not one cruise's own haul tally. No icesVocab entry
+      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
+      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms Mandatory: Yes and documents an ICES-wide convention applicable to any
+      field with a header: submit -9 for 'no information' -- so the -9 sentinel seen
+      in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
+      value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: Cruise year (YYYY)
@@ -1953,8 +2088,11 @@ tables:
       '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes
       total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec_01_seed_dict.R)
       for a usable `values` map -- and confirms the true domain genuinely is wider
-      than what's observed here (17 of 27 codes appear in this archive). Verified
-      2026-07-29 against the full CA archive.
+      than what's observed here (17 of 27 codes appear in this archive). The
+      name-match check above never tested real-data sentinel coverage: checked
+      2026-08-17 directly against .datras/CA.parquet (5,865,076 rows), -9 is present
+      and substantial (1,968,019 rows, 33.55%), 0 true nulls -- not previously
+      documented either way.
   - name: AreaCode
     type: string
     description: Area coding according to AreaType
@@ -1968,8 +2106,14 @@ tables:
       Field's own description says coding is 'according to AreaType' (its sibling
       field) -- meaning depends on that field's own value, same pattern as
       LngtClass/LngtCode. Codes mix ICES-area style (VIIg) and rectangle-like style
-      (38G3). 635 distinct values, 1,898,151 of 5,966,950 rows unpopulated. Verified
-      2026-07-29 against the full CA archive.
+      (38G3). Originally verified 2026-07-29 against obus's own icesDatras-fetched
+      archive, whose parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus
+      ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed
+      then as '1,898,151 of 5,966,950 rows unpopulated', which undercounted the true
+      picture: re-verified 2026-08-17 directly against .datras/CA.parquet (5,865,076
+      rows), -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No
+      icesVocab entry exists for this field under any name (checked against all 580
+      registered keys).
   - name: LengthCode
     type: enum
     description: |-
@@ -2035,8 +2179,12 @@ tables:
       Field's own description says the scheme depends on the sibling MaturityScale
       field ('MaturityScale should be filled in when...') -- explains the observed mix
       of numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales
-      using different code sets, not an inconsistency. 48 distinct values, 3,173,580
-      of 5,966,950 rows unpopulated. Verified 2026-07-29 against the full CA archive.
+      using different code sets, not an inconsistency. Originally verified 2026-07-29
+      against obus's own pre-fix icesDatras archive (same sentinel-scrubbing caveat as
+      GenSamp below) -- framed then as '3,173,580 rows unpopulated'. Re-verified
+      2026-08-17 directly against .datras/CA.parquet (5,865,076 rows): -9 is present
+      and dominant (3,100,723 rows, 52.87%), not a null -- 0 true nulls in the current
+      archive.
   - name: AgePlusGroup
     type: enum
     description: |-
@@ -2102,10 +2250,18 @@ tables:
     - '4'
     - '5'
     details: |-
-      Reads as a sequential per-sample identifier (dense run of small
-      integers-as-strings), open-ended and illustrative only, not an exhaustive domain
-      -- 170,774 distinct values, only 1,118,002 of 5,966,950 rows populated (~18.7%).
-      Verified 2026-07-29 against the full CA archive.
+      Field's own description ('Fish identification number - running sampling number
+      of the specimen') confirms a real per-specimen sequence, open-ended and
+      illustrative only, not an exhaustive domain. Originally verified 2026-07-29
+      against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
+      scrubs literal -9 to NA before opus ever sees it (same caveat as
+      GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as 'only ~18.7% of rows
+      populated', which was really the same sentinel misread: re-verified 2026-08-17
+      directly against .datras/CA.parquet (5,865,076 rows), -9 is present and dominant
+      (4,747,074 rows, 80.94%), not a null; real per-specimen IDs make up the
+      remaining ~19%. No icesVocab entry exists for this field under any name (checked
+      against all 580 registered keys) -- expected for a plain sequential identifier,
+      not a coded field.
   - name: GeneticSamplingFlag
     type: enum
     description: Flag whether genetic sample was taken
@@ -2421,7 +2577,12 @@ tables:
     description: Gear type code
     values:
       AAL: Bottom trawl net Aalhopser
+      ABD: Aberdeen 18 ft trawl
+      BAK: Baka trawl
       BLACK854: Pelagic trawl Blacksprutte 854#
+      BMT: Beam trawl
+      BOT: Bottom Trawl
+      BOX: Boris 'Goshawk' Box Trawl
       BT12: Beam Trawl 12 meters
       BT2: Beam trawl 2 meters
       BT3: Beam trawl 3 meters
@@ -2433,93 +2594,88 @@ tables:
       BT6: Beam trawl 6 meters
       BT7: Seven m Beam trawl
       BT8: Eight m Beam trawl
+      CAM: Unspecified Gear
       CAR: Bottom trawl FGAV019
+      CHP: Cod Hopper
+      COM: Commercial trawl with sprat bag
+      D40: Dutch Herring Trawl 40 feet
       D45: Dutch Herring Trawl 45 feet
       D48: Dutch Herring Trawl 48 feet
       D63: Dutch Herring Trawl 63 feet
       D73: Dutch Herring Trawl 73 feet
       D8: Dutch Herring Trawl 8 feet
+      DBT: Danish bottom trawl
+      DHT: Dutch Herring Trawl
+      DIV: Collected by diver
       DSD: Danish Sandeel dredge, used at the Danish Sandeel survey
+      DT: Russian bottom trawl
+      EGY: Unspecified Gear
       ENG1600: Pelagic trawl gear Engelnetz 1600#
+      ESB: Estonian small bottom trawl
+      EXP: EXPO trawl - winged midwater trawl
       FIN1600: Pelagic trawl Finflyder combi 1600'
+      FOT: Foto midwater trawl
       FOT32: Pelagic trawl Fotoe 3.2
+      GIL: Gill nets
+      GOS: GOV small
+      GOV: GOV Trawl
+      GRT: Granton trawl
+      H12: Herring Bottom Trawl 120 feet
+      H18: Herring Bottom Trawl 180 feet
+      H20: Herring ground trawl (HG20/25)
+      HAK: Hake-4M
+      HAN: Collected by hand
+      HOB: High Opening Bottom Trawl
+      HT: Herring Bottom Trawl
+      INT: Industrial Trawl
+      JDT: Jackson Trawl, modified otter trawl
       JTDS: Jackson Trawl Downscaled
       JTFS: Jackson Trawl Full Scale
       KAB: Pelagic trawl net Kabeljaubomber
+      LBT: Latvian Bottom Trawl
+      LCT: Lithuanian Cod Trawl
+      LPT: Latvian Pelagic Trawl
       MACRO5A: Pelagic trawl Macro 5A:1
+      MWT: Mid water trawl 664
+      NCT: Norwegian Campell Trawl 1800/96
+      P20: Herring Bottom Trawl (P20/25)
+      PAR: Pair trawl
+      PEL: Pelagic midwater trawl
       PG1: Pelagic trawl Gloria 1024 SW
       PG2: Pelagic trawl Gloria 2048 HO
       PG3: Pelagic trawl Gloria 2560 HO
       PG4: Pelagic trawl Gloria  4096
+      PG5: Pelagic Trawl Gloria Helix 358
       PG6: Pelagic Trawl Gloria Helix 224
+      PHT: Potuguese High Headline Trawl
       PMT_57x52: Pelagic midwater trawl 57x52
       PMT_76x70: Pelagic midwater trawl 76x70
       PORB: Porcupine Baka
       PRL: Pelagic trawl Red Lion 3072
+      PRS: Purse seines
       PRT: Russian pelagic trawl (75/448)
       PSN205: PSN205 pelagic trawl gear applied on Walther Herwig III
       PSN388: Pelagic trawl PSN388 Krake
       PT154: Young Gadoid Pelagic Trawl PT154
       RAPIA: Modified beam trawl with a rigid mouth (Width-3.5 m Weight-225 kg Four
         120-mm wide skids 46-mm codend mesh size)
+      ROT: Rock hopper otter trawl
       RTA: Pelagic trawl 70/300 project 0495
       RTM33S: Pelagic trawl RTM33S
+      SCT: Scraping tool
+      SON: Sonderborg trawl
       SOV: SOV-NET
+      SRN: Seines and ring nets
       TV3: Bottom trawl TV-3 930#
       TVCOD: Trawl model TV112-24-646
+      TVL: Large TV trawl
       TVM: Bottom trawl TV3-280x80
+      TVS: Small TV trawl
       US4: US 4 Seam 3 Bridle
+      VIN: Vinge trawl
       W2A: Western IIA
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
-      VIN: Vinge trawl
-      TVS: Small TV trawl
-      TVL: Large TV trawl
-      SRN: Seines and ring nets
-      SON: Sonderborg trawl
-      SCT: Scraping tool
-      PRS: Purse seines
-      PHT: Potuguese High Headline Trawl
-      PEL: Pelagic midwater trawl
-      PAR: Pair trawl
-      P20: Herring Bottom Trawl (P20/25)
-      NCT: Norwegian Campell Trawl 1800/96
-      MWT: Mid water trawl 664
-      LPT: Latvian Pelagic Trawl
-      LCT: Lithuanian Cod Trawl
-      LBT: Latvian Bottom Trawl
-      INT: Industrial Trawl
-      HT: Herring Bottom Trawl
-      HOB: High Opening Bottom Trawl
-      HAN: Collected by hand
-      HAK: Hake-4M
-      H20: Herring ground trawl (HG20/25)
-      H18: Herring Bottom Trawl 180 feet
-      H12: Herring Bottom Trawl 120 feet
-      GRT: Granton trawl
-      GOV: GOV Trawl
-      GOS: GOV small
-      GIL: Gill nets
-      FOT: Foto midwater trawl
-      EXP: EXPO trawl - winged midwater trawl
-      ESB: Estonian small bottom trawl
-      EGY: Unspecified Gear
-      DT: Russian bottom trawl
-      DIV: Collected by diver
-      DHT: Dutch Herring Trawl
-      DBT: Danish bottom trawl
-      D40: Dutch Herring Trawl 40 feet
-      COM: Commercial trawl with sprat bag
-      CHP: Cod Hopper
-      CAM: Unspecified Gear
-      BOX: Boris 'Goshawk' Box Trawl
-      BOT: Bottom Trawl
-      BMT: Beam trawl
-      BAK: Baka trawl
-      ABD: Aberdeen 18 ft trawl
-      ROT: Rock hopper otter trawl
-      PG5: Pelagic Trawl Gloria Helix 358
-      JDT: Jackson Trawl, modified otter trawl
     details: |-
       All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
       2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
@@ -2560,9 +2716,20 @@ tables:
     details: |-
       Field's own description says this is a national coding system, not defined by
       ICES -- examples show the common shape (short numeric-looking strings), not an
-      exhaustive domain. 24,130 distinct values in HH's archive (verified 2026-07-29),
-      the highest cardinality of any Tier 1 string field; 6,899 of 150,262 rows
-      unpopulated.
+      exhaustive domain; not a coded field, so no icesVocab entry is expected
+      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
+      2026-07-29 against obus's own icesDatras-fetched archive, whose
+      parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus ever sees it
+      (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as
+      '6,899 of 150,262 rows unpopulated', which was really the same sentinel misread:
+      re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows, 20,319
+      distinct values), -9 accounts for exactly those 6,899 rows, not a null. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms the ICES-wide '-9 = no information' convention applies here, same as
+      HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning problem:
+      CA's own matching StNo=-9 rows for these same hauls (191,893 rows, verified
+      2026-08-17) join HH successfully via the other 7 composite-key fields, since
+      both sides consistently carry -9 for the same haul rather than disagreeing.
     description: Station number. National coding system, not defined by ICES.
     constraints:
     - required
@@ -2578,7 +2745,14 @@ tables:
     details: |-
       Sequential per-cruise numbering, but countries vary in whether it resets each
       cruise or runs continuously -- the archive-wide range spans many cruises' own
-      counts pooled together, not one cruise's own haul tally.
+      counts pooled together, not one cruise's own haul tally. No icesVocab entry
+      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
+      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
+      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
+      confirms Mandatory: Yes and documents an ICES-wide convention applicable to any
+      field with a header: submit -9 for 'no information' -- so the -9 sentinel seen
+      in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
+      value, not an undocumented one.
     description: Sequential numbering of hauls during cruise.
   - name: ShootLatitude
     type: number(quantity)
@@ -2650,19 +2824,26 @@ tables:
     range:
     - 1.0
     - 3098.0
-    description: Sampling depth in metres, measured from the water surface.
     details: |-
-      Not a rename -- BottomDepth is already the raw ICES field name in LT's archive.
-      It sits alongside this table's own separate Depth field, byte-for-byte identical
-      to it (see Depth's own details): a known ICES-side redundancy, not a rename
-      relationship, filed with ICES 2026-08-06 (data-raw/ICES_ISSUE_REPORT.md, Issue
-      6).
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: 139 of
+      75,310 rows (0.18%), 0 true nulls. Not a rename -- BottomDepth is already the
+      raw ICES field name in LT's archive. It sits alongside this table's own separate
+      Depth field, byte-for-byte identical to it (see Depth's own details): a known
+      ICES-side redundancy, not a rename relationship, filed with ICES 2026-08-06
+      (data-raw/ICES_ISSUE_REPORT.md, Issue 6).
+    description: Sampling depth in metres, measured from the water surface.
   - name: Distance
     type: number(quantity)
     units: m
     range:
     - 0.0
     - 59995.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in either
+      table.
     description: Distance in metres between haul start and haul end point.
   - name: DoorSpread
     type: number(quantity)
@@ -2675,7 +2856,10 @@ tables:
       zero door spread. Three single-occurrence values (762, 767, 778m) sit far above
       everything else in the archive (next highest is 250m) and are treated as
       data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
-      likely a fixed beam-trawl spread) is kept.
+      likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
+      information' convention (data-raw/build_field_description_snapshot.R), confirmed
+      2026-08-17: HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%), 0
+      true nulls in either table -- already excluded by the range above.
     description: Mean value in metres of door spread measurements.
   - name: WingSpread
     type: number(quantity)
@@ -2687,7 +2871,11 @@ tables:
       0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value with real
       support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed
       beam-trawl spread). 142m (1 row) sits far above the next-highest real value
-      (50m) and is treated as a data-entry error, excluded.
+      (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
+      sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls in
+      either table -- already excluded by the range above.
     description: |-
       Mean value in metres of wing spread measurements. For more details see the
       manual.
@@ -2745,8 +2933,11 @@ tables:
       classes), '13'='centimetre 15-49.99cm' (a length-based class) -- two different
       measurement bases coexisting under one code list. 23 of 41 official codes
       observed here; not retyped enum since 41 exceeds the seed's VOCAB_CODE_LIMIT of
-      20. 16,508 of 79,451 rows unpopulated. Verified 2026-07-29 against the full LT
-      archive.
+      20. Originally verified 2026-07-29 against obus's own pre-fix icesDatras archive
+      (same sentinel-scrubbing caveat as GenSamp below) -- framed then as '16,508 rows
+      unpopulated'. Re-verified 2026-08-17 directly against .datras/LT.parquet (75,310
+      rows): -9 is present (14,736 rows, 19.57%), not a null -- 0 true nulls in the
+      current archive.
   - name: UnitWeight
     type: string
     examples:
@@ -2754,9 +2945,12 @@ tables:
     - g/haul
     details: |-
       Unit of the sibling LT_Weight field (see LT_Weight's own details below); exactly
-      2 values observed across the full archive (48,758 kg/haul, 26,437 g/haul), 4,256
-      of 79,451 rows unpopulated. No description present to confirm this is the
-      complete valid unit set. Verified 2026-07-29 against the full LT archive.
+      2 real values observed (kg/haul, g/haul). No description present to confirm this
+      is the complete valid unit set. Originally verified 2026-07-29 against obus's
+      own pre-fix icesDatras archive (same sentinel-scrubbing caveat as GenSamp below)
+      -- framed then as '4,256 rows unpopulated'. Re-verified 2026-08-17 directly
+      against .datras/LT.parquet (75,310 rows): -9 is present (4,144 rows, 5.50%), not
+      a null -- 0 true nulls in the current archive.
   - name: LT_Weight
     type: number(quantity)
     description: Weight of the litter category in units specified by the previous
@@ -2780,9 +2974,12 @@ tables:
     - items/haul
     details: |-
       Unit of the sibling LT_Items field (see LT_Items's own details below); only one
-      value ever observed (79,415 of 79,451 rows), 36 unpopulated -- a single example,
-      not five, because no second real value exists in the archive to show. Verified
-      2026-07-29 against the full LT archive.
+      real value ever observed -- a single example, not five, because no second real
+      value exists in the archive to show. Originally verified 2026-07-29 against
+      obus's own pre-fix icesDatras archive (same sentinel-scrubbing caveat as GenSamp
+      below) -- framed then as '36 rows unpopulated'. Re-verified 2026-08-17 directly
+      against .datras/LT.parquet: -9 accounts for exactly those 36 rows, not a null --
+      0 true nulls in the current archive.
   - name: LT_Items
     type: number(quantity)
     description: |-
@@ -2832,8 +3029,14 @@ tables:
       confirms all five (checked 2026-07-29): PE=Polyethylene, PET=Polyethylene
       terephthalate, PP=Polypropylene, PS=Polystyrene, UPL=Undefined plastic. 6 of 30
       official codes observed here; not retyped enum since 30 exceeds the seed's
-      VOCAB_CODE_LIMIT of 20. Very sparse: only 162 of 79,451 rows populated. Verified
-      2026-07-29 against the full LT archive.
+      VOCAB_CODE_LIMIT of 20. Originally verified 2026-07-29 against obus's own
+      pre-fix icesDatras archive (same sentinel-scrubbing caveat as GenSamp below) --
+      framed then as 'very sparse: only 162 of 79,451 rows populated', which badly
+      understated the true picture: the other 79,289 rows weren't absent, they were
+      the -9 sentinel, scrubbed to NA before that check ever saw them. Re-verified
+      2026-08-17 directly against .datras/LT.parquet (75,310 rows): -9 is present and
+      overwhelmingly dominant (75,148 rows, 99.79%), 0 true nulls -- the 162 real
+      plastic-type codes are the rare case, not the norm.
   - name: LTPRP
     type: string
     description: |-
@@ -2855,8 +3058,11 @@ tables:
       -- a combinable/multi-value scheme, not a flat single-select list, confirming
       the earlier guess. Not retyped enum: even the 22-code base list is past the
       seed's VOCAB_CODE_LIMIT of 20, and the combinable form isn't a plain enum shape
-      regardless. 58,349 of 79,451 rows unpopulated. Verified 2026-07-29 against the
-      full LT archive.
+      regardless. Originally verified 2026-07-29 against obus's own pre-fix icesDatras
+      archive (same sentinel-scrubbing caveat as GenSamp below) -- framed then as
+      '58,349 rows unpopulated'. Re-verified 2026-08-17 directly against
+      .datras/LT.parquet (75,310 rows): -9 is present and dominant (54,208 rows,
+      71.97%), not a null -- 0 true nulls in the current archive.
   - name: SweepLength
     type: number(quantity)
     units: m
@@ -2967,11 +3173,19 @@ tables:
     - '32F3'
     - '36F6'
     details: |-
-      701 distinct values in HH's archive (verified 2026-07-29); real ICES statistical
-      rectangle codes (0.5 deg lat x 1 deg lon grid), not a fixed enum given the size
-      of the grid. 12,235 of 150,262 HH rows unpopulated. Only present in HH and LT
-      (confirmed 2026-07-29) -- consistent with the Open items note that LT's
-      assessment output joins in a set of HH-style columns.
+      Real ICES statistical rectangle codes (0.5 deg lat x 1 deg lon grid), not a
+      fixed enum given the size of the grid -- independently corroborated 2026-08-17
+      by ICES's own field-description spreadsheet, which describes this field via the
+      same geometric grid rule rather than a code list
+      (data-raw/build_field_description_snapshot.R). Only present in HH and LT
+      (confirmed 2026-07-29) -- consistent with LT's assessment output joining in a
+      set of HH-style columns. Originally verified 2026-07-29 against obus's own
+      icesDatras-fetched archive, whose parseDatras(fix_types=TRUE) scrubs literal -9
+      to NA before opus ever sees it (same caveat as
+      GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as '12,235 of 150,262
+      HH rows unpopulated', which was really the same sentinel misread: re-verified
+      2026-08-17 directly against .datras/HH.parquet (145,958 rows, 685 distinct
+      values), -9 accounts for exactly those 12,235 rows, not a null.
     description: |-
       Intended ICES statistical area rectangle (0.5 degrees latitude, 1 degree
       longitude)
@@ -3031,6 +3245,11 @@ tables:
     range:
     - 0.0
     - 76.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
     description: |-
       Mean value in metres of vertical net opening measurements. For details see the
       survey manual.
@@ -3120,6 +3339,11 @@ tables:
     range:
     - 0.0
     - 4065.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in either
+      table.
     description: |-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio is depends
       on survey, for further details see survey manuals.
@@ -3133,7 +3357,11 @@ tables:
       A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated
       single-occurrence values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85,
       88mm) sit apart from it with no comparable support and are treated as data-entry
-      errors, excluded here.
+      errors, excluded here. -9 is the ICES-wide sanctioned 'no information'
+      convention (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17:
+      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception (already
+      excluded by the range above, [16,30]).
     description: Warp diametre in millimetres.
   - name: WarpDensity
     type: number(quantity)
@@ -3141,6 +3369,11 @@ tables:
     range:
     - 0.0
     - 26.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
     description: |-
       Warp weight in kg per linear meter of warp. See survey manuals for more
       information.
@@ -3150,6 +3383,11 @@ tables:
     range:
     - 0.0
     - 20.2
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls in
+      either table.
     description: Door surface area in square metres.
   - name: DoorWeight
     type: number(quantity)
@@ -3157,6 +3395,11 @@ tables:
     range:
     - 0.0
     - 1720.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls in
+      either table.
     description: Door weight in kilograms.
   - name: TowDirection
     type: number(quantity)
@@ -3169,7 +3412,11 @@ tables:
       same pattern confirmed for WindDir below. A further cluster -- 450 deg (62
       rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes
       ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg). Both groups
-      are outside the documented 0-360 domain and excluded here.
+      are outside the documented 0-360 domain and excluded here. -9 is the ICES-wide
+      sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls in
+      either table -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -3183,7 +3430,10 @@ tables:
     details: |-
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
-      gap, all excluded.
+      gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      56,805/145,958 rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in
+      either table -- already excluded by the range above.
     description: |-
       Ground speed of towing in knots. Recommended speed depends on survey, see survey
       manuals for more details
@@ -3193,6 +3443,11 @@ tables:
     range:
     - 0.0
     - 22.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
     description: Trawl speed on water in knots.
   - name: WindDirection
     type: number(quantity)
@@ -3203,7 +3458,12 @@ tables:
     details: |-
       -1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented
       out-of-domain 'not recorded' marker; a handful of further single-occurrence
-      values just above 360 (711, 504, 420, 365, 361) are also excluded.
+      values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
+      present and is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls in
+      either table -- already excluded by the range above (unlike -1, which the range
+      explicitly keeps).
     description: |-
       Direction of wind in degrees. Calm = 0,  direction from north to south = 360,
       varying direction = -1
@@ -3226,6 +3486,11 @@ tables:
     range:
     - 0.0
     - 360.0
+    details: |-
+      -9 is the ICES-wide sanctioned 'no information' convention
+      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH
+      120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls in
+      either table -- the modal value in both tables, not the exception.
     description: |-
       Direction of swell in degrees. No movement=0, direction from south to north =
       360, varying direction = -1
@@ -3257,7 +3522,11 @@ tables:
     details: |-
       0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh
       size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows)
-      and is treated as a data-entry error, excluded.
+      and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned
+      'no information' convention (data-raw/build_field_description_snapshot.R),
+      confirmed 2026-08-17: HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows
+      (30.11%), 0 true nulls in either table -- the modal value in both tables,
+      already excluded by the range above.
     description: Codend mesh size in mm
   - name: EEZ
     type: string

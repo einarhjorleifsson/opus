@@ -509,6 +509,40 @@ itself (e.g. "planned" vs. "added").
 
 ---
 
+## Issue 12: Two independently-maintained ICES documentation sources agree with each other, and both disagree with live WSDL, about `Year` and `SpecCode`'s type
+
+**Severity: Institutional governance -- the same wrong answer from two unrelated sources, over multiple years, never reconciled against the live contract**
+
+First noticed 2026-08-02 (`Year` only, comparing live WSDL against
+`getDatrasFieldList`): WSDL declares `Year` as `int` for all four Tier 1
+tables (`getHHdata`, `getHLdata`, `getCAdata`, `getLitterAssessmentOutput`),
+but `getDatrasFieldList` declares it `char`. The real archive
+(`.datras/*.parquet`) agrees with WSDL -- every `Year` value is a clean
+4-digit integer, never a non-numeric string.
+
+Re-checked 2026-08-17 against a third, independent source: the DATRAS
+field-description spreadsheet (`DATRAS_Field_descriptions_and_example_file_December2025.xlsx`,
+found this session -- see Issue 11 above) also declares `Year` as `char`,
+in all four tables, agreeing with `getDatrasFieldList` and disagreeing
+with WSDL and the real archive. The same spreadsheet independently makes
+the identical kind of claim for `SpecCode` (HL and CA): `char`, while live
+WSDL declares `int` -- consistent with `SpecCode` being a WoRMS AphiaID,
+a numeric species identifier, not a text field.
+
+So this isn't one stale citation from one source, corrected once and
+forgotten: two separately-maintained ICES documentation artifacts,
+built years apart, have independently landed on the same wrong answer,
+and neither has ever been reconciled against the live WSDL contract
+they're both supposed to describe.
+
+**Recommendation:** Confirm which is actually correct (real submitted
+data already answers this: numeric, for both fields) and align
+`getDatrasFieldList` and the field-description spreadsheet with what
+WSDL and real submissions already agree on, rather than leaving two
+independent documentation sources both wrong in the same direction.
+
+---
+
 ## Suggestion for consideration (not a bug report)
 
 Everything above documents a confirmed error, gap, or unused feature in

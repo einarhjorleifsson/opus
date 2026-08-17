@@ -4,7 +4,25 @@
 # Documents: sentinels, known violations, data quality issues
 #
 # Version: 0.1.0 (draft)
-# Last updated: 2026-08-16
+# Last updated: 2026-08-17
+#
+# `scope` (added 2026-08-17, one TODO.md item overdue -- see DEVLOG.md's
+# same-date entry for the concrete findings this restructure was designed
+# around, not guessed at in the abstract): every known_violations entry is
+# now tagged with the level of escalation it actually represents --
+#   "field-level"  -- one specific field/table finding (e.g. one column's
+#                     own -9 orphan rate). The common case.
+#   "systemic"     -- a recurring pattern spanning multiple, otherwise-
+#                     unrelated fields via one shared root cause (e.g.
+#                     icesVocab_gaps, datras_field_list_type_divergence).
+#                     Escalate these with higher priority: fixing the
+#                     pattern's cause resolves every instance at once,
+#                     unlike a field-level fix.
+#   "opus-internal" -- not ICES's issue at all; opus's own pipeline bug,
+#                     tracked here for institutional memory, never a
+#                     candidate for ICES escalation.
+# Lets a future escalation-candidate pass (TODO.md) filter on this
+# directly instead of re-reading every entry's prose to classify it.
 
 # Sentinel values that mean "missing/not recorded"
 # Applied during Phase 2 parsing before type casting
@@ -39,6 +57,7 @@ sentinels:
 known_violations:
   - id: "sentinel_replacement_data_loss"
     severity: "opus-internal"
+    scope: "opus-internal"
     field: "all numeric columns"
     table: "HH, HL, CA, LT"
     issue: "Archive-building pipeline (data-raw/archive_04_parse_phase2.R, archive_05_backfill_lt_partitions.R) applied a blanket -9/-99/-999/-1/-5/-95/-100/-900/88888888 -> NA conversion, unconditionally, across every column, before any curation could see the real values."
@@ -49,6 +68,7 @@ known_violations:
 
   - id: "ca_haulno_unlinkable_to_hh"
     severity: "D"
+    scope: "field-level"
     field: "HaulNo"
     table: "CA"
     issue: "-9 sentinel (not null); affected rows unlinkable to HH via any key"
@@ -59,6 +79,7 @@ known_violations:
 
   - id: "lt_bts_2025_q1_orphaned"
     severity: "D"
+    scope: "field-level"
     field: "composite key (Survey, Year, Quarter, Country, Platform, Gear, StationName, HaulNumber)"
     table: "LT"
     issue: "2,026 of 75,310 LT rows (2.7%) do not match any HH haul on the composite key"
@@ -68,6 +89,7 @@ known_violations:
 
   - id: "ca_haulno_tail_mismatch"
     severity: "D"
+    scope: "field-level"
     field: "HaulNo"
     table: "CA"
     issue: "Small residual of non-sentinel HaulNo values that still fail to match HH on the composite key"
@@ -77,6 +99,7 @@ known_violations:
 
   - id: "swell_height_type_mismatch"
     severity: "D"
+    scope: "field-level"
     field: "SwellHeight"
     table: "HH, LT"
     issue: "icesVocab declares this field an enum (codes H/L/M/N/NR/VH, an unprefixed 'SwellHeight' key); real archive data in both tables is continuous numeric, not categorical codes."
@@ -88,6 +111,7 @@ known_violations:
 
   - id: "swell_height_vocab_unused"
     severity: "C"
+    scope: "field-level"
     field: "SwellHeight"
     issue: "icesVocab's own single 'SwellHeight' code list (H/L/M/N/NR/VH height classes) is used by neither HH's nor LT's real submissions."
     extent: "0 of 37,260 real (non-sentinel) HH values and 0 of 38,935 real LT values use any of the vocab's 6 codes; both tables submit a continuous metric measurement instead. Exhaustively confirmed no second, differently-named vocab key exists for this concept: checked all 580 registered icesVocab keys by substring match on both Key and Description, 2026-08-16."
@@ -96,9 +120,20 @@ known_violations:
 
   - id: "icesVocab_gaps"
     severity: "C"
+    scope: "systemic"
     issue: "DATRAS enum codes don't fully match icesVocab vocabulary"
     examples: ["GearExceptions (only 'B' in vocab)", "PARAM in LT (1,938 vocab codes, 50 real values)"]
     discovered: "2026-07-29"
+
+  - id: "datras_field_list_type_divergence"
+    severity: "C"
+    scope: "systemic"
+    field: "Year, SpecCode"
+    table: "HH, HL, CA, LT (Year); HL, CA (SpecCode)"
+    issue: "ICES's own documentation-side metadata sources disagree with the live WSDL contract (and real submitted data) about these fields' physical type."
+    extent: "Year: live WSDL declares int; getDatrasFieldList and the DATRAS field-description spreadsheet (data-raw/build_field_description_snapshot.R) both independently say char, across all four tables. SpecCode: live WSDL declares int (it's a WoRMS AphiaID, a numeric species identifier); the same spreadsheet says char, in both HL and CA."
+    implication: "opus seeds types from WSDL only (Working Principle 1: real data is ground truth, and WSDL is the auto-generated, authoritative source -- see AGENTS.md's Data Sources), so opus's own spec already correctly types both fields as numeric (Year: number(ordinal); SpecCode: number(id)) and this is not a bug in opus's spec to fix. It IS a real, persistent gap in ICES's own institutional metadata: two independently-maintained ICES documentation sources (getDatrasFieldList, and now the field-description spreadsheet -- built and maintained separately, years apart) have both been wrong about these fields' type in the same direction, for as long as opus has been checking. First noted 2026-08-02 (Year only, WSDL vs getDatrasFieldList) but never actually written into this registry until now -- DEVLOG.md's own narrative had described it as 'documented in known-issues #10', which was true of intent, not of this file. See data-raw/ICES_ISSUE_REPORT.md Issue 12 for the ICES-facing writeup."
+    discovered: "2026-08-02 (Year, WSDL vs getDatrasFieldList); corroborated 2026-08-17 (both fields, vs the field-description spreadsheet)"
 
 # Processing directives
 processing:

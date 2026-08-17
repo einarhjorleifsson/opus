@@ -740,3 +740,126 @@ new `@export` tag becomes live automatically on the next
 `devtools::document()` -- the whole class of bug this session hit
 twice (dead files with orphaned tags, a new function needing a manual
 NAMESPACE edit) can't recur.
+
+---
+
+## 2026-08-17 (continued) -- a full remediation plan, not just a priority order
+
+User's own instinct, mid-triage of the field-gap audit's findings (81%
+`-9` on `CA.FishID`, 32% on `AreaCode`, 41 spreadsheet-vs-opus
+conflicts): "small issues have been known to become bigger issues
+later on in our prior processing" -- don't just prioritize a fix list,
+plan it properly first. Backed by this project's own history: the
+sentinel-scrub bug and the `read.delim()` T/F coercion bug both started
+as one small anomaly. Entered plan mode; used two Explore agents in
+parallel (root cause of the 41 missing-`required` fields; what
+`CA.FishID`/`CA.AreaCode` actually are) and one Plan agent to validate
+the resulting tier structure before writing the final plan
+(`~/.claude/plans/tender-napping-bee.md`) and getting explicit approval
+-- see that file for the full investigation writeup this entry
+summarizes the *execution* of.
+
+**Tier 0 (exhaustive sweep) itself caught a mistake before acting on
+it.** The first grep for "verified 2026-07-29" citations in
+`spec_02_curate_dict.R` was case-sensitive and found 11 sites. A second,
+case-insensitive pass -- run specifically because the whole point of
+this tier was not repeating "fixed one instance, missed the pattern" --
+found 17 more, including `UnitWgt`/`UnitItem`/`LTSZC` (whose citations
+used capital "Verified"). Checked all 28 candidate sites against current
+`.datras/*_legacy.parquet`: 6 (`OSPARArea`, `MSFDArea`, `PARAM`, `EEZ`,
+`NMArea`, `Valid_Aphia`) turned out genuinely clean (true nulls, not
+sentinels) -- ruled out empirically, not assumed clean because they were
+already suspected innocent.
+
+**Tier 1: 13 fields fixed, same root cause as the already-known
+sentinel-scrub bug, just missed by its own fix's verification sweep.**
+`CA.FishID`, `CA.AreaCode`, `HH.StNo`, `HH.StatRec`, `HH.DepthStratum`,
+`HH.HydroStNo`, `CA.AreaType`, `CA.Maturity`, `LT.LTSZC`, `LT.UnitWgt`,
+`LT.UnitItem`, `LT.TYPPL`, `LT.LTPRP` -- all had 0 true nulls in the
+current archive but were documented (originally verified 2026-07-29,
+against obus's own pre-fix icesDatras archive) as substantially
+"unpopulated." `LT.TYPPL` was the most dramatic: cited as "very sparse,
+only 162 of 79,451 rows populated" -- the 162 was exactly right, the
+other 79,289 rows were never absent, they were `-9` (99.79% of the
+table). Plus 16 shared HH/LT gear and environmental-measurement fields
+(`CodendMesh`, `DoorSpread`, `WarpDen`, etc.) got the same "`-9` is the
+ICES-wide sanctioned convention" footnote already established for
+`HaulNo` -- HH's own rates often exceed LT's (`WarpDen`: HH 96.1%, LT
+60.3%), the modal value in both tables for several fields, not the
+exception. `known-issues.yaml`'s `ca_haulno_unlinkable_to_hh` updated
+with the same citation, sharpening its open question from "is -9 valid
+here" to "why are so many mandatory composite-key values missing at
+all." Batched into one `spec_02`/`spec_03` run; verified via structural
+diff (order-insensitive for enum value sets, having learned from an
+earlier false alarm over `Gear`'s cosmetic key-reordering -- confirmed
+content-identical, never root-caused, now in `TODO.md`): exactly 52
+`details`-only changes, nothing else. Committed separately from Tier 2
+(`c74d4a2`) at the user's request, specifically so each commit's diff
+stays reviewable against one coherent root cause rather than several
+bundled together.
+
+**Tier 2: a general mechanism, not a hand list -- and it repaired a bug
+already in production.** 35 fields marked `Mandatory: Yes` in the
+field-description spreadsheet had no `required` constraint in opus's
+own spec. Root cause (an Explore agent's finding): `constraints` is set
+by exactly two mechanisms in `spec_02_curate_dict.R` -- the composite-key
+loop (2026-08-16) and 4 unrelated one-off hand edits -- and there had
+never been a general mandatory-ness mechanism, because there had never
+been a *source* for ICES's Mandatory flag before this session. Built
+one: read the spreadsheet's Mandatory column programmatically, translate
+curated names to legacy via `op_datras_rename_crosswalk()`, apply
+`required` to any field lacking a stronger constraint whose real current
+null rate is under 0.5%. All 35 qualified automatically; zero needed the
+review-holdback path.
+
+Before writing this, a Plan agent's validation pass found a real risk:
+`apply_col_update()`'s `constraints` handling was a plain overwrite, not
+a merge -- the new mechanism could have silently dropped a
+composite-key field's `foreign_key` constraint. Fixed to a
+de-duplicated union first. Verifying the fix's effect afterward found it
+wasn't just precautionary: `HH.HaulNo` and `HH.Year` had *already*
+silently lost their original `field_specs`-declared `required`
+constraint (down to `primary_key` alone) the moment the 2026-08-16
+composite-key loop first ran, undetected until this fix organically
+restored it. Confirmed all 32 composite-key `foreign_key` constraints
+intact afterward -- none dropped by the new loop. Structural diff:
+exactly 37 `constraints`-only changes (35 new + 2 restored). Committed
+separately (`a5d31a7`).
+
+**Tier 3: closed a 2026-08-02 gap that had sat unfiled for over two
+weeks.** `Year`'s WSDL-vs-documentation type divergence was noted
+2026-08-02 (WSDL says `int`, `getDatrasFieldList` says `char`) and this
+file's own narrative described it as "documented in known-issues #10" --
+but it was never actually written into `inst/DATRAS-known-issues.yaml`
+or `data-raw/ICES_ISSUE_REPORT.md`, confirmed by grepping both directly.
+Today's field-gap audit independently corroborated it from a third
+source (the field-description spreadsheet also says `char`) and found
+the identical pattern for `SpecCode` (HL, CA). Filed as
+`datras_field_list_type_divergence` in `known-issues.yaml` and Issue 12
+in `ICES_ISSUE_REPORT.md`, framed correctly: not a bug in opus's own
+spec (which already sides with WSDL and real data, correctly), but two
+independently-maintained ICES documentation sources landing on the same
+wrong answer, years apart, never reconciled against the live contract
+they both describe.
+
+**Tier 4: promoted the audit script; restructured known-issues.yaml
+using today's own findings as the design material.**
+`build_field_gap_audit.R` documented in `AGENTS.md` alongside
+`build_vocab_correction.R`/`build_vocab_field_audit.R` -- none of which
+had a "standalone audit tooling" section to live in before this, an
+incompleteness of its own worth fixing while adding the new one, not
+just plugging in the new script next to a gap. `known-issues.yaml`
+gained a `scope` field (`field-level` / `systemic` / `opus-internal`) on
+all 8 entries: the mapping fell out cleanly from what already existed --
+5 entries are single-field findings, `icesVocab_gaps` and today's new
+`datras_field_list_type_divergence` are genuinely systemic (one root
+cause, multiple otherwise-unrelated fields), `sentinel_replacement_data_loss`
+was already distinctly opus's own fault. Closes a `TODO.md` item that
+had been open since before this session, designed around real examples
+instead of guessed at in the abstract, exactly as planned.
+
+Every tier verified with `devtools::check()` (clean throughout) and,
+where a yaml regeneration was involved, a structural diff confirming
+the change touched exactly what was intended and nothing else -- the
+same discipline this project has applied to every field-level fix since
+2026-08-08.

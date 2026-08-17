@@ -4,7 +4,7 @@
 
 *Detailed dated development history lives in `DEVLOG.md`, not here. This file tracks only current backlog state.*
 
-**Latest:** 2026-08-17 — Fixed the `read.delim()` T/F-to-logical archive-integrity bug and rebuilt the archive; removed 6 dead three-phase-bootstrap `R/` files; restructured AGENTS.md/TODO.md to current-state-only and created `DEVLOG.md` for dated history. See `DEVLOG.md`'s 2026-08-17 entries for full detail.
+**Latest:** 2026-08-17 — Full day: fixed the `read.delim()` T/F-to-logical bug and the 4th-data-source/`NAMESPACE` work (see prior entries below), then a field-gap audit (`data-raw/build_field_gap_audit.R`, now permanent tooling) cross-referencing real sentinel usage, icesVocab coverage, and the field-description spreadsheet against opus's own spec — cross-referencing two individually-thorough prior audits that had never been checked against each other. Found and fixed: 13 fields where `-9` was mis-framed as "unpopulated" (one, `LT.TYPPL`, was 99.8% sentinel); a general Mandatory→`required` mechanism covering 35 previously-undeclared fields, which along the way caught and repaired an already-live silent-constraint-loss bug (`HH.HaulNo`/`HH.Year`); `Year`/`SpecCode`'s type divergence, filed as Issue 12 after sitting unfiled since 2026-08-02; and `known-issues.yaml`'s two-level (`field-level`/`systemic`/`opus-internal`) restructure, designed around today's own findings rather than guessed at abstractly. See `DEVLOG.md`'s 2026-08-17 entries for full detail.
 
 ---
 
@@ -34,7 +34,7 @@
 - [ ] Fix `DESCRIPTION`'s "Data-only package (no computational functions)" claim against its own 22 exported functions.
 - [ ] Fix `HH.StartTime`'s details ("same as StatRec above" — wrong name, wrong direction; same bug in the legacy YAML).
 - [ ] Glossary: add `icesVocab`, `WSDL`, `WoRMS`/`AphiaID`, the internal rule codes (`M01`/`S24`/`D01`/`D04`), `CPUE`, `OSPAR`, `SeaDataNet` — all used repeatedly, never defined.
-- [ ] Minor cleanup pass: trailing `.0` on range values, flow-scalar vs. block-scalar inconsistency at the table/dataset level, `HL.SubsamplingFactor`'s stale row-count citation (and spot-check others for the same drift), two tiny case mismatches (`HH.ThermoCline`, `LT.LTSRC`), delete the now-fully-dead `scripts/build-dictionary.sh`.
+- [ ] Minor cleanup pass: trailing `.0` on range values, flow-scalar vs. block-scalar inconsistency at the table/dataset level, `HL.SubsamplingFactor`'s stale row-count citation (and spot-check others for the same drift), two tiny case mismatches (`HH.ThermoCline`, `LT.LTSRC`), delete the now-fully-dead `scripts/build-dictionary.sh`; `Gear`'s enum `values` map re-serializes in a different (but content-identical) key order on every `spec_02`/`spec_03` re-run -- cosmetically noisy diffs, confirmed harmless (2026-08-17) but never root-caused.
 - [ ] Consider making `col_labels`'s apply loop (`spec_02_curate_dict.R`) reject unexpected keys instead of silently dropping them — this exact silent-drop hid a real fix on its first attempt (`DEVLOG.md`, 2026-08-16).
 
 Full evidence/detail behind every item above is in `DEVLOG.md`.
@@ -44,12 +44,12 @@ Full evidence/detail behind every item above is in `DEVLOG.md`.
 ## Immediate: Tier 1 Validation + Known-Issues Escalation
 
 - [ ] **Known-issues registry refinement:**
-  - [ ] Restructure for two-level escalation: field-level gaps vs. systemic patterns
+  - [x] ~~Restructure for two-level escalation: field-level gaps vs. systemic patterns~~ — done 2026-08-17: added a `scope` field (`field-level`/`systemic`/`opus-internal`) to all 8 `known_violations` entries, designed around today's own findings (`icesVocab_gaps`/`datras_field_list_type_divergence` are the systemic examples) rather than guessed at in the abstract.
   - [ ] Inventory findings from 2026-08-02 session (7 D-level issues across HH/HL/CA/LT)
-  - [ ] Prioritize escalation candidates for imbus feedback
-  
+  - [ ] Prioritize escalation candidates for imbus feedback — now filterable by the new `scope: systemic` tag, not yet actually done
+
 - [ ] **imbus/ICES liaison (WP2 handoff):**
-  - [ ] Define escalation format: memo, GitHub Issues, or direct registry submission?
+  - [ ] Define escalation format: memo, GitHub Issues, or direct registry submission? -- checked 2026-08-17: `vignettes/imbus-interim-note-mockup.qmd` is explicitly a mockup, "not live yet". The escalation channel itself doesn't exist yet, not just an undecided choice among existing ones -- a bigger decision than opus can resolve unilaterally (imbus liaison structure, per this file's own WP2/WP3 scope boundary), so `ICES_ISSUE_REPORT.md` (now 12 issues) stays unsent regardless of anything else in this backlog.
   - [ ] Clarify opus's role vs. imbus's data governance work
   - [ ] Establish timeline for ICES feedback loop (e.g., HaulValidity vocab completion)
 

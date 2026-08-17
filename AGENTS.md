@@ -202,6 +202,13 @@ There is a second, separate pipeline (`data-raw/archive_0N_*`) that downloads an
 
 Full construction history, reorg, and bug fixes for both pipelines are in `DEVLOG.md`.
 
+**Standalone audit tooling** (`data-raw/`, not part of either pipeline above — each re-run independently, on demand, to verify or re-derive a specific cross-source fact rather than to build a shipped artifact):
+- `build_vocab_correction.R` — for each of the ~55 Tier 1 enum fields, picks the best-fitting icesVocab key and reports the fit; writes `inst/DATRAS-vocab-correction.csv`, read at runtime by `op_vocab_resolve_datras_key()`
+- `build_vocab_field_audit.R` — the same name-match/value-fit check extended to all 190 Tier 1 fields, not just the already-curated enums (`vocab_fit_helper.R`'s `pick_best_vocab_match()` is shared by both, factored out once rather than duplicated)
+- `build_icesvocab_snapshot.R` — full-catalog bulk download of every icesVocab code-type's codes (opus's own direct HTTP, not the `icesVocab` package), cached under `.datras/ices-schemas/` with hash-stamped provenance; makes audits needing many codes at once fast and reproducible instead of hundreds of live calls per run
+- `build_field_description_snapshot.R` — downloads and caches the DATRAS field-description spreadsheet (opus's 4th data source, above), same caching convention
+- `build_field_gap_audit.R` — cross-references real sentinel usage, icesVocab coverage, and the field-description spreadsheet's `Mandatory`/`DataType` columns against opus's own spec for all 190 fields at once; this is what surfaced the 2026-08-17 fixes above (13 stale-citation fields, 35 missing-`required` fields, `Year`/`SpecCode`'s type divergence) — none of which either of the two audits above, run independently, had ever caught, because they'd never been cross-referenced against each other. Worth re-running whenever the field-description spreadsheet gets a new dated version, not treated as a one-off.
+
 ------------------------------------------------------------------------
 
 ## Key Facts

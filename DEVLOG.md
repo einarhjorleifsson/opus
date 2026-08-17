@@ -1,0 +1,619 @@
+# opus development log
+
+Dated development history: root causes, verification evidence, and the
+reasoning behind non-obvious decisions. `AGENTS.md` documents opus's
+*current* state (working principles, scope, architecture) and does not
+carry this kind of narrative; `TODO.md` tracks only what's currently
+open. Git commit messages remain the most granular record -- entries
+here are a longer-form, human-browsable index of the same history.
+
+Chronological, oldest first (new entries get appended at the bottom,
+like a lab notebook).
+
+---
+
+## 2026-07-29 to 2026-08-01 -- initial build
+
+Tier 1 (HH, HL, CA, LT) bootstrap workflow (WSDL seed -> parquet
+enrich -> curate), R package scaffold, initial vignettes and test
+data. Most field-level verification citations dated "2026-07-29"
+throughout the shipped YAML trace back to this period, run against
+obus's own icesDatras-fetched archive (see the 2026-08-16 entry below
+for why several of those early "100% clean" claims later needed
+correcting -- that archive silently scrubbed `-9` before opus ever saw
+the data).
+
+---
+
+## 2026-08-02 -- what opus actually is; two systemic audits
+
+**Critical architectural discovery: icesVocab code lookups are
+dependent on field *names*, and DATRAS fields have two names (old/
+legacy ICES names and new/current names) that sometimes point to
+*different vocabularies*.** Example: `Sex` has `TS_Sex`/`AC_Sex`
+(ambiguous between trawl and acoustic domains), but `IndividualSex`
+does not; `GearEx` has `TS_GearEx` (13 codes) while `GearExceptions`
+has `AC_GearExceptions` (1 code) -- both re-verified live 2026-08-08.
+Solution adopted: document legacy field names in each column's
+`details:` via a standardized `Legacy field name: {OldName}` prefix,
+with dual-lookup wrappers in `R/vocab.R` + `R/field_names.R`. Full
+discovery notes in `vignettes/articles/technical-notes.md`.
+
+**Corollary, learned the hard way (2026-08-08):** knowing this
+abstractly didn't prevent tripping over it. Checking `HH.HaulValidity`
+and `HL.SpeciesValidity` against icesVocab using their *current* names
+resolved to `AC_HaulValidity` (2 codes) and `AC_SpeciesValidity` (2
+codes) -- producing a false "5 of 7 real values missing" / "8 of 10
+missing" finding, reported as fact before being challenged.
+Re-resolving against their *legacy* names (`HaulVal` -> `TS_HaulVal`,
+`SpecVal` -> `TS_SpecVal`) showed a perfect match both directions --
+no gap at all.
+
+**Full systematic audit, same day (2026-08-08), all 52 Tier 1 enum
+fields, both names checked for every one:** icesVocab is empirically
+legacy-name-keyed, cleanly, no exceptions. Of the 21 renamed enum
+fields where any vocab match exists at all, 100% (21/21) resolve via
+the legacy name; 0/21 resolve via the current name. Overall: 46 fields
+get a full bidirectional match on their best candidate, 6 have no
+icesVocab entry under *either* name (`RecordHeader`/`RecordType` and
+CA's three Sampling Flag fields -- legitimately no vocab exists), zero
+genuine gaps once resolved correctly. This is the origin of Working
+Principle 9 (audit exhaustively) -- each individual check on 2026-08-02
+was genuinely empirical, yet the sweep still missed the answer because
+it wasn't exhaustive; the two failures are independent, and both are
+needed to actually verify something.
+
+**Enum coverage audit:** Systematically audited all 52 enum fields in
+Tier 1 against icesVocab. 35 fields (67%) full coverage; 17 (33%) no
+icesVocab match (system/metadata fields); 4 incomplete (HaulValidity
+29%, SpeciesValidity 20%, GearExceptions 8%, LengthCode 43%); 1 empty
+vocab despite key existing (AgePreparationMethod); 12 exist under both
+`TS_`/`AC_` prefixes with ambiguity. Outputs: `enum_field_inventory.csv`,
+`enum_enrichment_analysis.md`. Key insight: incompleteness is systemic,
+not random -- patterns suggesting domain-specific extensions not in
+centralized icesVocab.
+
+**Type source authority:** Three ICES metadata sources claim to define
+field types and they diverge. WSDL is authoritative (auto-generated
+from server code); getDatrasFieldList is secondary (hand-maintained).
+Five confirmed divergences at the time: Year fields (WSDL=int, API=char;
+real archive=int), Distance (WSDL=int, API=float; real archive=int).
+opus seeds from WSDL only (documented in known-issues #10,
+`datras_field_list_type_divergence`).
+
+**What opus really is.** Not a data reformatting tool -- opus is
+institutional data governance audit infrastructure. It systematically
+exposes where ICES's three metadata sources (WSDL, getDatrasFieldList,
+icesVocab) diverge from each other and from real data. The
+known-issues registry is an accountability log: evidence, impact, fix.
+This reconciliation work is the actual deliverable; the YAML specs are
+the vehicle. (A trimmed version of this now lives in AGENTS.md's "What
+the project does".)
+
+---
+
+## 2026-08-06 -- removed icesDatras/icesVocab R-package dependencies
+
+Removed opus's R-package dependency on both `icesDatras` and
+`icesVocab` (direct web-service calls instead, verified byte-identical
+for icesVocab's two endpoints). Building the replacement
+(`op_datras_field_list()`, `R/field_names.R`) required cross-verifying
+ICES's live `getDatrasFieldList` metadata against each operation's own
+ASMX response and the real archive, which surfaced 6 confirmed
+ICES-side errors: LT coverage gap (only 22 of 58 real fields), 3 wrong
+LT renames, a phantom LT `RecordHeader` field, CA's unverifiable
+`IndividualAge`/`AgeRings` row, missing `DateofCalculation`/`Valid_Aphia`
+entries, and LT's `Depth`/`BottomDepth` data duplication -- filed as
+`data-raw/ICES_ISSUE_REPORT.md` (moved from `inst/` 2026-08-08), not
+yet sent to ICES.
+
+Corrected opus's own spec accordingly: `CA.IndividualAge` reverted to
+`CA.Age` (the rename rested on an unverifiable metadata row), LT's ~23
+shared fields renamed via verified cross-table inference.
+
+Same-day session also produced several documents (`PHASE2_ISSUES_FOR_ICES.md`,
+`PHASE3_ROADMAP.md`, `DATRAS_PHASE2_ORIGINAL_NAMES.yaml`,
+`ICESVOCAB_MAPPING_AUDIT.md` and related CSVs) containing fabricated
+row counts and misattributed sources, discovered when this session's
+own rigor caught a specific bad claim. **Resolved 2026-08-07:** all
+deleted; every one was untracked, so nothing was lost from git
+history.
+
+---
+
+## 2026-08-08 -- data-raw/ reorganized; legacy/new parquet split; type-caster bug found and fixed
+
+**data-raw/ audit and reorg.** Traced every `source()` call and
+`Rscript data-raw/X` invocation across the whole repo (not
+filenames/headers alone) to build the real dependency graph, confirming
+two independent pipelines by actual git history: **spec-building**
+(`spec_00_operation_types.R` -> `spec_01_seed_dict.R` ->
+`spec_02_curate_dict.R` -> `spec_03_dict_to_qmd.R`, first committed
+2026-07-31, builds `inst/DATRAS-data-dict.yaml`) and **data-archival**
+(`archive_01_download_config.R`/`archive_02_download.R`/
+`archive_03_catalog.R` -> `archive_04_parse_phase2.R` ->
+`archive_05_backfill_lt_partitions.R` -> `archive_06_split_legacy_new.R`,
+first committed 2026-08-05, downloads the real archive and consumes
+the spec pipeline's yaml). Both renamed to a scoped `_0N_` prefix per
+pipeline (deliberately two separate sequences, since the pipelines
+don't run in one order).
+
+Removed 6 confirmed-dead scripts, each verified individually rather
+than assumed from naming: `datras_phase2_stage1.R` (read a spec file
+that doesn't exist -- couldn't have run), `xml_to_parquet.R`/`.py` and
+`xml_to_csv.py` (standalone converters from an earlier iteration, zero
+callers, superseded by the inline parser in `archive_04_parse_phase2.R`),
+`ices_api.R` (`op_fetch_datras_field_list()`/`op_fetch_vocab_codes()`,
+zero callers, superseded by the exported `op_datras_field_list()`/
+`op_vocab_get_codes()`), and `datras_vocabulary.R` (self-declared
+deprecated, confirmed zero functional callers). Found but did **not**
+remove a real duplicate: `archive_03_catalog.R::datras_get_field_list()`
+is a second live implementation, actually called by
+`archive_02_download.R` for manifest provenance hashing -- a different
+purpose from the package's own `op_datras_field_list()`.
+
+Every rename's cross-references were fixed by exhaustive repo-wide
+grep before and after: `source()` calls, usage/help text, man pages
+(regenerated via `devtools::document()`), vignettes, TODO.md, and
+AGENTS.md. Moved the 9 untracked `*_retired.*` files into
+`data-raw/retired/`; deleted the untracked, stray
+`data-raw/DATRAS-data-dict_files/`.
+
+**Legacy/new parquet split + full ground-truthing.** `.datras/parquet/LT`
+had no partitioned directory (unlike HH/HL/CA) because LT's XML
+predates the manifest-tracked downloader; backfilled via
+`data-raw/archive_05_backfill_lt_partitions.R` (204 files, 75,310 rows
+-- matches the pre-existing consolidated total exactly). That backfill
+surfaced two latent bugs in `archive_04_parse_phase2.R` (LT wrongly
+required a `RecordType` field it doesn't have; an all-empty XML file
+crashed instead of being recorded as `EMPTY_RECORDS`), fixed in both
+scripts. Then split the consolidated legacy archive from the curated
+spec: `.datras/{HH,HL,CA,LT}_legacy.parquet` (current ICES field
+names, full archive) alongside new `.datras/{HH,HL,CA,LT}.parquet`
+(opus-curated names -- rename is the only difference) and
+`.datras/DATRAS-data-dict-legacy.yaml`, all built by
+`archive_06_split_legacy_new.R`. Crosswalk derived from the yaml's own
+`Legacy field name:` annotations via the real `op_legacy_field_name()`
+(not a second copy of its regex). Found and fixed a bad annotation:
+LT's `BottomDepth` details wrongly said `Legacy field name: Depth`
+(BottomDepth is its own legacy field, not a rename -- Issue 6).
+Independently re-verified the full crosswalk for all four tables
+directly against raw XML (at least one non-empty sample per survey,
+all 28 surveys per table) -- zero discrepancies.
+
+**Second-look review, same day:** re-verified column *values* (not
+just names) survived the rename correctly -- sampled 50 random rows
+per table, every column, legacy value equals the renamed column's
+value, all four tables. Found the BottomDepth fix above had only
+patched the symptom: `spec_02_curate_dict.R`'s `add_legacy_field_names()`
+independently rebuilds its own old-name lookup and never inherited the
+LT `Depth`/`BottomDepth` exception already applied a few dozen lines
+above it -- so the cross-table inference kept wrongly tagging LT's
+real, separate `BottomDepth` column. Fixed by excluding it from
+`add_legacy_field_names()`'s lookup the same way the other step
+already did.
+
+**XML->parquet type casting was silently broken; fixed by moving to
+WSDL-only, no yaml, no validation gates (2026-08-08/09).** User found
+this by actually using the data: `open_dataset(".datras/parquet/CA")`
+then a `str_detect(GenSamp, ...)` filter crashed with a DuckDB
+schema-merge error. Root cause: `archive_04_parse_phase2.R`'s
+yaml-based `apply_rigid_types(df, rt, spec)` checked `rt %in%
+names(spec)`, but `spec` was the *whole* yaml object -- top-level
+names are `tables`/`glossary`/`version`, never a table name. Always
+true, so the function silently no-opped for every call, every column.
+Confirmed via a real per-file schema scan: 16 CA columns and 8 HL
+columns end up typed inconsistently across different files for the
+same column (e.g. `GenSamp`: `int32` in all-`-9` files, `string` in
+files with a real `Y`/`N`, though the yaml already documented GenSamp
+as clean `Y`/`N` since 2026-07-29). HH and LT tested clean by luck of
+their data, not correctness of the pipeline.
+
+Fix, per two points from the same conversation: (1) this stage should
+rely solely on live WSDL for types, never the curated yaml, and
+shouldn't even know the word "enum" exists -- WSDL is keyed by the raw
+XML's own legacy tag names, exactly what this stage parses, and
+enum-ness is a curation conclusion reached by analyzing real data,
+downstream of this stage (circular to depend on it here); (2) a
+"required fields" completeness gate (reject a record for a missing
+expected column) also doesn't belong at this stage -- a validation
+judgment, not a type-casting one, removed from both scripts. Built
+`data-raw/archive_00_wsdl_types.R`: `apply_wsdl_types(df, rt)`, casting
+straight from live WSDL, fetched once per table and cached. Validated
+against the two real files that exposed the bug, both now produce
+`character` consistently.
+
+Session paused mid-reprocessing (`TaskStop`) partway through the first
+full-archive rerun, resumed cleanly after the required-fields fix
+landed (unconditional overwrite self-heals a mixed starting state).
+Full run, all four tables: 2,968 records written, 813 correctly
+classified as genuinely empty ICES submissions (`EMPTY_RECORDS`, zero
+`PARSE_ERROR`). Re-ran the schema-inconsistency scan: zero
+inconsistent columns, all four tables (was 16 + 8). Reproduced the
+user's original failing query: no error.
+
+Simplified `archive_06_split_legacy_new.R`'s Step 1 while rebuilding
+on top of the corrected data: instead of migrating a pre-existing file
+of undocumented provenance via one-time rename, it now consolidates
+directly from the partitioned directory every run -- fully known
+provenance, self-heals on reprocessing. Row counts unchanged (145,958
+/ 13,754,042 / 5,865,076 / 75,310), now consistently typed.
+
+---
+
+## 2026-08-09 -- legacy-name-primary restructure; icesDatras attribution corrected
+
+**Curation pipeline restructured to be legacy-name-primary; icesVocab
+audit extended to all 190 fields, not just the 52 enum ones.** Dated
+proof the pipeline's file structure had it backwards: the yaml's own
+"verified 2026-07-29" citations predate the very concept of new-named
+parquet (invented 2026-08-08/09) by 10 days -- every check necessarily
+ran against legacy-named data, yet the yaml stored the *new* name as
+primary, the reverse of how data actually flows (raw XML ->
+legacy-named parquet -> opus's own rename). Also, `build_vocab_correction.R`
+only ever checked the 52 fields already curated as `type: enum` -- the
+same blind spot Principle 9 exists to catch, one level up.
+
+Rewrote `spec_01_seed_dict.R`/`spec_02_curate_dict.R` to key every
+seed field, correction, and spec entry by legacy (real, on-the-wire)
+name throughout (~140 individual substitutions, all 1:1 via the real
+crosswalk). Cross-referenced all 40 `shared_field_specs` entries
+against real per-table legacy names first; found exactly one case
+where a table's legacy name for a shared concept diverges
+(`BottomDepth`/`Depth`, Issue 6). `inst/DATRAS-data-dict.yaml` is no
+longer hand-curated: a new final step, `spec_03_translate_new_names.R`,
+does a pure rename off the newly-primary legacy yaml via
+`op_datras_rename_crosswalk()`.
+
+Two real bugs caught by verification: (1) `yaml::read_yaml()` silently
+collapses a single-element YAML sequence back into a bare scalar on
+read, breaking write-back for length-1 array fields -- fixed by
+re-wrapping length-1 unnamed values before translating. (2) A
+structural diff of the regenerated yaml against the pre-restructure
+version caught a genuine content loss: LT's `BottomDepth` lost its
+description and duplication note once the two tables' legacy names for
+this field diverged -- fixed with an explicit backfill.
+
+**Full audit (`build_vocab_field_audit.R`), all 190 fields by legacy
+name against live icesVocab**, two stages (name-match, then
+value-match): 115/190 zero candidates (expected, mostly genuine
+measurements); 75/190 with >=1 candidate, 46 already-known enum
+fields; 29 fields never typed `enum` still got a name match -- 16
+already documented, 6 never checked before this sweep. Of those 6:
+`Ship`->`TS_Ship` a false lead (79% of real values not covered, same
+shape as known `Survey`/`Country` false leads); five genuine exact
+matches, zero gaps: `Year`->`Year`, CA's `Maturity`->`TS_Maturity`,
+HH's `DepthStratum`->`TS_DepthStratum`, HH+LT's `Tickler`->`TS_Tickler`,
+HL's `CatIdentifier`->`TS_CatIdentifier`. Filed as Issue 9 in
+`data-raw/ICES_ISSUE_REPORT.md`.
+
+**icesDatras attribution corrected.** Earlier documentation (including
+this log's own prior entries, since superseded) described `icesDatras`
+as silently hand-patching `getDatrasFieldList()` (a fabricated
+`lt_extra` table for LT, explicit overrides). Checked directly against
+the current official `ices-tools-prod/icesDatras` on GitHub: its
+`getDatrasFieldList()` is four lines -- fetch, parse, return. No
+patches, no overrides, no `data-raw/` directory at all. That
+patch-narrative described a personal development fork
+(`einarhjorleifsson/icesDatras`, branch `einar_dev/integration`)
+installed locally at the time, not the official package. One specific
+claim this fed was actively wrong, not just imprecisely attributed:
+`getDatrasFieldList()`'s CA `IndividualAge`/`AgeRings` row (Issue 4)
+was described as something the icesDatras patch "still trusts" -- but
+the fork's own patch had already fixed that exact row three weeks
+before the report text was written. Every citation across opus
+(comments, roxygen docs, the ICES issue report, the -9-sentinel claim
+in the yaml) was re-checked against the current official repo and
+corrected: retracted where the citation only exists on the fork (the
+hand-patch narrative, `build_datras_schema.R` and siblings -- none
+exist upstream), left in place and re-pointed where the underlying
+fact turned out genuinely true of the official package too (the -9
+scrub, real and current in `parseDatras()`, mis-cited as
+`applyDatrasTypeSchema()`, which doesn't do it).
+
+---
+
+## 2026-08-10 -- Tickler/CatIdentifier retyped enum; undeclared icesVocab dependency fixed
+
+The two fields flagged 2026-08-09. Re-verified fresh directly against
+the real legacy parquet: HH's Tickler (9 distinct values) and LT's
+Tickler (3, a subset of HH's) both fully covered by `TS_Tickler`'s 32
+codes; HL's CatIdentifier (13 distinct values) fully covered by
+`TS_CatIdentifier`'s 56 codes. Both vocab keys turned out to be
+genuine controlled code lists once actually read, not just
+name-matches. Retyped `enum` with the full vocab code list as
+`values`.
+
+Left `Year`, `Maturity`, `DepthStratum` (the other three matches from
+the same sweep) unchanged, each for a distinct reason: `Year` is a
+continuously-advancing ordinal, not a fixed closed set; `Maturity`'s
+coding depends on the sibling `MaturityScale` field, so `TS_Maturity`'s
+63 codes are plausibly a union across several scales; `DepthStratum`
+is survey-specific per its own description, in tension with one
+universal vocab key.
+
+Found and fixed a real, unrelated bug while building the generic
+version of this: the pre-existing `Gear` enum called `library(icesVocab);
+getCodeList('Gear')` directly -- the *real* external package, not
+opus's own `op_vocab_get_codes()` -- despite `icesVocab` appearing in
+neither `Imports` nor `Suggests`. Would have failed on any machine
+without that package, quietly contradicting opus's "zero R-package
+dependency" claim. Confirmed byte-identical output (99 codes) before
+generalizing.
+
+Verified: structural diff of the regenerated yaml against the
+pre-change version showed exactly the 3 intended changes and nothing
+else. `devtools::check()` clean.
+
+---
+
+## 2026-08-16 -- data-dict feature adoption; a major archive-integrity bug; documentation architecture change
+
+Started as a review of new data-dict features (`relationships`,
+`todo`, `definitions`, assertions, the JSON/HTML `report` format,
+`render`) opus wasn't yet using; became the single most consequential
+session since the 2026-08-08/09 type-casting fix.
+
+**`relationships` implemented.** HH's 8-field composite key marked
+`primary_key`; HL/CA/LT's matching columns `required, foreign_key`;
+three joins declared. Collapses four copies of the same prose
+(previously hand-written per table) into one structurally-checked
+fact. Caveat, confirmed by testing: `validate-data`'s `D05` only
+checks single-column foreign keys, so this composite key always
+reports `unevaluated` -- spec-level correctness only, no automatic
+cross-table orphan detection.
+
+**A real, systemic archive-integrity bug, found via that test.**
+Testing the relationships surfaced a contradiction: `known-issues.yaml`
+said CA's `HaulNo` carries a `-9` sentinel with "0 true nulls," but
+`.datras/CA.parquet` showed 288,581 true nulls, zero `-9`. Root cause:
+`archive_04_parse_phase2.R`/`archive_05_backfill_lt_partitions.R` each
+carried a `GLOBAL_SENTINELS` list (`-9, -99, -999, -1, -5, -95, -100,
+-900, 88888888`) applying a blanket, unconditional sentinel-to-`NA`
+conversion across every column, before type casting -- introduced
+between the pipeline's 2026-08-05 commit and the 2026-08-08 reorg,
+*after* the `-9` finding had already been verified as real, non-null
+data on 2026-08-07. Confirmed against raw XML: `CA_BTS_2004_Q3` has
+513 literal `<HaulNo>-9</HaulNo>` tags, all silently becoming `NA`.
+
+Not confined to one field: a full re-scan for all 9 sentinel values
+across every numeric column found 101 (table, column, sentinel)
+combinations with real counts. Worst: `HH.Tickler` -- icesVocab's own
+code for `-9` is "No ticklers are allowed," a real answer, not an
+absence of one -- was `-9` for 113,645 of 145,958 rows (78%), the
+modal value. This directly undermined the 2026-08-10 Tickler/CatIdentifier
+"zero gaps" finding: that check ran against an already-silently-scrubbed
+archive.
+
+Fix: removed `GLOBAL_SENTINELS`/`replace_sentinels()` entirely from
+both scripts (sentinel *meaning* is a curation conclusion, not a
+type-casting one -- same reasoning as the enum-detection fix). Full
+reprocess from raw XML, all four tables: identical Success/Error
+counts to the 2026-08-08/09 baseline. `op_flag_violations()`
+re-confirmed the original finding exactly, now correctly `-9` not
+null. Full writeup, including the quantity/ordinal/id/enum triage
+technique for telling "standard missing" apart from "field-specific
+meaning," in `vignettes/articles/technical-notes.md` section 4.
+
+**Six field-level spec fixes followed, each root-caused against the
+rebuilt archive:**
+- `HH.SwellHeight`/`LT.SwellHeight`: retyped `number(quantity)` (was
+  wrongly `enum` on LT, matching vocab codes neither table's real data
+  uses -- confirmed exhaustively across all 580 registered vocab
+  keys). Range `[0, 13]` for HH, settled using `WindSpeed` at the same
+  haul as an independent check (a real discontinuity, not an
+  arbitrary cutoff). LT is a byte-for-byte copy of HH's value
+  (55,914/55,914 matched) and inherits HH's range/reasoning.
+- `CA.Age`: `-9` (1,995,814 rows, 34%) was entirely undocumented.
+- `DateofCalculation` (HH/HL/CA): `-9` (5.76-7.93%) already excluded
+  by the declared range, just never named.
+- `Quarter`/`Tickler`/`CatIdentifier`: live WSDL declares all three
+  `int`, not string -- an accepted, permanent divergence, same class
+  as the already-accepted `Valid_Aphia` pattern.
+
+**Checked whether other "shared" fields are also literal HH copies**
+-- ~30 are (100% or near-100%). Three real exceptions documented
+instead of forced to match: `CA.GearEx` (92.27% -- CA supplements
+HH's generic `-9` with a real code the other 7.73%, never
+contradicts), `LT.Rigging` (95.33% at the time -- see the 2026-08-17
+entry below for why this needed rechecking), `LT.HaulVal` (99.97%,
+negligible). Diagnosed the 2.7% LT-to-HH composite-key match residual:
+2,010 of 2,026 rows are `Survey=BTS, Year=2025, Quarter=1`, where HH's
+own submission is genuinely empty -- an ICES-side submission gap
+(`known-issues.yaml`'s new `lt_bts_2025_q1_orphaned`); the remaining
+16 (`NS-IBTS`) later diagnosed as a different, still-open cause since
+HH has abundant real data for both exact cells.
+
+**`todo`/`definitions` adopted for the first time.** Six `todo:`
+entries convert "flagged for review, not investigated"-style prose
+into structured, `validate-spec`-visible (S31) notes. One
+`definitions` entry: `CA.linkable_to_hh` (`HaulNo != -9`).
+
+**`op_flag_violations()` reconsidered, not deprecated.** Confirmed the
+CLI's report row-cap (5 per problem) isn't configurable, so exhaustive
+per-row marking still can't be replaced by the report format,
+correcting the function's own (false) docstring justification. Added
+`op_validate_spec(json = TRUE)` and `op_validation_problems()`. 21
+exported functions total, not 17.
+
+**Documentation architecture decided: `render`, not the hand-rolled
+Quarto generator.** `spec_04_dict_to_qmd.R` and its three generated
+`.qmd` files removed; data-dict's own `render` (`op_render_spec()`)
+does everything the generator did plus a relationship diagram, search,
+and live data profiling (and actually renders `relationships`, which
+the generator never did). `known-issues.yaml` gets no replacement page
+(confirmed `render` rejects it -- never a real data-dict.yaml
+document). `render` stays an on-demand tool, nothing committed --
+`.datras/`'s full local archive is continuously growing, so a profiled
+page can't be a "kept in sync" repo artifact. `op_render_spec()`
+gained a `data_dir` parameter for exactly that use case.
+
+**Follow-through, same day: two real bugs fixed in `.validate_via_dict()`**
+(`R/validation.R`) that had silently made `op_validate_meta()`/
+`op_validate_data()` non-functional against the shipped dictionary.
+(1) The table end-boundary scan looked only for the next `- name:`
+line, so the *last* table (LT) ran off the end and swallowed
+`relationships:`/`glossary:` -- fixed by stopping at any unindented
+line. (2) Once fixed, a second bug surfaced: removing an existing
+`source:` block dropped only that line, not its indented `parquet:`
+child, producing invalid YAML for every table -- fixed by walking
+forward while lines stay nested. Verified against all four tables:
+both validate cleanly now, 3 `M01` type mismatches for HH (`Quarter`,
+`Month`, `Tickler`), all documented divergences (closed one genuine
+gap this surfaced: `Month` had the same divergence as `Quarter`/
+`Tickler` with no `details:` note of its own -- added).
+
+**Pre-staging review, same day:** a three-part review before staging
+the day's work -- (1) compared opus's yaml against data-dict's own
+canonical worked examples; (2) audited against the data-dict CLI's
+`skill-read`/`skill-create` prompts as a rubric; (3) a from-scratch
+structural review of the whole repo. Two fixes landed directly:
+
+- **`AgeSource`/`AgePrepMet` were resolving to redirect-only icesVocab
+  keys.** `TS_AgeSource`/`TS_AgePrepMet` turned out non-authoritative
+  -- each one's own icesVocab `Description` is a bare "see X"
+  cross-reference to a different domain, invisible to name-matching.
+  Real CA data matches `SampleType`/`PreparationMethod` exactly,
+  code-for-code. Fixed in `spec_02_curate_dict.R`; `ICES_ISSUE_REPORT.md`
+  Issue 8 gained an addendum on the general redirect-without-structure
+  problem.
+- **A real bug caught mid-fix:** the first attempt silently did
+  nothing. Root cause: the entries lived in `col_labels`, whose apply
+  loop hardcodes the update to `label` alone, silently discarding
+  every other field with no warning. Fixed by moving to `field_specs`.
+  Whether `col_labels`'s loop should instead reject unexpected keys
+  outright is tracked in TODO.md.
+- **Three CA sampling-flag columns (`GenSamp`/`StomSamp`/`ParSamp`)**
+  had the same stale "100% clean" claim already fixed for
+  Tickler/CatIdentifier/Age/SwellHeight, just missed by that pass --
+  each was documented 2026-07-29 as clean Y/N, but that check ran
+  against the same pre-scrubbed archive. Re-verified: `-9` is now
+  dominant (82.9-85.6%) in all three.
+
+Found the real provenance of `inst/*.parquet` along the way:
+`data-raw/GENERATE_test_data_ns_ibts_2026q1.R` (2026-07-31) -- a
+narrow single-survey/quarter extract from **obus's** local files, not
+a broad sample. `inst/*.parquet`'s staleness relative to corrections
+made since (e.g. `DateofCalculation`) is deliberately unresolved (see
+TODO.md's D1 item); a draft resampling script,
+`data-raw/archive_07_build_test_samples.R`, exists on disk, untracked,
+pending that decision.
+
+**Session-close correction, same day:** a post-commit status check
+found three things investigated and verbally reported but never
+actually written into AGENTS.md/TODO.md: the `swell_height_type_mismatch`
+stale cross-reference, the render-adoption process lesson (below), and
+`archive_07_build_test_samples.R`'s own false provenance claim. All
+three re-added. **Lesson:** a verbal "still open, tracked" claim isn't
+reliable on its own -- verify against the actual backlog file, not
+memory of having written something down.
+
+**Process lesson, written up late (should have been recorded
+2026-08-08):** `render` was adopted 2026-08-08 (commit `638c9ac`), but
+that decision was never recorded in AGENTS.md at the time -- so a
+brand-new hand-rolled Quarto generator got built anyway two days
+later and survived 8 days until this session found and removed it.
+
+---
+
+## 2026-08-17 -- read.delim() T/F-to-logical bug; dead R/ files removed; docs restructured
+
+**A second, independent archive-integrity bug, root-caused and fixed:
+`read.delim()`'s T/F-to-logical auto-coercion.** The "new
+archive-integrity bug" flagged at the end of 2026-08-16 (literal
+`"TRUE"`/`"FALSE"` text in several enum columns) was root-caused.
+Checked raw XML first: ICES's real submissions are clean
+(`<SpecCodeType>T</SpecCodeType>`, one character) -- the corruption is
+entirely opus's own pipeline, not an ICES-side problem, so (unlike the
+sentinel-scrub bug, similarly opus's own fault) no `known-issues.yaml`
+entry was warranted.
+
+Root cause: `archive_04_parse_phase2.R` and
+`archive_05_backfill_lt_partitions.R` each carry their own independent
+copy of `parse_xml_to_dataframe()`, both calling `read.delim(con,
+stringsAsFactors = FALSE, na.strings = "")` with no `colClasses`, so
+R's own type-guessing runs. Confirmed directly: `read.table`'s guesser
+coerces bare `T`/`F`/`TRUE`/`FALSE` to `logical` (not `True`/`False`/
+lowercase). Any file where a column's real values happen to be a
+subset of `{T, F}` -- e.g. an HL file with no `W`-coded rows for
+`SpecCodeType` -- silently became a `logical` vector at parse time,
+before `apply_wsdl_types()` ever ran; its later `as.character()` cast
+can't recover the original text (`as.character(TRUE)` is `"TRUE"`,
+not `"T"`). Same failure shape as both the 2026-08-08/09 type-caster
+bug and the sentinel scrub -- an earlier, implicit, per-file-value-
+dependent step silently destroying information before the later,
+correct, explicit step ever sees it.
+
+Exhaustive scope check (every string column, all four tables) found 7
+`(table, column)` pairs, one more than the 6 previously listed --
+`CA.SpeciesCodeType` (514,216 rows) had been missed by the earlier ad
+hoc discovery. Total ~2.12M affected rows, confirmed zero in LT:
+`HH.DoorType` (733), `HH.Rigging` (1,784), `HL.DoorType` (60,844),
+`HL.SpeciesCodeType` (1,536,333), `CA.DoorType` (9,141),
+`CA.SpeciesCodeType` (514,216), `CA.IndividualSex` (87).
+
+Fix: added `colClasses = "character"` to both scripts' `read.delim()`
+call. Validated against a known-bad file (`HL_SP-NORTH_2009_Q3`, real
+value `T`) before touching the full archive. Full reprocess, all four
+tables: Success 2968 | Error 813 (all `EMPTY_RECORDS`) -- identical to
+the 2026-08-16 baseline. Re-split legacy/new: row counts unchanged.
+Re-ran the exhaustive scan: zero rows anywhere still equal
+`TRUE`/`FALSE`. Spot-checked: `HL.SpeciesCodeType`'s `T` count
+(2,008,425) exactly equals the old `T` + `TRUE` counts combined -- no
+rows lost, only correctly retyped.
+
+**Checked whether this had contaminated an existing conclusion -- it
+hadn't.** The 2026-08-16 HH-vs-LT `Rigging` "95.33% match" was a
+plausible suspect, since LT had zero rows affected by this bug while
+HH.Rigging had 1,784 -- a row-level `"TRUE"` (HH) vs `"T"` (LT)
+comparison for the same real haul would have shown a false mismatch.
+Recomputed post-fix: 69,064/72,483 = 95.28% match, mismatches 100%
+`FB`/`FW` swaps (3,419 -- the exact count already cited in
+`spec_02_curate_dict.R`'s own comment), zero residual `TRUE`/`T`-shaped
+mismatches. The small shift is denominator noise, not contamination --
+the original conclusion holds. Worth having checked regardless: the
+mechanism was real and plausible, it simply didn't reach far enough
+into this particular downstream comparison to change its answer.
+
+**Removed the 6 dead three-phase-bootstrap `R/` files**
+(`op_apply_curated_spec.R`, `op_audit_yaml_phase2_mismatch.R`,
+`op_build_final_yaml.R`, `op_check_type_mismatch.R`,
+`op_enrich_stage2_yaml.R`, `op_minimal_yaml.R`). Verified empirically
+before deleting: grepped the whole repo for each function name, found
+zero real callers. `NAMESPACE` (hand-frozen, not roxygen-managed) had
+zero `export()` entries for any of the six -- despite `@export` tags,
+they were never actually part of the shipped API; the six `man/*.Rd`
+pages existed only because roxygen2 generates a page for any
+`@export`-tagged function regardless of NAMESPACE.
+
+Read all six fully before deciding remove-vs-repurpose. Each
+implements one phase of an abandoned three-phase merge design (WSDL
+seed -> icesVocab enrich -> apply curated spec -> build final), and
+every one requires an already-existing "curated_yaml" as input -- the
+exact catch-22 the current `spec_00`(crawl)->`01`(seed)->`02`(curate)->
+`03`(translate) pipeline was built to avoid, using one single verified
+crosswalk instead of each function's own ad hoc lookup.
+`op_check_type_mismatch()` additionally has a dead tautological branch
+(`is_renamed && !is_renamed`, always `FALSE`). Verdict: remove, not
+repurpose. `devtools::document()` correctly left `NAMESPACE` untouched
+and auto-deleted the six orphaned man pages. `devtools::check()` clean
+throughout.
+
+**AGENTS.md/TODO.md restructured; this file created.** User flagged
+that AGENTS.md had grown from 89 to 371 lines since 2026-07-31, every
+single commit adding net content, never once trimmed -- duplicating
+detail that git commit messages already carry. Considered and
+rejected `NEWS.md` as the name for a split-out history file: that's
+the R-ecosystem convention for package *consumer* release notes
+(`tools::news()`, pkgdown's Changelog page), and opus has exactly one
+user who is also its maintainer and will likely never have others --
+there's no consumer audience to serve with that convention. Settled on
+`DEVLOG.md` instead (this file), added to `.Rbuildignore` alongside
+AGENTS.md/TODO.md as an internal working doc, not a package artifact.
+AGENTS.md trimmed to current-state-only (principles, scope,
+architecture); TODO.md trimmed to current backlog only, with resolved
+items deleted outright rather than kept as struck-through paragraphs
+(their story lives here and in git log instead). All of the historical
+narrative above this entry was migrated from AGENTS.md's "Open Items"
+section and TODO.md's resolved-item explanations, not rewritten from
+memory.

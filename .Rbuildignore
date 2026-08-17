@@ -12,6 +12,7 @@
 ^vignettes$
 ^AGENTS\.*
 ^TODO\.md$
+^DEVLOG\.md$
 ^README\.Rmd$
 ^README\.knit\.md$
 ^README\.html$

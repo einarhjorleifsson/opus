@@ -29,7 +29,7 @@
   - [x] ~~Prioritize escalation candidates for imbus feedback~~ — done 2026-08-18: see DEVLOG.md for the full ready-to-file / already-filed / needs-diagnosis / excluded breakdown.
 
 - [ ] **imbus/ICES liaison (WP2 handoff):**
-  - [ ] File `data-raw/ICES_ISSUE_REPORT.md` with ICES (13 confirmed issues, drafted) — held deliberately, not just stuck: the venue doesn't exist yet (next item), and ongoing work keeps surfacing more issues worth folding in before one filing.
+  - [ ] File `data-raw/ICES_ISSUE_REPORT.md` with ICES (16 confirmed issues, drafted) — held deliberately, not just stuck: the venue doesn't exist yet (next item), and ongoing work keeps surfacing more issues worth folding in before one filing.
   - [ ] Define escalation format: memo, GitHub Issues, or direct registry submission? -- checked 2026-08-17: `vignettes/imbus-interim-note-mockup.qmd` is explicitly a mockup, "not live yet". The escalation channel itself doesn't exist yet, not just an undecided choice among existing ones -- a bigger decision than opus can resolve unilaterally (imbus liaison structure, per this file's own WP2/WP3 scope boundary).
   - [ ] Clarify opus's role vs. imbus's data governance work
   - [ ] Establish timeline for ICES feedback loop (e.g., HaulValidity vocab completion)

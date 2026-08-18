@@ -1304,3 +1304,94 @@ choice: drafting the three ready-to-file items into
 separately-tracked "imbus/ICES liaison" `TODO.md` item, not done here.
 
 `devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+---
+
+## 2026-08-18 (continued) -- ICES_ISSUE_REPORT.md: 3 issues filed, a stale "false lead" corrected, dates/history stripped
+
+Continuation of the same session: filed the three gaps identified above
+(`ca_haulno_unlinkable_to_hh`, `lt_bts_2025_q1_orphaned`,
+`param_vocab_incomplete`) as Issues 14-16, and reviewed the full report
+end to end for staleness rather than just appending.
+
+**Issue 9's own table was wrong, by the same mechanism Issue 8 itself
+already names.** Its `Ship` row called `Ship` a "false lead" using
+`TS_Ship`'s own codes (88 of 111 real values missing) -- but Issue 8's own
+text, a few hundred lines earlier in the same document, already flags
+`TS_Ship` as a bare redirect ("see SHIPC"). Nobody had gone back and
+followed it. Checked directly: across HH/HL/CA/LT combined, 112 distinct
+real `Ship` values, 109 match `SHIPC` (97%), only `AA36`/`DCA`/`HOL` don't.
+`Country` had the identical problem, referenced only in Issue 9's prose
+("already-known Survey/Country false leads") -- `TS_Country` misses 20 of
+23 real values, but the redirect target `ISO_3166` covers 22 of 23 exactly
+(the lone exception, `DUM`, reads as a placeholder; the archive's `SUHH`
+correctly matches `ISO_3166`'s own convention of suffixing defunct
+countries, `SUHH`=USSR). `Survey` was checked the same way and remains a
+genuine false lead -- no redirect exists for it, the bare `Survey` key's
+133 codes are simply a different, unrelated list from DATRAS's own 28
+survey acronyms. Rewrote Issue 9's table and surrounding prose to reflect
+the corrected picture, and folded in evidence for both corrected fields.
+Also relocated a "Tickler/CatIdentifier adopted as enum" addendum that had
+been orphaned at the very end of the file (after the unrelated "Suggestion
+for consideration" section) back into Issue 9, where it actually belongs.
+Added Ship/Country as two more confirmed instances to `known-issues.yaml`'s
+`icesvocab_key_resolution_hazard` entry -- no opus-side bug resulted (Ship/
+Country are typed as open strings, not enums), but the same hazard applies.
+
+**At the user's explicit request, stripped discovery dates and
+session-history narrative from the whole report.** Every "found
+2026-08-16", "re-checked 2026-08-17", "First noticed 2026-08-02"-style
+phrase removed; the "How this was verified" section's dated
+"(added 2026-08-08)"/"(added 2026-08-09)" annotations folded into plain
+numbered method descriptions; the top-level "Date: 2026-08-06" dropped
+outright, since the document has kept changing since and was never
+actually sent. What stayed: the substantive verification methodology
+(which live sources, checked how) and all evidence/numbers -- an
+ICES-facing report should read as a current-state account of what's wrong
+and why, not a lab notebook of opus's own session-by-session path to
+finding it. That narrative belongs here, in `DEVLOG.md`, exclusively.
+
+Cross-referenced the three new issues back into their `known-issues.yaml`
+entries ("Filed as ... Issue N"), corrected `param_vocab_incomplete`'s own
+implication text (previously said "never actually filed," no longer true),
+and bumped `TODO.md`'s stale issue count (13 -> 16).
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+---
+
+## 2026-08-18 (continued) -- a structural consistency checker between the two issue documents, which immediately found a third stale reference
+
+User asked, after the "why two files" explanation above, for a script that
+keeps `inst/DATRAS-known-issues.yaml` and `data-raw/ICES_ISSUE_REPORT.md`
+in sync going forward. Wrote `data-raw/validate_issue_registry_sync.R`:
+checks that every "ICES_ISSUE_REPORT.md Issue N" cited inside the yaml
+resolves to a real `## Issue N:` header, the reverse (every yaml `id`
+cited near "known issue(s)" in the .md still exists), that no
+`scope: opus-internal` entry ever cites an ICES issue, and that the .md's
+own Issue headers are unique and contiguous. Explicitly a linter, not a
+fact-checker -- documented in the script's own header that it cannot
+catch a claim going stale (today's earlier `icesVocab_gaps`/Issue 9 bugs
+were both factual errors, not broken cross-references; neither would have
+tripped this script). Verified detection actually works, not just that it
+runs clean: copied both files to a scratch dir, corrupted each of the four
+checks in turn (a dangling yaml->md number, a renamed yaml id still cited
+in the .md, an opus-internal entry given a fake filing, a duplicated
+`## Issue` header), and confirmed each specific break was caught with the
+right message before reverting.
+
+**Running it clean surfaced a third stale reference no one had caught by
+hand.** `swell_height_vocab_unused`'s own text still said "Candidate for
+`data-raw/ICES_ISSUE_REPORT.md`" -- even though Issue 10 already exists
+and covers exactly this finding. This one had been silently wrong since
+Issue 10 was written, and the "escalation candidate" list given to the
+user just one turn earlier had wrongly asserted it as already
+cross-referenced (an inherited assumption, not independently re-checked
+at the time). Fixed the yaml text to say "Filed as ... Issue 10" once the
+checker flagged it; re-running confirmed the fix and produced the correct
+7-filed / 2-not-yet-filed split (`ca_haulno_tail_mismatch`, genuinely
+undiagnosed; `swell_height_type_mismatch`, resolved on opus's own side
+with no remaining ICES-facing angle -- both correctly informational, not
+errors).
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes.

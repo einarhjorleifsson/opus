@@ -1,11 +1,9 @@
 # Issues found in ICES DATRAS web services
 
 **Prepared by:** opus (github.com/einarhjorleifsson/opus)
-**Date:** 2026-08-06
 **Scope:** ICES's `DATRASWebService.asmx` (both `getDatrasFieldList` and the
 Tier 1 data-retrieval operations), the LT (Litter Assessment) archive data,
-and (from Issue 7 onward, added 2026-08-08) the icesVocab service where it
-concerns DATRAS fields specifically.
+and the icesVocab service where it concerns DATRAS fields specifically.
 
 ## How this was verified
 
@@ -19,29 +17,25 @@ sources**, never against documentation alone:
    names and types the server's own code actually generates — independent
    of the separately-maintained metadata service in (1)
 3. The real Tier 1 archive data (145,958 HH rows, 13,754,042 HL rows,
-   5,865,076 CA rows, 75,310 LT rows; 1965–2026, downloaded 2026-08-05)
-4. (Issues 7–8) icesVocab's own live `getCodeTypes`/`getCode` responses
+   5,865,076 CA rows, 75,310 LT rows; full 1965-2026 history)
+4. icesVocab's own live `getCodeTypes`/`getCode` responses
    (`https://vocab.ices.dk/services/api/...`), checked field-by-field against
    both the legacy and current DATRAS name for every one of Tier 1's 52 enum
    fields, not a sample -- see Issue 8 for why checking only one name is not
    sufficient
-5. (Issue 9, added 2026-08-09) The same icesVocab check extended to all 190
-   Tier 1 fields, not just the 52 already typed `enum` -- see Issue 9 for
-   why scoping the check to fields already believed to be candidates is
-   itself a blind spot
+5. The same icesVocab check extended to all 190 Tier 1 fields, not just the
+   52 already typed `enum` -- see Issue 9 for why scoping the check to
+   fields already believed to be candidates is itself a blind spot
+6. Raw LT exchange XML, parsed directly (at least one non-empty file per
+   survey, all 28 surveys) and diffed against `inst/DATRAS-data-dict.yaml`'s
+   own legacy-name annotations for all four Tier 1 tables -- confirms
+   Issues 1-3 (LT's real field set, the `Ship`/`StNo`/`HaulNo` renames, and
+   the phantom `RecordType` field) by a method independent of (1)-(2). Zero
+   discrepancies in either direction for HH, HL, CA, or LT.
 
 No finding here rests on a single source, and none rest on any third-party
 R package's own internal handling of these services -- every claim traces
 directly to the live ICES endpoints listed above.
-
-**2026-08-08 re-verification:** Issues 1–3 (LT's real field set, the
-`Ship`/`StNo`/`HaulNo` renames, and the phantom `RecordType` field)
-independently re-confirmed via a third method not used above: parsing raw
-LT exchange XML directly (at least one non-empty file per survey, all 28
-surveys) and diffing the resulting real field-tag set against
-`inst/DATRAS-data-dict.yaml`'s own legacy-name annotations for all four
-Tier 1 tables, not just LT. Zero discrepancies in either direction for HH,
-HL, CA, or LT.
 
 ---
 
@@ -127,9 +121,8 @@ Because the row's old-name half is already shown not to correspond to
 anything real, its new-name half (`"IndividualAge"`) cannot be trusted to
 apply to the real `Age` field either — it may be stale, a typo, or describe
 a field removed from `getCAdata` at some point without the field-list being
-updated to match. We have deliberately **not** treated `Age` as renamed to
-`IndividualAge` on the strength of this row alone (opus's own spec
-previously did, before this cross-verification step existed).
+updated to match. This field is deliberately not treated as renamed to
+`IndividualAge` on the strength of this row alone.
 
 **Recommendation:** Confirm whether `Age` should be documented as
 `IndividualAge`, and if so, correct the row's old-name to `Age` (not
@@ -160,9 +153,9 @@ Unlike Issues 1–5, this is not about the field-list metadata service — it's
 about the archived data itself. LT's real archive carries **two separate
 columns**, `Depth` and `BottomDepth`, that are byte-for-byte identical
 across all 75,310 rows (100% populated in both, 0 differences, 0
-one-sided nulls — verified directly 2026-08-06). This is not a naming
-variant of the same field (as Issue 2's fields are) — both columns
-genuinely exist side by side with fully duplicate content.
+one-sided nulls). This is not a naming variant of the same field (as
+Issue 2's fields are) — both columns genuinely exist side by side with
+fully duplicate content.
 
 **Recommendation:** Confirm whether this duplication is intentional (e.g. a
 legacy field retained for backward compatibility) or an artifact of how LT
@@ -245,34 +238,28 @@ Across all 52 fields, `AC_` was never once the correct candidate for a
 DATRAS field -- not occasionally wrong, categorically inapplicable, for
 this database specifically.
 
-**A second, independent ambiguity in the same prefix, found 2026-08-16:**
-`TS_` is not even reliably self-contained. At least two `TS_` keys --
-`TS_AgeSource` and `TS_AgePrepMet` -- are themselves non-authoritative:
-each one's own icesVocab `Description` field is a bare cross-reference
-("see SampleType", "see PreparationMethod") to a *different*, non-`TS_`-
-prefixed ("bare") domain, not a real code list in its own right. This
-wasn't caught by the systematic check above because that check verified
-plausibility by name/description match, not by testing the resolved key's
-codes against real archive values one-for-one -- `TS_AgeSource`'s and
-`TS_AgePrepMet`'s codes have **zero overlap** with what CA's real
-`AgeSource`/`AgePrepMet` columns actually contain, while the domains their
-own descriptions point to (`SampleType`, `PreparationMethod`) match
-exactly, code-for-code, including a literal lowercase `otolith` code in
-`SampleType` (not just its description). Two more `TS_` keys carry the
-same kind of redirect (`TS_Ship` -> `SHIPC`, `TS_Country` -> `ISO_3166`),
-found by scanning every `TS_` key's own Description for a "see "
-cross-reference -- neither affects opus's own resolution today, since
-`Ship`/`Country` are typed as open string codes in opus's spec, not small
-enums, so opus never attempts a vocab-key match for them. The general
-hazard remains for any future field, or any other consumer, that resolves
-by prefix and by name alone: a `TS_` match is necessary but was already
-known not to be sufficient (the `AC_` collision above), and now isn't even
-reliably a real code list rather than a pointer to one -- with nothing
-machine-readable distinguishing an authoritative `TS_` key from a redirect
-one, only a `Description` string a consumer has to already know to check.
-Opus's own proposed mapping table below is corrected for these two fields;
-`inst/DATRAS-vocab-correction.csv` and `op_vocab_resolve_datras_key()` were
-also fixed to point at the redirect targets, not the `TS_` aliases.
+**A second, independent ambiguity in the same prefix:** `TS_` is not even
+reliably self-contained. At least two `TS_` keys -- `TS_AgeSource` and
+`TS_AgePrepMet` -- are themselves non-authoritative: each one's own
+icesVocab `Description` field is a bare cross-reference ("see SampleType",
+"see PreparationMethod") to a *different*, non-`TS_`-prefixed ("bare")
+domain, not a real code list in its own right. This wasn't caught by the
+systematic check above because that check verified plausibility by
+name/description match, not by testing the resolved key's codes against
+real archive values one-for-one -- `TS_AgeSource`'s and `TS_AgePrepMet`'s
+codes have **zero overlap** with what CA's real `AgeSource`/`AgePrepMet`
+columns actually contain, while the domains their own descriptions point to
+(`SampleType`, `PreparationMethod`) match exactly, code-for-code, including
+a literal lowercase `otolith` code in `SampleType` (not just its
+description). Two more `TS_` keys carry the same kind of redirect (`TS_Ship`
+-> `SHIPC`, `TS_Country` -> `ISO_3166`) -- see Issue 9 for what following
+those two redirects turns up. The general hazard remains for any future
+field, or any other consumer, that resolves by prefix and by name alone: a
+`TS_` match is necessary but was already known not to be sufficient (the
+`AC_` collision above), and now isn't even reliably a real code list rather
+than a pointer to one -- with nothing machine-readable distinguishing an
+authoritative `TS_` key from a redirect one, only a `Description` string a
+consumer has to already know to check.
 
 **Recommendation:** Document each vocab domain prefix's scope in a
 machine-readable field (which ICES data collection(s) it applies to), and/or
@@ -370,7 +357,7 @@ Sampling Flag fields).
 
 ---
 
-## Issue 9: A full sweep of all 190 Tier 1 fields finds real icesVocab coverage for 5 more fields, invisible without checking every field individually
+## Issue 9: A full sweep of all 190 Tier 1 fields finds real icesVocab coverage for 6 more fields, invisible without checking every field individually
 
 **Severity: Same root cause as Issue 7 (no declared field-to-key link) -- shown here to hide good, applicable matches, not just cause bad ones**
 
@@ -385,12 +372,12 @@ combined), by legacy name, regardless of current type.
 mostly genuine measurements: haul duration, temperatures, depths, etc.).
 75/190 have at least one candidate. Of those 75: 46 are the enum fields
 Issue 8's table already covers. The remaining 29 are fields NOT currently
-typed `enum` that still returned a name match. 16 of those 29 were already
-independently discovered and documented in opus's own curation notes
-(`Country`, `Survey`, `StatRec`, `AreaType`, `LTPRP`, `LTSZC`, `PARAM`,
-`TYPPL`, `SwellHeight`) -- which is itself a useful cross-check: the sweep
-independently rediscovers every one of these by the same mechanical
-process, corroborating that the method works, not just that it's exhaustive.
+typed `enum` that still returned a name match. 16 of those 29 are already
+documented elsewhere in opus's own curation notes (`Country`, `Survey`,
+`StatRec`, `AreaType`, `LTPRP`, `LTSZC`, `PARAM`, `TYPPL`, `SwellHeight`) --
+which is itself a useful cross-check: the sweep independently rediscovers
+every one of these by the same mechanical process, corroborating that the
+method works, not just that it's exhaustive.
 
 The other 13 rows (6 distinct fields, appearing once per table where each
 occurs) had never been checked against icesVocab at all before this sweep,
@@ -400,26 +387,58 @@ nothing -- see Issue 7):
 
 | Legacy field | Table(s) | icesVocab key | Real value coverage |
 |---|---|---|---|
-| `Ship` | HH, HL, CA, LT | `TS_Ship` | **False lead** -- 113 vocab codes, but 88 of 111 real distinct values (79%) aren't among them; a different coding scheme entirely, same shape as the already-known `Survey`/`Country` false leads |
+| `Ship` | HH, HL, CA, LT | `TS_Ship` (a redirect -- see Issue 8 -- to `SHIPC`) | `SHIPC` covers 109 of 112 real distinct values (97%); the exceptions are `AA36`, `DCA`, `HOL` |
 | `Year` | HH, HL, CA, LT | `Year` | 62/62 real distinct years, 0 missing either direction |
 | `Maturity` | CA | `TS_Maturity` | 47/47 real values, 0 missing either direction |
 | `DepthStratum` | HH | `TS_DepthStratum` | 186/186 real values, 0 missing either direction |
 | `Tickler` | HH, LT | `TS_Tickler` | 9/9 real values, 0 missing either direction |
 | `CatIdentifier` | HL | `TS_CatIdentifier` | 13/13 real values, 0 missing either direction |
 
-Five of six are genuine, exact, currently-undocumented matches -- not
-partial or "close enough," a full bidirectional fit each time. None of
-these fields' own ICES field-list descriptions mention icesVocab, and
-nothing about `getDatrasFieldList`'s metadata points a consumer toward
+Two related fields, checked the same way, are worth noting alongside this
+table even though neither is one of the 13 new rows above. `Survey` (name
+match `TS_Survey`/`AC_Survey`, both registered) remains a genuine false
+lead: the bare `Survey` key's 133 codes share zero overlap with the 28 real
+DATRAS survey acronyms in the archive -- an unrelated code list, not a
+redirect, so following any prefix here doesn't help. `Country` looked like
+a second false lead for the same reason `Ship` did (`TS_Country` misses 20
+of 23 real values) until its own redirect (`TS_Country` -> `see ISO_3166`,
+also noted in Issue 8) is followed: `ISO_3166`'s 288 codes cover 22 of the
+23 real values exactly, including historical entries the archive still
+carries (e.g. `SUHH` = USSR); the one exception, `DUM` (CA only), reads as
+a placeholder rather than a real country code.
+
+All six table fields resolve cleanly once each key's actual code list is
+checked and any redirect is followed first -- five with a full
+bidirectional fit, `Ship` with three single-value exceptions out of 112.
+None of these fields' own ICES field-list descriptions mention icesVocab,
+and nothing about `getDatrasFieldList`'s metadata points a consumer toward
 checking. They were only discoverable by checking every field against
 every vocab key directly and comparing the result against real data --
-exactly the gap Issue 7 already describes, now with five additional,
-concrete, currently-unused matches as evidence of what that gap costs, not
-just what it risks.
+exactly the gap Issue 7 already describes, now with concrete,
+currently-unused matches as evidence of what that gap costs, not just what
+it risks.
+
+Two of the five originally-clean matches (`Tickler`, `CatIdentifier`) have
+since been adopted into opus's own curated spec as `type: enum` --
+`inst/DATRAS-data-dict.yaml` now reflects this directly, opus's own
+downstream reaction to a gap that remains ICES's to close, noted here for
+completeness rather than because it changes the finding. The other three
+were deliberately left as-is, each for a distinct reason rather than a
+shared threshold: `Year` is a continuously-advancing ordinal (next year
+needs a code that doesn't exist yet), not a fixed closed set, regardless of
+icesVocab happening to enumerate past years as codes; `Maturity`'s own
+field description says its coding depends on the sibling `MaturityScale`
+field, so `TS_Maturity`'s codes are plausibly a union across several
+distinct scales, not one flat list; `DepthStratum`'s own description says
+strata are survey-specific, in tension with treating one vocab key as
+universal. Neither reservation applies to `Tickler` (a real gear-count
+code, not growing) or `CatIdentifier` (already independently documented as
+a coded scheme, not a sequence).
 
 **Recommendation:** Same as Issue 7's -- publish the field-to-key
-crosswalk. Until then, these five matches (and any others like them) stay
-invisible to anyone who doesn't redo this exact full sweep themselves.
+crosswalk. Until then, matches like these (and genuine false leads like
+`Survey`) stay indistinguishable from each other to anyone who doesn't
+redo this exact full sweep, and follow every redirect, themselves.
 
 ---
 
@@ -437,9 +456,7 @@ substring match on both `Key` and `Description`, not just the obvious name.
 
 Both HH and LT carry a `SwellHeight` field (LT's own value is a verified
 byte-for-byte copy of HH's for the same haul -- 55,113 of 55,113 matched
-non-null rows identical (re-confirmed 2026-08-18; a prior 2026-08-16 check
-cited a stale 55,914 total for the same zero-exceptions result), not an
-independent second measurement). Checked
+non-null rows identical, not an independent second measurement). Checked
 the full real archive for both, after correcting an unrelated
 archive-pipeline bug that had been silently converting this field's own
 `-9` sentinel to a null (see opus's own `known-issues.yaml`,
@@ -469,7 +486,7 @@ carrying tables use a continuous measurement instead.
 
 ---
 
-## Issue 11: The December 2025 field-description spreadsheet declares two new fields that don't yet exist in live WSDL or any real submission
+## Issue 11: The DATRAS field-description spreadsheet declares two fields that don't exist in live WSDL or any real submission
 
 **Severity: Institutional governance -- ICES's own sources disagree with each other about what the current schema is**
 
@@ -479,20 +496,19 @@ from
 `https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx`)
 states in its own version notes: "New field in HH ReasonHaulDisruption
 added" and "New field in CA PreservationMethod added." Checked both
-against opus's other two structural sources, live 2026-08-17:
+against opus's other two structural sources:
 
 - Live WSDL (`getHHdata`, 69 fields; `getCAdata`, 34 fields) declares
   neither field.
-- The real downloaded archive (`.datras/HH_legacy.parquet`,
-  `.datras/CA_legacy.parquet` -- both also 69/34 columns) contains zero
-  occurrences of either field name, anywhere in the full archive.
+- The real archive (`.datras/HH_legacy.parquet`, `.datras/CA_legacy.parquet`
+  -- both also 69/34 columns) contains zero occurrences of either field
+  name, anywhere in the full archive.
 
-So as of this date, ICES's own published schema description and ICES's
-own live service/submitted-data reality disagree: one source says these
-fields exist, the other two (both authoritative for what's actually
-implemented) say they don't. This isn't a data-quality problem on any
-submitter's side -- nobody can populate a field the live service doesn't
-ask for.
+So ICES's own published schema description and ICES's own live
+service/submitted-data reality disagree: one source says these fields
+exist, the other two (both authoritative for what's actually implemented)
+say they don't. This isn't a data-quality problem on any submitter's side
+-- nobody can populate a field the live service doesn't ask for.
 
 `CA.PreservationMethod`'s spreadsheet entry does include one thing the
 other two sources never provide for any field: a direct icesVocab
@@ -513,29 +529,27 @@ itself (e.g. "planned" vs. "added").
 
 ## Issue 12: Two independently-maintained ICES documentation sources agree with each other, and both disagree with live WSDL, about `Year` and `SpecCode`'s type
 
-**Severity: Institutional governance -- the same wrong answer from two unrelated sources, over multiple years, never reconciled against the live contract**
+**Severity: Institutional governance -- the same wrong answer from two unrelated sources, never reconciled against the live contract**
 
-First noticed 2026-08-02 (`Year` only, comparing live WSDL against
-`getDatrasFieldList`): WSDL declares `Year` as `int` for all four Tier 1
-tables (`getHHdata`, `getHLdata`, `getCAdata`, `getLitterAssessmentOutput`),
-but `getDatrasFieldList` declares it `char`. The real archive
-(`.datras/*.parquet`) agrees with WSDL -- every `Year` value is a clean
-4-digit integer, never a non-numeric string.
+Comparing live WSDL against `getDatrasFieldList` for `Year`: WSDL declares
+`Year` as `int` for all four Tier 1 tables (`getHHdata`, `getHLdata`,
+`getCAdata`, `getLitterAssessmentOutput`), but `getDatrasFieldList`
+declares it `char`. The real archive (`.datras/*.parquet`) agrees with
+WSDL -- every `Year` value is a clean 4-digit integer, never a
+non-numeric string.
 
-Re-checked 2026-08-17 against a third, independent source: the DATRAS
-field-description spreadsheet (`DATRAS_Field_descriptions_and_example_file_December2025.xlsx`,
-found this session -- see Issue 11 above) also declares `Year` as `char`,
-in all four tables, agreeing with `getDatrasFieldList` and disagreeing
-with WSDL and the real archive. The same spreadsheet independently makes
-the identical kind of claim for `SpecCode` (HL and CA): `char`, while live
-WSDL declares `int` -- consistent with `SpecCode` being a WoRMS AphiaID,
-a numeric species identifier, not a text field.
+A third, independent source, the DATRAS field-description spreadsheet
+(see Issue 11), also declares `Year` as `char`, in all four tables,
+agreeing with `getDatrasFieldList` and disagreeing with WSDL and the real
+archive. The same spreadsheet independently makes the identical kind of
+claim for `SpecCode` (HL and CA): `char`, while live WSDL declares `int`
+-- consistent with `SpecCode` being a WoRMS AphiaID, a numeric species
+identifier, not a text field.
 
-So this isn't one stale citation from one source, corrected once and
-forgotten: two separately-maintained ICES documentation artifacts,
-built years apart, have independently landed on the same wrong answer,
-and neither has ever been reconciled against the live WSDL contract
-they're both supposed to describe.
+So this isn't one stale citation from one source: two separately-maintained
+ICES documentation artifacts have independently landed on the same wrong
+answer, and neither has ever been reconciled against the live WSDL
+contract they're both supposed to describe.
 
 **Recommendation:** Confirm which is actually correct (real submitted
 data already answers this: numeric, for both fields) and align
@@ -560,12 +574,12 @@ with HH's copy of the same haul.
 **Evidence.** Joining HH to LT on the standard 8-field composite haul
 key (Survey, Year, Quarter, Country, Ship, Gear, StNo, HaulNo -- LT's
 own value is internally consistent across all of a haul's own LT rows
-where a haul has more than one, confirmed 2026-08-18), 30,364 distinct
-hauls carry a `DateofCalculation` value on both sides. Of those, 19,193
-(63.21%) disagree -- not a small or one-sided drift: the median gap
-when they disagree is 120 days, the largest is 2,557 days (~7 years),
-and it runs in both directions (LT dated later than HH in 11,224 cases;
-HH later in 7,969).
+where a haul has more than one), 30,364 distinct hauls carry a
+`DateofCalculation` value on both sides. Of those, 19,193 (63.21%)
+disagree -- not a small or one-sided drift: the median gap when they
+disagree is 120 days, the largest is 2,557 days (~7 years), and it runs
+in both directions (LT dated later than HH in 11,224 cases; HH later in
+7,969).
 
 This differs in kind from the other confirmed HH/child-table conflict,
 `RecordType`/`RecordHeader` (Issue 2 above): that one differs *by
@@ -574,19 +588,17 @@ either table's documentation suggests `DateofCalculation` is meant to
 vary by product for the same real-world haul.
 
 **Independent corroboration.** A related internal downstream project
-has separately documented the same category of behavior for a
-different DATRAS product: `getFlexFile()` (the FL/fishing-effort
-product) returns multiple rows for the same haul, identical in every
-field except `DateofCalculation` -- confirmed reprocessing revisions,
-not submission duplicates (739 of 53,859 distinct FL haul keys in a
-full 2000-2026 pull). That project also found `DateofCalculation`'s own
-digit order differs by product (`YYYYMMDD` in HH, `YYYYDDMM` in
-FlexFile) -- checked directly against HH and LT for this report and
-*not* reproduced there (both stay at or under 12 in the digit position
-that would expose a day-before-month encoding), so that specific
-sub-finding is FL-specific, not evidence of a wider encoding problem.
-Neither finding had been filed with ICES by either project before this
-report.
+has separately documented the same category of behavior for a different
+DATRAS product: `getFlexFile()` (the FL/fishing-effort product) returns
+multiple rows for the same haul, identical in every field except
+`DateofCalculation` -- confirmed reprocessing revisions, not submission
+duplicates (739 of 53,859 distinct FL haul keys in a full 2000-2026
+pull). That project also found `DateofCalculation`'s own digit order
+differs by product (`YYYYMMDD` in HH, `YYYYDDMM` in FlexFile) -- checked
+directly against HH and LT for this report and *not* reproduced there
+(both stay at or under 12 in the digit position that would expose a
+day-before-month encoding), so that specific sub-finding is FL-specific,
+not evidence of a wider encoding problem.
 
 **Recommendation:** Confirm whether `DateofCalculation` is intended as
 a single per-haul fact (in which case HH/LT/FL disagreeing this often
@@ -596,6 +608,67 @@ across products with no documented distinction (in which case the
 field's eventual published description -- see Issue 5 -- should say so
 explicitly, since nothing today tells a consumer not to expect one
 answer per haul).
+
+---
+
+## Issue 14: CA records with `HaulNo` = `-9` cannot be linked to any HH haul
+
+**Severity: Data quality — orphaned records**
+
+CA's composite-key field `HaulNo` carries the sentinel value `-9` (ICES's
+own documented "no information" convention, confirmed against the DATRAS
+field-description spreadsheet) in 288,581 of 5,865,076 rows (4.92%). These
+rows do not match any HH haul on the documented composite key (`Survey`,
+`Year`, `Quarter`, `Country`, `Ship`, `Gear`, `StNo`, `HaulNo`), even when
+`HaulNo` itself is dropped from the join -- not a join-key formatting
+problem, genuinely orphaned CA records with no corresponding HH haul
+anywhere in the archive.
+
+A separate, much smaller residual of 700 rows (0.01%) carries a plausible
+(non-sentinel) `HaulNo` value that still fails to match HH on the same
+key, for a cause not yet identified.
+
+**Recommendation:** Confirm whether these CA records correspond to hauls
+that were never submitted to HH at all (a genuine cross-table submission
+gap), or whether some other linking mechanism, not the documented
+composite key, is intended for this subset.
+
+---
+
+## Issue 15: LT has real records for a Survey/Year/Quarter where HH's own submission is empty
+
+**Severity: Data quality — cross-table submission gap**
+
+Joining LT to HH on the standard composite key (`Survey`, `Year`,
+`Quarter`, `Country`, `Ship`, `Gear`, `StNo`, `HaulNo`), 2,026 of 75,310 LT
+rows (2.7%) do not match any HH haul. 2,010 of those (99.2%) share one
+exact cell: Survey=BTS, Year=2025, Quarter=1 -- HH's own submission for
+that exact survey/year/quarter is entirely empty (0 rows), while LT
+independently carries real litter-assessment records for it. The
+remaining 16 rows (Survey=NS-IBTS, split across two other survey/year/
+quarter cells) are a different, unexplained mismatch: HH has abundant
+real data for both of those exact cells, so this small residual is not a
+missing-submission gap.
+
+**Recommendation:** Confirm whether HH's BTS/2025/Q1 submission is
+genuinely missing (and if so, whether it is expected to be backfilled)
+given LT independently has data for the same survey/year/quarter.
+
+---
+
+## Issue 16: LT's `PARAM` field uses codes that are not in icesVocab's own `PARAM` list
+
+**Severity: Institutional governance — vocabulary coverage gap**
+
+LT's `PARAM` field takes 49 distinct real values across 75,308 of 75,310
+non-null rows. icesVocab's own `PARAM` code list carries 1,938 codes
+(confirmed present: e.g. `LT-TOT` = "Litter - total") -- but 6 common real
+values (`A2`, `A3`, `A5`, `A6`, `A7`, `A14`) do not appear anywhere in it,
+checked directly against the full list, not a sample.
+
+**Recommendation:** Add the missing codes to icesVocab's `PARAM` list, or
+confirm they belong to a different or superseding code list this analysis
+hasn't identified.
 
 ---
 
@@ -621,7 +694,7 @@ carried onto every haul-referencing record in HL/CA/LT -- would let the
 8-field composite key, and potentially some of the other repeated
 columns, be replaced by one join column. It would also sidestep
 composite-key edge cases this analysis found: CA's own well-documented
-`-9`/orphaned-record gap (opus's own known issues,
+`-9`/orphaned-record gap (Issue 14 above, opus's own known issues,
 `ca_haulno_unlinkable_to_hh`/`ca_haulno_tail_mismatch`) is a direct
 consequence of the
 composite key's correctness depending on several independently-submitted
@@ -632,5 +705,3 @@ This isn't something opus can adopt unilaterally -- it would require a
 real change to ICES's own submission format, not a documentation or
 vocabulary fix, so it is offered here as an idea for ICES's own future
 consideration rather than a request for immediate action.
-
-**Update, 2026-08-10:** two of the five real matches (`Tickler`, `CatIdentifier`) were re-verified and adopted into opus's own curated spec as `type: enum` -- `inst/DATRAS-data-dict.yaml` now reflects this directly. Included here for the record, not because it changes the finding: this is opus's own downstream reaction to a gap that's still ICES's to close. The other three were deliberately left as-is, each for a distinct, already-documented reason rather than a shared threshold: `Year` is a continuously-advancing ordinal (next year needs a code that doesn't exist yet), not a fixed closed set, regardless of icesVocab happening to enumerate past years as codes; `Maturity`'s own field description says its coding depends on the sibling `MaturityScale` field, so `TS_Maturity`'s 63 codes are plausibly a union across several distinct scales, not one flat list; `DepthStratum`'s own description says strata are survey-specific, in tension with treating one vocab key as universal. None of that applies to `Tickler` (a real gear-count code, not growing) or `CatIdentifier` (already independently documented as "a coded scheme, not a sequence" before this vocab match was even found).

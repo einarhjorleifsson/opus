@@ -23,10 +23,10 @@
 
 ## Immediate: Tier 1 Validation + Known-Issues Escalation
 
-- [ ] **Known-issues registry refinement:**
+- [x] ~~**Known-issues registry refinement:**~~ — done 2026-08-18, see DEVLOG.md
   - [x] ~~Restructure for two-level escalation: field-level gaps vs. systemic patterns~~ — done 2026-08-17: added a `scope` field (`field-level`/`systemic`/`opus-internal`) to all 8 `known_violations` entries, designed around today's own findings (`icesVocab_gaps`/`datras_field_list_type_divergence` are the systemic examples) rather than guessed at in the abstract.
-  - [ ] Inventory findings from 2026-08-02 session (7 D-level issues across HH/HL/CA/LT)
-  - [ ] Prioritize escalation candidates for imbus feedback — now filterable by the new `scope: systemic` tag, not yet actually done
+  - [x] ~~Inventory findings from 2026-07-29/08-02 sessions (5 original D-level fields)~~ — done 2026-08-18: 3 of 5 (AgeSource, AgePreparationMethod, LTSRC) turned out to be false leads on re-verification, not real issues; `icesVocab_gaps`'s own GearExceptions example was also stale (same name-key-resolution artifact). Corrected registry: replaced with `icesvocab_key_resolution_hazard` (systemic) + `param_vocab_incomplete` (the one real gap that held up). See DEVLOG.md.
+  - [x] ~~Prioritize escalation candidates for imbus feedback~~ — done 2026-08-18: see DEVLOG.md for the full ready-to-file / already-filed / needs-diagnosis / excluded breakdown.
 
 - [ ] **imbus/ICES liaison (WP2 handoff):**
   - [ ] File `data-raw/ICES_ISSUE_REPORT.md` with ICES (13 confirmed issues, drafted) — held deliberately, not just stuck: the venue doesn't exist yet (next item), and ongoing work keeps surfacing more issues worth folding in before one filing.

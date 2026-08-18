@@ -4,7 +4,7 @@
 # Documents: sentinels, known violations, data quality issues
 #
 # Version: 0.1.0 (draft)
-# Last updated: 2026-08-17
+# Last updated: 2026-08-18
 #
 # `scope` (added 2026-08-17, one TODO.md item overdue -- see DEVLOG.md's
 # same-date entry for the concrete findings this restructure was designed
@@ -14,7 +14,7 @@
 #                     own -9 orphan rate). The common case.
 #   "systemic"     -- a recurring pattern spanning multiple, otherwise-
 #                     unrelated fields via one shared root cause (e.g.
-#                     icesVocab_gaps, datras_field_list_type_divergence).
+#                     icesvocab_key_resolution_hazard, datras_field_list_type_divergence).
 #                     Escalate these with higher priority: fixing the
 #                     pattern's cause resolves every instance at once,
 #                     unlike a field-level fix.
@@ -118,12 +118,26 @@ known_violations:
     implication: "Not a data-quality problem on ICES's side -- a candidate for institutional-governance escalation: either this vocabulary is aspirational/unused for DATRAS's own Tier 1 exchange, or it is genuinely used by some other DATRAS table or submission context not covered here. Candidate for data-raw/ICES_ISSUE_REPORT.md."
     discovered: "2026-08-16"
 
-  - id: "icesVocab_gaps"
+  - id: "icesvocab_key_resolution_hazard"
     severity: "C"
     scope: "systemic"
-    issue: "DATRAS enum codes don't fully match icesVocab vocabulary"
-    examples: ["GearExceptions (only 'B' in vocab)", "PARAM in LT (1,938 vocab codes, 50 real values)"]
-    discovered: "2026-07-29"
+    field: "HaulValidity, SpeciesValidity, GearExceptions, LengthCode, AgeSource, AgePreparationMethod"
+    table: "HH, HL, CA (varies by field)"
+    issue: "icesVocab has no machine-readable way to tell an authoritative code-list key apart from one that collides with an unrelated domain, or one that is a bare redirect to a different key -- resolving a vocab key by field-name match alone can silently pick the wrong key and read as a coverage gap that isn't real."
+    extent: "Two independent flavors of the same hazard, both found by resolving a field's *current* DATRAS name into a vocab key without also checking the *legacy* name and the resolved key's own description text. (1) Prefix collision, found 2026-08-08: current-name lookups for HaulValidity/SpeciesValidity/GearExceptions/LengthCode resolve to AC_-prefixed (acoustic-survey domain) keys with 1-2 codes each, producing false '5 of 7 missing' / '8 of 10 missing' / 'only B in vocab' / '43% coverage' findings from the 2026-08-02 enum audit; legacy-name lookups resolve to the correct TS_-prefixed (trawl-survey) keys, all four a full match (re-verified directly against real archive data 2026-08-18: HH.GearEx's 9 real values -9/S/SB/B/I2/DB/R/S2/D all match TS_GearEx's 13 codes exactly). (2) Redirect-only keys, found 2026-08-16: TS_AgeSource and TS_AgePrepMet each exist and name-match correctly, but their own icesVocab Description field is a bare cross-reference ('see SampleType', 'see PreparationMethod') to a different, non-TS_-prefixed key -- not a code list in its own right. Both keys' own codes have zero overlap with CA's real AgeSource/AgePrepMet values (re-verified 2026-08-18: AgeSource is only -9/otolith, AgePrepMet only -9/Se/SS/AL/BB/ALR/Br/ALEt); the redirect targets (SampleType, PreparationMethod) match exactly, including a literal lowercase 'otolith' code in SampleType."
+    implication: "Not a data-quality problem in DATRAS's real submissions -- every field above is, once resolved correctly, a full match. It is a governance gap in icesVocab's own structure: no field declares which collection(s) a key applies to, and nothing distinguishes an authoritative key from an alias/redirect. Fixed on opus's own side both times (2026-08-08: R/vocab.R + R/field_names.R dual legacy/current-name lookup; 2026-08-16: inst/DATRAS-vocab-correction.csv + op_vocab_resolve_datras_key() repointed to the redirect targets), but the underlying ambiguity is ICES's to fix for any other consumer. Filed with ICES as data-raw/ICES_ISSUE_REPORT.md Issues 7 (recommendation: structured scope/alias fields) and 8 (the concrete collision and redirect findings). Supersedes the former icesVocab_gaps entry's GearExceptions example, which was this exact hazard, not a real gap -- see param_vocab_incomplete below for the one example from that entry that held up. A third original 2026-07-29 finding, LTSRC (LT), was investigated the same day as this correction and found to be a plain false lead, not an instance of this hazard: real archive codes (incl. a lone lowercase 'sba' case variant) all match the vocab's own un-prefixed 'LTSRC' key exactly, no prefix collision or redirect involved -- the original check was simply wrong or stale, not superseded by a specific later fix. Not given its own registry entry since there was never an actual violation to record; see DEVLOG.md 2026-08-18 for the closure note."
+    discovered: "2026-08-02 (prefix collision suspected via HaulValidity/SpeciesValidity); confirmed 2026-08-08 (systematic 52-field audit, both names checked for every one); redirect-only variant found 2026-08-16"
+    resolved: "2026-08-08 (prefix collision, opus's own resolution); 2026-08-16 (redirect-only keys, opus's own resolution) -- both are opus-side workarounds; the underlying icesVocab ambiguity itself remains open with ICES"
+
+  - id: "param_vocab_incomplete"
+    severity: "C"
+    scope: "field-level"
+    field: "PARAM"
+    table: "LT"
+    issue: "6 real codes (A2, A3, A5, A6, A7, A14) do not appear in icesVocab's own PARAM code list under any description, despite being common real values."
+    extent: "49 distinct values across 75,308 of 75,310 non-null rows (2 unpopulated). icesVocab's PARAM list carries 1,938 total codes -- 'LT-TOT'='Litter - total' confirmed present, but the 6 codes above were checked directly against the full list, not a sample, and are genuinely absent. Not a name-key artifact like icesvocab_key_resolution_hazard above: PARAM has no legacy/current name split and no redirect involved -- this is the one example from the former icesVocab_gaps entry that held up under closer checking."
+    implication: "Not retyped enum in opus's own spec regardless of vocab status: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT of 20, so this doesn't surface as a live validation failure. Candidate for data-raw/ICES_ISSUE_REPORT.md -- flagged as a todo in data-raw/spec_02_curate_dict.R since curation but never actually filed there or given its own registry entry until now."
+    discovered: "2026-07-29; re-confirmed 2026-08-18 during known-issues registry refinement"
 
   - id: "datras_field_list_type_divergence"
     severity: "C"

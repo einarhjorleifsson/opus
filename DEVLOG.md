@@ -1232,4 +1232,75 @@ it were opus's own) and `known-issues.yaml`'s
 `dateofcalculation_cross_product_inconsistency` (`scope: systemic`).
 `TODO.md`'s filing-item count updated 12->13.
 
+---
+
+## 2026-08-18 (continued) -- known-issues registry refinement: three false leads closed, one real gap surfaced, escalation list prioritized
+
+`TODO.md`'s two remaining "Known-issues registry refinement" items:
+inventory the original 5 D-level fields from the 2026-07-29/08-02
+sessions, and prioritize escalation candidates for imbus using the
+`scope` tag added 2026-08-17. Re-verified every original finding
+directly against the current archive (`.datras/*_legacy.parquet`) and
+the 2026-08-17 full icesVocab snapshot, rather than trusting prior
+session notes at face value.
+
+**3 of the 5 original fields turned out to be false leads, not real
+issues.** `AgeSource` and `AgePreparationMethod` (CA): confirmed
+2026-08-16 (see that date's entry) that `TS_AgeSource`/`TS_AgePrepMet`
+are bare redirects ("see SampleType", "see PreparationMethod"), and
+that fix was never folded back into `known-issues.yaml` itself --
+re-verified again here (`AgeSource` real values are exactly
+`{-9, otolith}`, both present in `SampleType`; `AgePrepMet`'s 8 real
+values all present in `PreparationMethod`). `LTSRC` (LT) is a third,
+independent false lead with a different mechanism: no prefix collision,
+no redirect -- all 16 real codes, including a lone lowercase `sba`
+case variant, match the vocab's own un-prefixed `LTSRC` key exactly
+(re-checked directly against `.datras/LT_legacy.parquet` and the vocab
+snapshot). The original 2026-07-29 "SB* codes missing" claim was simply
+wrong or stale; no specific later fix corrected it, so there's no
+`known_violations` entry to write -- closure recorded here only.
+
+**The registry's own `icesVocab_gaps` entry was itself stale.** Its
+first example, "GearExceptions (only 'B' in vocab)", was the exact
+AC_/TS_ prefix collision already fixed 2026-08-08 (`AC_GearExceptions`
+has 1 code; `TS_GearEx`, the correct legacy-name key, has 13) --
+re-verified directly this session: HH's 9 real `GearEx` values
+(`-9/S/SB/B/I2/DB/R/S2/D`) all match `TS_GearEx` exactly. The entry had
+never been corrected after the 2026-08-08 fix, so it was quietly
+carrying a debunked finding as if still live. Retired it, replaced with
+two entries: `icesvocab_key_resolution_hazard` (`scope: systemic`) folds
+in both the prefix-collision and the redirect-only-key findings as one
+named hazard (icesVocab has no machine-readable way to mark a key as
+scoped to one collection or as an alias/redirect -- filed with ICES as
+Issues 7-8), and `param_vocab_incomplete` (`scope: field-level`) keeps
+the one example from the old entry that actually held up: LT's `PARAM`
+has 6 real codes (`A2/A3/A5/A6/A7/A14`) genuinely absent from
+icesVocab's 1,938-code list, checked directly rather than sampled. That
+finding had been sitting as an unaddressed `todo` in
+`spec_02_curate_dict.R` since curation, never given its own registry
+entry or filed anywhere.
+
+**Escalation-candidate prioritization**, cross-referenced against
+`ICES_ISSUE_REPORT.md`'s already-filed issues:
+
+- *Already filed, nothing further needed:* `swell_height_vocab_unused`
+  (Issue 10), `datras_field_list_type_divergence` (Issue 12),
+  `dateofcalculation_cross_product_inconsistency` (Issue 13),
+  `icesvocab_key_resolution_hazard` (Issues 7-8, new today).
+- *Ready to file, not yet in the report:* `ca_haulno_unlinkable_to_hh`
+  -- highest priority, largest volume (4.92% of CA rows), currently
+  only mentioned in passing under an unrelated design suggestion, never
+  its own issue; `lt_bts_2025_q1_orphaned` -- not mentioned at all;
+  `param_vocab_incomplete` -- the todo above.
+- *Not ready:* `ca_haulno_tail_mismatch` (700-row residual, cause still
+  undiagnosed since 2026-08-07; checked again for any incidental lead
+  from later sessions, found none).
+- *Excluded:* `sentinel_replacement_data_loss` (`scope: opus-internal`
+  -- not ICES's issue).
+
+Scoped today's edits to `known-issues.yaml` itself, at the user's
+choice: drafting the three ready-to-file items into
+`ICES_ISSUE_REPORT.md` as new numbered issues stays under the
+separately-tracked "imbus/ICES liaison" `TODO.md` item, not done here.
+
 `devtools::check()`: 0 errors, 0 warnings, 0 notes.

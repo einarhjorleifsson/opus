@@ -27,8 +27,6 @@ opus is **institutional data governance audit infrastructure**, not a data refor
 3. **Enables pre-submission validation** — Submitters can validate locally before uploading to ICES
 4. **Escalates problems upstream** — Known-issues registry feeds into imbus/ICES dialogue
 
-See `vignettes/why-opus.qmd` for context and philosophy.
-
 ------------------------------------------------------------------------
 
 ## Working Principles

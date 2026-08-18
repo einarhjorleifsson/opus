@@ -863,3 +863,114 @@ where a yaml regeneration was involved, a structural diff confirming
 the change touched exactly what was intended and nothing else -- the
 same discipline this project has applied to every field-level fix since
 2026-08-08.
+
+---
+
+## 2026-08-17 (continued) -- why-opus.qmd and using-opus.qmd dropped; stale shipped test data removed; four generator bugs fixed
+
+Working through `TODO.md`'s backlog this session surfaced a live,
+uncommitted edit in `vignettes/articles/why-opus.qmd`: the user had
+started annotating its own flagship example ("EINAR: It is wrong to
+claim HaulNumber is supposed to link individual fish records back to
+the haul in which they were captured...") but the note cut off
+mid-sentence. Rather than reconstruct the intended correction, the user
+chose to drop the file outright. Re-reading the rest of the vignette
+confirmed this was a reasonable call on its own terms, not just
+deference to the interrupted edit: past that one example, the remaining
+sections (`What opus does`/`doesn't`, `Scope`, `Why now`, `The format`)
+restate `AGENTS.md`'s own "What the project does"/Working Principles
+content more thinly, with no second concrete example to fall back on.
+Deleted (`git rm -f`, discarding the uncommitted note along with it,
+per the user's explicit instruction); removed the now-dead pointer at
+`AGENTS.md`'s former line 30.
+
+**`vignettes/articles/using-opus.qmd` dropped too**, closing the
+`TODO.md` backlog item that had left its fate undecided. Reading the
+full file (untracked since 2026-07-30, per its own mtime -- this was
+long-standing debt, not something drafted this session) confirmed it
+documents a project phase that no longer exists: a "descriptive vs.
+strict icesVocab-only" two-YAML split (today's actual split is
+legacy-name vs. curated-name, per `AGENTS.md`), and a
+`known-issues$issues` list with `title`/`status`/`description` fields
+(today's registry is `known_violations`, keyed by
+`id`/`severity`/`scope`/`field`/`table`/`issue`/`extent`/`implication`).
+Every `{r, eval=FALSE}` chunk in the file would error against the
+current package. Deleted along with its Quarto render byproduct
+(`using-opus_files/`, also untracked); fixed the one place this file
+was still referenced -- `README.md`/`README.Rmd` both pointed at a
+third, never-existent path (`vignettes/using-opus.Rmd`, `.Rmd` not
+`.qmd`, no `articles/` segment) that had never matched the real file's
+location or extension.
+
+**`inst/*.parquet` (the four bundled test-data samples) removed, not
+regenerated.** `TODO.md`'s own backlog item (D1) had left this as an
+open decision, with a draft resampling script
+(`data-raw/archive_07_build_test_samples.R`, untracked, drafted
+2026-08-16) sitting unrun. Checked directly rather than assumed: a
+fresh sample drawn from the current `.datras/*.parquet` archive using
+that script's own logic (same seed, same `min(20000, n)` sizing) was
+compared against the committed `inst/*.parquet` files. Row counts
+matched the *original* pre-fix sample sizes exactly (331/48,070/30,068/291
+for HH/HL/CA/LT) -- confirming the script had never actually been run,
+despite its own header comment's confidence. Worse, the comparison
+found real drift, not just staleness: `inst/CA.parquet` still carries a
+column named `IndividualAge` where the current archive (and current
+spec) has `Age` (see `ICES_ISSUE_REPORT.md` Issue 4 -- `IndividualAge`
+was never confirmed as a real rename), and `inst/LT.parquet` still
+carries `GearEx` where the current archive has the already-renamed
+`GearExceptions`. Given the choice between regenerating (fixing the
+draft script's own wrong header claim first) and dropping shipped test
+data entirely, the user chose to drop it. `git rm`'d the four parquet
+files; deleted the now-pointless draft script; removed the `source:`
+stanza this decision leaves dangling from both YAML generators
+(`spec_02_curate_dict.R`'s per-table loop,
+`spec_03_translate_new_names.R`'s per-table loop) rather than leave it
+pointing at files that no longer exist -- `source` is optional per the
+data-dict.yaml spec, and every opus R function already takes an
+explicit `data_path` argument rather than reading it.
+
+**Four smaller, purely mechanical fixes, verified via structural diff:**
+- `tests/testthat/test_validation.R`: `skip_if_not(file.exists("HH.parquet"), ...)`
+  checked the current working directory, not the installed package --
+  always false under `devtools::test()`/`R CMD check`, silently
+  skipping 6 of the file's 14 tests regardless of whether test data
+  existed. Replaced with a `system.file("HH.parquet", package = "opus")`-resolved
+  path (computed once, used in both the skip condition and the actual
+  `op_*` calls that followed it -- the bare `"HH.parquet"` string had
+  been passed to those too, which would have failed differently even
+  if the skip check had been fixed alone). Now that `inst/*.parquet` is
+  gone (above), these 6 correctly and honestly skip -- confirmed via a
+  direct `testthat::test_file()` run, not inferred from `R CMD check`'s
+  pass/fail summary alone.
+- `DESCRIPTION`'s `Description:` field claimed "Data-only package (no
+  computational functions)" against the package's own 22 exported
+  functions -- reworded to describe the actual thin-wrapper role.
+- Both YAMLs' `origin:` field carried a literal `<U+2192>` (eight
+  characters of Unicode-escape *text*, not a real arrow) instead of the
+  arrow character the R source (`spec_02_curate_dict.R`,
+  `spec_03_translate_new_names.R`) actually contains -- a
+  `yaml::write_yaml()` plain-scalar encoding quirk with the unquoted,
+  unbracketed style `origin:` uses. Rather than chase the writer's
+  internal handling, replaced the Unicode arrow with plain ASCII `->`
+  at the source -- simpler, portable, and avoids the bug entirely.
+- `HH.StartTime`/`LT.StartTime`'s `details` ended "...same as StatRec
+  above." -- wrong on both counts. Traced to one shared source line
+  (`spec_02_curate_dict.R`, the `TimeShot` field spec): the referenced
+  field is actually *below* in file order (line 459/3239 vs.
+  342/3207), and "StatRec" is the *legacy* name -- correct in the
+  legacy YAML (where the field really is `StatRec`) but a bare,
+  unqualified legacy-name reference in the current/curated-name YAML
+  (where the field is `StatisticalRectangle`), where `spec_03`'s "pure
+  rename, prose stays literal" design means it's never automatically
+  retranslated. Fixed to `"same as {StatisticalRectangle or StatRec}
+  below"`, matching the `{new or old}` bracket convention this same
+  file already uses for the composite-key fields (`{Platform or
+  Ship}`, `{StationName or StNo}`), which reads correctly in both
+  YAMLs without needing yaml-specific branching.
+
+Re-ran `spec_02_curate_dict.R` then `spec_03_translate_new_names.R`;
+`git diff` confirmed exactly the intended changes and nothing else (2
+arrow fixes, 2 StatRec fixes, 4 `source:` stanzas removed, per file).
+`devtools::check()`: 0 errors, 0 warnings, 0 notes; direct
+`testthat::test_file()` run confirmed the 6 previously-miscounted tests
+now skip cleanly with the correct reason ("HH.parquet not found").

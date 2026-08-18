@@ -57,8 +57,6 @@ issues_path <- system.file("DATRAS-known-issues.yaml", package = "opus")
 issues <- yaml::read_yaml(issues_path)
 ```
 
-See `vignettes/using-opus.Rmd` for detailed examples.
-
 ### Validate your submission data
 
 ``` r

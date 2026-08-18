@@ -9,7 +9,7 @@ description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length)
   for the curated/new-named version this package actually ships.'
 origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R
 version:
-  date: '2026-08-17'
+  date: '2026-08-18'
 tables:
 - name: HH
   columns:
@@ -1128,8 +1128,6 @@ tables:
     no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh)
     and obus::dr_add_id for the composite ID construction logic.'
   origin: data-raw/spec_02_curate_dict.R
-  source:
-    parquet: HH_legacy.parquet
 - name: HL
   columns:
   - name: RecordType
@@ -1786,8 +1784,6 @@ tables:
     via the full composite key (see HH table details). The full 8-field composite
     key is required for correct joins regardless.'
   origin: data-raw/spec_02_curate_dict.R
-  source:
-    parquet: HL_legacy.parquet
 - name: CA
   columns:
   - name: RecordType
@@ -2572,8 +2568,6 @@ tables:
       (known-issues.yaml: ca_haulno_unlinkable_to_hh) -- i.e. rows that can actually
       be joined back to HH via the composite key.'
     expr: HaulNo != -9
-  source:
-    parquet: CA_legacy.parquet
 - name: LT
   columns:
   - name: Survey
@@ -3663,8 +3657,6 @@ tables:
     -- HH''s own submission is genuinely missing for that survey/year/quarter, not
     an LT-side data-quality problem.'
   origin: data-raw/spec_02_curate_dict.R
-  source:
-    parquet: LT_legacy.parquet
 relationships:
 - join: HL.Survey = HH.Survey AND HL.Year = HH.Year AND HL.Quarter = HH.Quarter AND
     HL.Country = HH.Country AND HL.Ship = HH.Ship AND HL.Gear = HH.Gear AND HL.StNo

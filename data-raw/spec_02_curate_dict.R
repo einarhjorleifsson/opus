@@ -1047,12 +1047,12 @@ relationships <- list(
   list(join = relationship_join("LT"), cardinality = "many-to-one")
 )
 
-# Add sources to each table (pointers to parquet test data) -- points at the
-# LEGACY-named parquet, matching this yaml's own (legacy) column names.
-for (ti in seq_along(curated$tables)) {
-  table_name <- curated$tables[[ti]]$name
-  curated$tables[[ti]]$source <- list(parquet = paste0(table_name, "_legacy.parquet"))
-}
+# No `source:` stanza: opus ships no bundled parquet test data (dropped
+# 2026-08-17 -- the four inst/*.parquet samples had drifted stale relative
+# to the corrected archive, e.g. CA's IndividualAge/Age and LT's
+# GearEx/GearExceptions renames; see DEVLOG.md). `source` is optional per
+# the data-dict.yaml spec, and opus's own R functions always take an
+# explicit `data_path` argument rather than reading this field.
 
 # Glossary: domain-specific DATRAS/survey terminology
 glossary <- list(

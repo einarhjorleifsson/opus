@@ -104,9 +104,6 @@ for (ti in seq_along(translated$tables)) {
     col$name <- unname(rename_map[[col$name]])
     translated$tables[[ti]]$columns[[ci]] <- col
   }
-
-  # New-named parquet, matching this yaml's own (new) column names.
-  translated$tables[[ti]]$source <- list(parquet = paste0(tname, ".parquet"))
 }
 
 ## ---- Translate `relationships`' join expressions -----------------------

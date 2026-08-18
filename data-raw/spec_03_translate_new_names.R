@@ -134,6 +134,26 @@ if (!is.null(translated$relationships)) {
     translated$relationships[[ri]]$join <- translate_join(translated$relationships[[ri]]$join)
   }
 
+  # Translate `conflicts` column names the same way (legacy -> new), and
+  # re-wrap as a list explicitly: read_yaml() parses a one-item YAML
+  # sequence back as a length-1 character vector, not a list, which
+  # write_yaml() then renders as a bare scalar instead of an array -- same
+  # round-trip quirk apply_col_update()'s `constraints` handling already
+  # works around elsewhere in this pipeline. Resolved via HH's own rename
+  # map since every conflicts column is, by construction, one HH also has.
+  for (ri in seq_along(translated$relationships)) {
+    conf <- translated$relationships[[ri]]$conflicts
+    if (is.null(conf)) next
+    translated$relationships[[ri]]$conflicts <- as.list(vapply(conf, function(old) {
+      new_col <- rename_maps[["HH"]][[old]]
+      if (is.null(new_col)) {
+        stop("No rename mapping for conflicts column '", old, "' -- ",
+             "crosswalk/relationships have drifted apart.", call. = FALSE)
+      }
+      new_col
+    }, character(1), USE.NAMES = FALSE))
+  }
+
   # Ground-truth, same rigor as the column-rename check above: every
   # translated reference must actually exist on its (already-renamed) table.
   for (rel in translated$relationships) {
@@ -200,6 +220,44 @@ translated$origin <- paste(
 translated$version <- list(date = as.character(Sys.Date()))
 
 write_yaml(translated, "inst/DATRAS-data-dict.yaml")
+
+# Post-process YAML: convert `description:`/`details:` scalars to folded
+# (`>-`) block style (same requirement, same mechanism, and same
+# verification -- a full parsed-value round-trip comparison -- as
+# spec_02_curate_dict.R; re-run here because this is a brand-new
+# write_yaml() call, with the same styling to correct).
+fold_long_scalars <- function(outfile) {
+  lines <- readLines(outfile)
+  key_indent <- function(s) nchar(regmatches(s, regexpr("^\\s*", s))[[1]])
+  out <- character(0)
+  i <- 1
+  while (i <= length(lines)) {
+    line <- lines[i]
+    m <- regexec("^(\\s*)(description|details): (.*)$", line)
+    parts <- regmatches(line, m)[[1]]
+    if (length(parts) == 0 || parts[4] %in% c("|-", ">", ">-", "|", "|+")) {
+      out <- c(out, line); i <- i + 1; next
+    }
+    indent <- parts[2]; key <- parts[3]; first_val <- parts[4]
+    this_indent <- nchar(indent)
+    block <- c(first_val)
+    j <- i + 1
+    while (j <= length(lines) && nchar(lines[j]) > 0 && key_indent(lines[j]) > this_indent) {
+      block <- c(block, sub("^\\s+", "", lines[j]))
+      j <- j + 1
+    }
+    if (grepl("^'", block[1])) {
+      block[1] <- sub("^'", "", block[1])
+      last <- length(block)
+      block[last] <- sub("'$", "", block[last])
+      block <- gsub("''", "'", block, fixed = TRUE)
+    }
+    out <- c(out, paste0(indent, key, ": >-"), paste0(indent, "  ", block))
+    i <- j
+  }
+  writeLines(out, outfile)
+}
+fold_long_scalars("inst/DATRAS-data-dict.yaml")
 
 # Post-process YAML to quote number-looking string examples (same
 # requirement, same mechanism as spec_02_curate_dict.R -- yaml::write_yaml()

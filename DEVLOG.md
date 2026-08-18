@@ -974,3 +974,159 @@ arrow fixes, 2 StatRec fixes, 4 `source:` stanzas removed, per file).
 `devtools::check()`: 0 errors, 0 warnings, 0 notes; direct
 `testthat::test_file()` run confirmed the 6 previously-miscounted tests
 now skip cleanly with the correct reason ("HH.parquet not found").
+
+---
+
+## 2026-08-18 -- remaining TODO.md backlog cleared; folded scalars; a real TimeShot bug found by hand; a systemic stale-citation audit
+
+Cleared the rest of `TODO.md`'s Backlog in one continued session (dates
+turn over from 2026-08-17 to 2026-08-18 partway through -- see the
+`version:` field's own date bump, harmless and expected).
+
+**`conflicts:` added to all three `relationships` entries, empirically
+checked, not guessed from the one example TODO.md gave.** Every non-key
+column HH shares with HL/CA/LT was checked against the real archive:
+`RecordType`/`RecordHeader` conflicts for HL and CA (LT has no such
+field); `DateofCalculation` conflicts for **LT only** -- HL/CA's copies
+match HH 100.00% (5.6M-13.8M joined rows each), but LT's matches only
+37.34% of the time (45,421 of 72,483 joined rows differ). `SweepLngt`/
+`DoorType`/`GearEx` all confirmed 100% duplicates, not conflicts. Adding
+this surfaced a real, unrelated bug: `spec_03_translate_new_names.R`'s
+legacy-to-current translation was silently collapsing a one-item
+`conflicts` array into a bare scalar on the YAML read/write round-trip
+(same class of quirk as `apply_col_update()`'s own `constraints`
+handling, fixed 2026-08-17), and never translated the column name at
+all -- the current-name YAML would have shipped `conflicts: RecordType`,
+a name that doesn't exist in that file. Fixed both: `conflicts` now
+translates legacy->current names (resolved via HH's own rename map,
+since every conflicts column is one HH also has) and round-trips as a
+proper array (`vapply(..., USE.NAMES = FALSE)` -- the naive form
+silently produces a *named* vector, which `as.list()` then turns into a
+YAML mapping instead of a sequence).
+
+**Trailing `.0` on range values, fixed by real type, not blanket
+formatting.** `range = c(0, 360)` produces an R double; `yaml::write_yaml()`
+then renders whole-number doubles with a spurious `.0`. Audited all ~85
+range values showing this pattern against each field's *real* archive
+column class: 55 (32 distinct fields, some declared per-table rather
+than shared -- `Depth`, `LngtClass`) are genuinely integer-typed and got
+their R literals converted to explicit integers (`0L`); the other ~29
+are genuinely double-typed columns whose bound happens to be a whole
+number (e.g. a Salinity range starting at `0.0`) and were left alone,
+per the user's own rule: fix only where the underlying variable's real
+type is integer.
+
+**`col_labels` now rejects unexpected keys instead of silently dropping
+them** -- the exact 2026-08-16 incident (an entry's `label`-only apply
+loop silently discarded every other field a misplaced correction
+carried) now fails loudly if a future entry repeats it.
+
+**Glossary gained 7 entries** (`icesVocab`, `WSDL`, `WoRMS`/`AphiaID`,
+the `M01`/`S24`/`D01`/`D04` rule codes, `CPUE`, `OSPAR`, `SeaDataNet`),
+grounded against the sibling `data-dict` repo's own rule-code fixtures
+(`crates/data-dict/tests/snapshots/validate_spec__s24_*`) rather than
+guessed -- `M01`/`S24` are that CLI's own metadata/spec-tier codes, not
+opus's invention.
+
+**`HH.ThermoCline`/`LT.LTSRC`'s "two tiny case mismatches"**, recovered
+from git history (`92bb3cb`'s own `AGENTS.md` diff had the detail TODO.md's
+later summary dropped: "`HH.ThermoCline` 3 rows, `LT.LTSRC` 1 row") and
+confirmed against the real archive: 3 HH rows carry lowercase `y`
+instead of `Y`; 1 LT row carries lowercase `sba` instead of the declared
+`SBA` code. Documented via `details:`, not added to `values:` -- both
+read as one-off submitter slips, not an established alternate spelling
+worth enumerating permanently.
+
+**Folded (`>-`) scalar style, done as option B (the user's explicit
+call after seeing the trade-off): remove `format_long_text()`'s
+hard-`\n` bug first, then convert everything to real folded style.**
+`yaml::write_yaml()` has no option to emit `>`/`>-` directly -- it
+always picks plain or single-quoted style depending on content -- so
+this rewrites the already-written file's raw text, same approach as
+the existing quote-number-examples post-process (`fold_long_scalars()`,
+added to both `spec_02`/`spec_03`, right after their own `write_yaml()`
+calls). Verified safe two ways before trusting it: an isolated test
+comparing parsed values before/after (byte-identical, after switching
+the chomping indicator from bare `>` to `>-` -- bare `>` keeps one
+trailing newline a plain/quoted scalar never had), then, once wired into
+the real pipeline, a full column-by-column comparison across every one
+of 190 fields in both files confirming zero unintended value changes.
+One field (`HL.NoMeas`/`SubsampledNumber`) correctly stayed in literal
+`|-` style: its description has a genuine two-line structure straight
+from ICES's own seed text (a formula on its own line), and folding would
+have collapsed that into a run-on sentence -- the skip-guard's job,
+working as intended, not a bug.
+
+**A real bug found by the user's own spot-check, not by any tooling
+here: `TimeShot` (`HH`/`LT.StartTime`)'s "NOT zero-padded" claim was
+backwards.** `hh |> select(TimeShot) |> mutate(n_char = nchar(TimeShot)) |>
+count(n_char)` (the user's own query) showed all 145,958 HH rows are
+exactly 4 characters -- confirmed against LT too (75,310 rows, same).
+Real values ARE zero-padded (`'0730'`, not `'730'`); the file's own
+`examples:` list even showed the wrong 3-character shapes. The citation's
+row-count denominator (150,262) was stale too. Fixed both `examples:`
+and `details:`; the 2026-07-29 citation's original basis isn't
+recoverable from here, so the correction says so rather than guessing why
+it was wrong.
+
+**That single catch prompted a systemic audit, at the user's explicit
+request ("no trouble adding more changes within this process"): every
+`description:`/`details:` row-count citation across all 190 fields,
+checked against today's real archive, not sampled.** Extracted every
+`N/M`- and `N of M`-shaped citation (93, later 100 once new fixes added
+their own), cross-referenced each `M` against the four real current
+table totals (HH 145,958; HL 13,754,042; CA 5,865,076; LT 75,310).
+Distinguishing a genuine bug from a false positive took actually reading
+each flagged field, not just trusting the mechanical match: `HH.StNo`/
+`StatRec`/`HydroStNo` and `CA.AreaCode` all cite the same stale
+`150,262`/`5,966,950` totals *on purpose*, inside an explicit "framed
+then as X... re-verified 2026-08-17 as Y" narrative already in the
+text -- correctly already-fixed, not bugs. Genuinely still wrong,
+fixed this pass:
+- `HH.Turbidity` -- same root cause as the 13 fields fixed 2026-08-17
+  (`-9` silently scrubbed to NA before the original 2026-07-29 check
+  ever saw it), just missed by that sweep. 145,756 of 145,958 rows
+  carry `-9`, not a null; only 202 real (all exactly 0), not "202 of
+  150,262 populated."
+- `LT.OSPARArea`/`MSFDArea`/`EEZ` -- numerator and distinct-value counts
+  were already right; only the denominator (`79,451`, not LT's real
+  `75,310`) was stale.
+- `LT.PARAM`/`EEZ` -- same denominator fix, plus their own distinct-value
+  counts had each drifted by exactly one (50->49, 20->19) since 2026-07-29.
+- `LT.NMArea` -- denominator *and* both other numbers were wrong
+  (18->17 distinct, 53,303->49,581 unpopulated), not just the total.
+- `HH`/`LT.WindSpeed` -- one shared, undated citation (`1,641 of
+  109,012`) matched neither table's real non-sentinel count; replaced
+  with a proper per-table breakdown (HH: 1,407 of 106,109, 1.33%; LT:
+  1,149 of 64,985, 1.77%) and dropped an unreconcilable "357 rows at
+  exactly 28" claim rather than guess at it.
+- `LT.LT_Items` -- previously cited 76,882 "populated rows", exceeding
+  LT's own real 75,310-row total outright; not just stale, impossible.
+- `HL.SubFactor` -- the already-known-and-described fix (from earlier
+  today's status update, never actually applied until now): of 144,395
+  rows showing `SubFactor < 1`, 144,041 are the `-9` sentinel, leaving
+  354 genuine anomalies against a real 13,754,042-row total, not the
+  previously cited 356 of 14,256,091.
+- `LT.HaulVal`/`Rigging`/`SwellHeight` (HH-LT matched-row comparisons,
+  originally checked 2026-08-16) -- discovered along the way: **LT has
+  44,255 duplicate composite keys** (`HH` has zero), so a proper
+  `inner_join` on the 8-field key fans out to more matched rows than a
+  naive per-table count would suggest. All three fields' *difference*
+  counts were already correct (21, 3,419, 0); only the matched-row
+  denominator had drifted (73,263/73,284/55,914 -> a consistent 72,483/
+  72,483/55,113). Fixed in `spec_02_curate_dict.R`, `DATRAS-known-issues.yaml`,
+  and `ICES_ISSUE_REPORT.md` (all three carried the same stale number).
+
+**Not chased further, flagged instead:** `LT`'s 44,255 duplicate
+composite keys is a real structural fact about the table not documented
+anywhere before this, potentially the same root cause behind
+`LT.DateofCalculation`'s own conflict above (if a haul's multiple LT
+rows were processed at different times) -- left open at the user's
+request pending a clearer idea of what `DateofCalculation` actually
+means per-table. A handful of vocab-code-coverage citations (`CA.AreaType`
+"17 of 27", `LT.TYPPL` "6 of 30", `LT.LTSZC` "23 of 41") compare against
+a *fixed external vocab list size*, not an archive row count, so they're
+out of this audit's scope entirely, not overlooked.
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes throughout every
+regeneration this session.

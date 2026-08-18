@@ -436,8 +436,10 @@ the same concept: checked all 580 currently-registered icesVocab keys by
 substring match on both `Key` and `Description`, not just the obvious name.
 
 Both HH and LT carry a `SwellHeight` field (LT's own value is a verified
-byte-for-byte copy of HH's for the same haul -- 55,914 of 55,914 matched
-non-null rows identical, not an independent second measurement). Checked
+byte-for-byte copy of HH's for the same haul -- 55,113 of 55,113 matched
+non-null rows identical (re-confirmed 2026-08-18; a prior 2026-08-16 check
+cited a stale 55,914 total for the same zero-exceptions result), not an
+independent second measurement). Checked
 the full real archive for both, after correcting an unrelated
 archive-pipeline bug that had been silently converting this field's own
 `-9` sentinel to a null (see opus's own `known-issues.yaml`,

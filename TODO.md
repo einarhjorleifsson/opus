@@ -8,6 +8,8 @@
 
 **Also 2026-08-17 (continued):** worked the Backlog below. Dropped `why-opus.qmd` (disputed flagship example) and `using-opus.qmd` (documented a defunct project phase) rather than fix either; removed the four stale `inst/*.parquet` samples instead of regenerating them (confirmed drifted: CA's `IndividualAge`/`Age`, LT's `GearEx`/`GearExceptions`); fixed the arrow-mojibake, `StatRec` above/below+name, `test_validation.R` skip-check, and `DESCRIPTION` claim bugs; deleted the dead `build-dictionary.sh`. `devtools::check()` clean throughout. See `DEVLOG.md`'s second 2026-08-17 entry.
 
+**2026-08-18:** cleared the rest of the Backlog below. Added `conflicts:` to all 3 `relationships` (empirically checked -- found and fixed a real `spec_03` bug along the way, a `conflicts` array silently collapsing to a scalar on the yaml round-trip); fixed all genuinely-integer-typed range values' trailing `.0` (55 of ~85, by real column type, not blanket); `col_labels` now rejects unexpected keys; glossary gained 7 entries; `HH.ThermoCline`/`LT.LTSRC`'s case-variant rows documented. Switched to real folded (`>-`) scalar style project-wide (314 fields, verified value-preserving column-by-column). The user's own spot-check then caught a real bug (`TimeShot`'s zero-padding claim was backwards), which prompted a full stale-citation audit across all 190 fields: found and fixed 9 more fields citing stale/wrong totals (`HH.Turbidity`, `LT.OSPARArea`/`MSFDArea`/`PARAM`/`EEZ`/`NMArea`, `HH`+`LT.WindSpeed`, `LT.LT_Items`, `HL.SubFactor`), plus 3 HH-LT comparison citations (`LT.HaulVal`/`Rigging`/`SwellHeight`) whose denominators had drifted — discovering along the way that **LT has 44,255 duplicate composite keys** (HH has zero), left as an open structural finding, not chased further. `devtools::check()` clean throughout. See `DEVLOG.md`'s 2026-08-18 entry for full detail.
+
 ---
 
 ## v0.2.0 — Complete
@@ -26,11 +28,8 @@
 ## Backlog
 
 - [ ] **File `data-raw/ICES_ISSUE_REPORT.md` with ICES** — 12 confirmed issues, drafted but not yet sent (longest-standing open item in this project). Venue undecided (informal imbus discussion first, per existing strategy, or direct GitHub/DIG submission?) — and per the imbus/ICES liaison item below, the venue doesn't actually exist yet either.
-- [ ] Stop baking hard `\n` line breaks into `description`/`details` string values (`format_long_text()` in `spec_02_curate_dict.R`) — use a folded (`>`) scalar instead, matching data-dict's own canonical examples.
-- [ ] Add `conflicts` to the three `relationships` entries where real overlapping non-key columns exist (e.g. `RecordHeader`'s meaning differs HH vs. HL).
-- [ ] Glossary: add `icesVocab`, `WSDL`, `WoRMS`/`AphiaID`, the internal rule codes (`M01`/`S24`/`D01`/`D04`), `CPUE`, `OSPAR`, `SeaDataNet` — all used repeatedly, never defined.
-- [ ] Minor cleanup pass: trailing `.0` on range values, flow-scalar vs. block-scalar inconsistency at the table/dataset level, `HL.SubsamplingFactor`'s stale row-count citation (and spot-check others for the same drift), two tiny case mismatches (`HH.ThermoCline`, `LT.LTSRC`); `Gear`'s enum `values` map re-serializes in a different (but content-identical) key order on every `spec_02`/`spec_03` re-run -- cosmetically noisy diffs, confirmed harmless (2026-08-17) but never root-caused.
-- [ ] Consider making `col_labels`'s apply loop (`spec_02_curate_dict.R`) reject unexpected keys instead of silently dropping them — this exact silent-drop hid a real fix on its first attempt (`DEVLOG.md`, 2026-08-16).
+- [ ] `Gear`'s enum `values` map re-serializes in a different (but content-identical) key order on every `spec_02`/`spec_03` re-run -- cosmetically noisy diffs, confirmed harmless (2026-08-17) but never root-caused.
+- [ ] `LT` has 44,255 duplicate composite keys (HH has zero) -- found 2026-08-18 while re-verifying HH-LT comparison citations; not investigated further, possibly related to `LT.DateofCalculation`'s own conflict with HH (see `relationships`) if a haul's multiple LT rows were processed at different times.
 
 Full evidence/detail behind every item above is in `DEVLOG.md`.
 

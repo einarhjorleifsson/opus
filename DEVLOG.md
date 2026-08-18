@@ -1130,3 +1130,106 @@ out of this audit's scope entirely, not overlooked.
 
 `devtools::check()`: 0 errors, 0 warnings, 0 notes throughout every
 regeneration this session.
+
+---
+
+## 2026-08-18 (continued) -- the two remaining Backlog items closed: one false alarm, one defensive fix
+
+**`LT`'s 44,255 duplicate composite keys: not a bug, LT's real grain is
+finer than "one row per haul."** Pulled a real example: two LT rows
+sharing the exact 8-field key (`BITS`/2011/Q1/`DK`/`26D4`/`TVL`/228/28)
+are identical on every HH-copied field (position, gear geometry,
+environment) but differ on `PARAM` (`E5` vs `D`) and `LT_Weight`
+(1.000 vs 1.476) -- two separate litter-category observations for the
+same haul, exactly the same relationship HL/CA already have to HH (many
+rows per haul, disambiguated by fields beyond the shared key). Checked
+how far LT's own classification fields (`PARAM`, `LTSZC`, `TYPPL`,
+`LTPRP`, `LTSRC`, `LTREF`) get toward uniqueness: 31,055 distinct with
+the 8-field key alone, 65,883 with all six added -- closer, not
+complete. The remaining 9,427 duplicate groups (16,140 rows) share
+every one of those fields too and differ only in `LT_Weight`/`LT_Items`,
+consistent with multiple physical litter items of the identical full
+classification recorded as separate rows rather than summed into one --
+LT carries no sequence/replicate field to disambiguate those, and none
+seems to exist. Nothing to fix: the table's own `details` already says
+"each row is one litter assessment/observation," and `relationships`
+already declares `many-to-one`, both already consistent with what this
+confirmed. Left as institutional knowledge in `TODO.md`'s history
+rather than restated in the spec, since it doesn't change anything
+already documented there.
+
+**`Gear`'s enum key-order noise: root cause not confirmed, fixed
+defensively anyway.** `get_vocab_enum_values()` (`spec_02_curate_dict.R`)
+builds the `values` map straight from whatever row order
+`op_vocab_get_codes()`'s live icesVocab call returns, with no sort.
+Tried to reproduce the reported "different order every re-run" directly:
+two live `op_vocab_get_codes("Gear")` calls a second apart, and two full
+`spec_02` re-runs diffed byte-for-byte -- both came back perfectly
+stable. Couldn't confirm the symptom recurs on a short timescale, so
+either it's real but tied to a longer-timescale drift in the live
+service (e.g. server-side reindexing between sessions days apart) than
+this session tested, or the original observation was a one-off. Added
+`codes[order(codes$Key), ]` before building the map regardless -- key
+order carries no meaning for a map-form enum (data-dict spec: map form
+is for labels, not sequence), so sorting is purely stabilizing, zero
+content risk, and removes the possibility outright whether or not the
+original cause is ever pinned down. Regenerating showed only a 2-line
+diff per YAML -- the live service's natural order was already very
+close to alphabetical, just not exactly.
+
+Both items closed out `TODO.md`'s Backlog entirely; moved the
+`ICES_ISSUE_REPORT.md` filing item (the one Backlog item deliberately
+not touched this round) down into the `imbus/ICES liaison` section at
+the user's request, with a one-line note that it's held on purpose
+(more issues may still surface to fold in), not merely stuck.
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+---
+
+## 2026-08-18 (continued) -- ICES Issue 13 filed: DateofCalculation, corroborated from obus (read with explicit user permission)
+
+The user connected the LT duplicate-key finding above to the earlier
+`LT.DateofCalculation` conflict and suggested obus might already
+document related behavior -- explicitly authorizing read access to
+obus's repo for this (a deliberate, scoped exception to this project's
+own standing "stay out of obus internals" habit, not a change to it
+generally).
+
+**obus's own `vignettes/articles/issues.qmd` (main branch, not a
+feature branch) turned out directly relevant.** Two entries:
+"FlexFile returns superseded `DateofCalculation` revisions per haul" --
+`getFlexFile()` returns duplicate rows per haul, identical except
+`DateofCalculation`, confirmed reprocessing revisions (739 of 53,859
+distinct FL haul keys, full 2000-2026 pull) -- and "`DateofCalculation`
+is encoded differently in different tables" (`YYYYMMDD` in HH,
+`YYYYDDMM` in FlexFile). Both marked "not yet filed" with ICES by obus
+itself. (A tempting-looking hit in an exploratory obus branch,
+mentioning "LT" near a `DateofCalculation`-adjacent formula, turned out
+to be a false lead on inspection -- "LT" there is the Lithuania country
+code inside a quoted `{DATRAS}` package comment, not the Litter table;
+included here as a reminder to read the actual context, not just trust
+a grep match.)
+
+**Extended opus's own verification before writing anything.** Confirmed
+LT's own `DateofCalculation` is internally consistent across a haul's
+multiple LT rows (0 of 14,059 multi-row hauls disagree with themselves)
+-- so the HH-vs-LT conflict is a per-table difference, not an
+LT-internal one. Checked HH/LT for obus's own digit-order finding
+directly rather than assuming it transfers: neither table's own digit
+pattern exceeds 12 in the position that would expose a day-before-month
+encoding, so that specific sub-finding is FL-specific and was reported
+as such, not generalized. Recomputed the HH-vs-LT mismatch on distinct
+hauls rather than the earlier raw joined-row count (which double-counts
+hauls with more than one LT row, though harmlessly, since LT's own
+value doesn't vary within a haul): 30,364 distinct hauls with a value on
+both sides, 19,193 (63.21%) disagree, median gap 120 days, max 2,557
+days (~7 years), both directions.
+
+Filed as `data-raw/ICES_ISSUE_REPORT.md` Issue 13 (own evidence primary,
+obus's finding cited explicitly as corroboration, not merged in as if
+it were opus's own) and `known-issues.yaml`'s
+`dateofcalculation_cross_product_inconsistency` (`scope: systemic`).
+`TODO.md`'s filing-item count updated 12->13.
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes.

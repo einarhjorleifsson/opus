@@ -135,6 +135,16 @@ known_violations:
     implication: "opus seeds types from WSDL only (Working Principle 1: real data is ground truth, and WSDL is the auto-generated, authoritative source -- see AGENTS.md's Data Sources), so opus's own spec already correctly types both fields as numeric (Year: number(ordinal); SpecCode: number(id)) and this is not a bug in opus's spec to fix. It IS a real, persistent gap in ICES's own institutional metadata: two independently-maintained ICES documentation sources (getDatrasFieldList, and now the field-description spreadsheet -- built and maintained separately, years apart) have both been wrong about these fields' type in the same direction, for as long as opus has been checking. First noted 2026-08-02 (Year only, WSDL vs getDatrasFieldList) but never actually written into this registry until now -- DEVLOG.md's own narrative had described it as 'documented in known-issues #10', which was true of intent, not of this file. See data-raw/ICES_ISSUE_REPORT.md Issue 12 for the ICES-facing writeup."
     discovered: "2026-08-02 (Year, WSDL vs getDatrasFieldList); corroborated 2026-08-17 (both fields, vs the field-description spreadsheet)"
 
+  - id: "dateofcalculation_cross_product_inconsistency"
+    severity: "C"
+    scope: "systemic"
+    field: "DateofCalculation"
+    table: "HH, LT"
+    issue: "DateofCalculation disagrees between HH's and LT's own copy of the same haul in most cases, despite sharing one field name with no documentation suggesting per-product variation is expected."
+    extent: "30,364 distinct hauls carry a DateofCalculation value on both sides (HH, LT); 19,193 (63.21%) disagree. Median gap when disagreeing: 120 days; max 2,557 days (~7 years); runs both directions (LT later in 11,224 cases, HH later in 7,969). LT's own value is internally consistent across a haul's own multiple LT rows where more than one exists (0 of 14,059 such hauls show internal disagreement). Verified 2026-08-18 against the full .datras/{HH,LT}_legacy.parquet archive."
+    implication: "Consistent with an independently-documented finding from a related internal downstream project for a different product (FL/FlexFile): getFlexFile() returns duplicate rows per haul differing only in DateofCalculation, confirmed reprocessing revisions rather than submission duplicates (739 of 53,859 distinct FL haul keys) -- that project's own finding, not independently re-verified by opus, cited here for corroboration only. Together these suggest DateofCalculation is a per-product reprocessing timestamp, not a single per-haul fact, but nothing in ICES's own documentation says so. Filed as data-raw/ICES_ISSUE_REPORT.md Issue 13."
+    discovered: "2026-08-18, during the relationships/conflicts work -- corroborated same day against a related project's separate, independent FL-side finding"
+
 # Processing directives
 processing:
   phase2:

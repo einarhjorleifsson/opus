@@ -2526,10 +2526,10 @@ tables:
       ImpIm: Impression and imaged
       NP: No preparation
       P: Polished
-      Se: Sectioned
       SP: Sectioned and polished
       SPS: Sectioned and polished and stained
       SS: Sectioned and stained
+      Se: Sectioned
       St: Stained
       TPHE: Trichrome in paraffin stained with H&E
       TRHE: Trichrome in resin stained with H&E

@@ -95,6 +95,18 @@ apply_table_update <- function(dict, table, updates) {
 # immediately, not lazily).
 get_vocab_enum_values <- function(key) {
   codes <- op_vocab_get_codes(key)
+  # Sorted by Key, not left in whatever order the live service happened to
+  # return -- this is the TODO.md item ("Gear's enum values map re-serializes
+  # in a different but content-identical key order on every re-run"). Tried
+  # to reproduce it directly, 2026-08-18: two live op_vocab_get_codes("Gear")
+  # calls a second apart, and two full spec_02 re-runs diffed byte-for-byte,
+  # both came back perfectly stable -- couldn't confirm the symptom recurs on
+  # short time scales, so the live service may simply be stable most of the
+  # time, drifting only occasionally (e.g. server-side reindexing) on a
+  # longer timescale than this session tested. Sorting removes the risk
+  # regardless, for a one-line cost -- key order carries no meaning for a
+  # map-form enum, so this is purely stabilizing, not a content change.
+  codes <- codes[order(codes$Key), ]
   setNames(as.list(codes$Description), codes$Key)
 }
 

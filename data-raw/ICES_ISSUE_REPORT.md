@@ -545,6 +545,60 @@ independent documentation sources both wrong in the same direction.
 
 ---
 
+## Issue 13: `DateofCalculation` disagrees between HH and LT for the same haul in most cases, consistent with each product being reprocessed independently
+
+**Severity: Data quality / institutional governance -- the field does
+not mean what its own name suggests**
+
+`DateofCalculation` (present in HH, HL, CA, and LT; already covered by
+Issue 5 above for its absence from `getDatrasFieldList` entirely) reads,
+by name and by HH's own field description, as a single per-haul fact:
+when ICES last recalculated and reprocessed that haul's record. It is
+not. LT's own copy of a haul's `DateofCalculation` frequently disagrees
+with HH's copy of the same haul.
+
+**Evidence.** Joining HH to LT on the standard 8-field composite haul
+key (Survey, Year, Quarter, Country, Ship, Gear, StNo, HaulNo -- LT's
+own value is internally consistent across all of a haul's own LT rows
+where a haul has more than one, confirmed 2026-08-18), 30,364 distinct
+hauls carry a `DateofCalculation` value on both sides. Of those, 19,193
+(63.21%) disagree -- not a small or one-sided drift: the median gap
+when they disagree is 120 days, the largest is 2,557 days (~7 years),
+and it runs in both directions (LT dated later than HH in 11,224 cases;
+HH later in 7,969).
+
+This differs in kind from the other confirmed HH/child-table conflict,
+`RecordType`/`RecordHeader` (Issue 2 above): that one differs *by
+design* (each table's own row states its own record type). Nothing in
+either table's documentation suggests `DateofCalculation` is meant to
+vary by product for the same real-world haul.
+
+**Independent corroboration.** A related internal downstream project
+has separately documented the same category of behavior for a
+different DATRAS product: `getFlexFile()` (the FL/fishing-effort
+product) returns multiple rows for the same haul, identical in every
+field except `DateofCalculation` -- confirmed reprocessing revisions,
+not submission duplicates (739 of 53,859 distinct FL haul keys in a
+full 2000-2026 pull). That project also found `DateofCalculation`'s own
+digit order differs by product (`YYYYMMDD` in HH, `YYYYDDMM` in
+FlexFile) -- checked directly against HH and LT for this report and
+*not* reproduced there (both stay at or under 12 in the digit position
+that would expose a day-before-month encoding), so that specific
+sub-finding is FL-specific, not evidence of a wider encoding problem.
+Neither finding had been filed with ICES by either project before this
+report.
+
+**Recommendation:** Confirm whether `DateofCalculation` is intended as
+a single per-haul fact (in which case HH/LT/FL disagreeing this often
+and this widely is itself the defect to fix) or is genuinely a
+per-product processing timestamp that happens to share one field name
+across products with no documented distinction (in which case the
+field's eventual published description -- see Issue 5 -- should say so
+explicitly, since nothing today tells a consumer not to expect one
+answer per haul).
+
+---
+
 ## Suggestion for consideration (not a bug report)
 
 Everything above documents a confirmed error, gap, or unused feature in

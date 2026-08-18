@@ -194,8 +194,8 @@ translated$description <- paste(
   "curated names, in place of ICES's legacy on-the-wire names) differ."
 )
 translated$origin <- paste(
-  "data-raw/spec_01_seed_dict.R → data-raw/spec_02_curate_dict.R",
-  "→ data-raw/spec_03_translate_new_names.R"
+  "data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R",
+  "-> data-raw/spec_03_translate_new_names.R"
 )
 translated$version <- list(date = as.character(Sys.Date()))
 

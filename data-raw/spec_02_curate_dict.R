@@ -671,7 +671,7 @@ shared_field_specs <- list(
   list(field = "StatRec", examples = list("37F8", "35F5", "36F7", "32F3", "36F6"),
        details = "Real ICES statistical rectangle codes (0.5 deg lat x 1 deg lon grid), not a fixed enum given the size of the grid -- independently corroborated 2026-08-17 by ICES's own field-description spreadsheet, which describes this field via the same geometric grid rule rather than a code list (data-raw/build_field_description_snapshot.R). Only present in HH and LT (confirmed 2026-07-29) -- consistent with LT's assessment output joining in a set of HH-style columns. Originally verified 2026-07-29 against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as '12,235 of 150,262 HH rows unpopulated', which was really the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows, 685 distinct values), -9 accounts for exactly those 12,235 rows, not a null."),
   list(field = "TimeShot", examples = list("730", "715", "1300", "900", "700"),
-       details = "1,440 distinct values in HH's archive (verified 2026-07-29), always populated (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') -- documented here rather than silently assumed. Only present in HH and LT (confirmed 2026-07-29), same as StatRec above."),
+       details = "1,440 distinct values in HH's archive (verified 2026-07-29), always populated (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') -- documented here rather than silently assumed. Only present in HH and LT (confirmed 2026-07-29), same as {StatisticalRectangle or StatRec} below."),
 
   list(field = "SweepLngt", type = "number(quantity)", units = "m", range = c(0, 850)),
   list(field = "HaulNo", type = "number(ordinal)", range = c(0, 82483),
@@ -1084,7 +1084,7 @@ curated <- list(
     "field names -- see data-raw/spec_03_translate_new_names.R for the",
     "curated/new-named version this package actually ships."
   ),
-  origin = "data-raw/spec_01_seed_dict.R → data-raw/spec_02_curate_dict.R",
+  origin = "data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R",
   version = list(date = as.character(Sys.Date())),
   tables = curated$tables,
   relationships = relationships,

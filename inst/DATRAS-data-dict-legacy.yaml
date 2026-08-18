@@ -7,7 +7,7 @@ description: 'Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length)
   -- see data-raw/spec_02_curate_dict.R for the corrections and field-spec fills applied
   and why. Keyed by ICES''s own legacy (real, on-the-wire) field names -- see data-raw/spec_03_translate_new_names.R
   for the curated/new-named version this package actually ships.'
-origin: data-raw/spec_01_seed_dict.R <U+2192> data-raw/spec_02_curate_dict.R
+origin: data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R
 version:
   date: '2026-08-18'
 tables:
@@ -353,7 +353,7 @@ tables:
       (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
       10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
       documented here rather than silently assumed. Only present in HH and LT
-      (confirmed 2026-07-29), same as StatRec above.
+      (confirmed 2026-07-29), same as {StatisticalRectangle or StatRec} below.
     constraints:
     - required
   - name: DepthStratum
@@ -3211,7 +3211,7 @@ tables:
       (150,262/150,262). Field's own description implies a fixed 4-digit HHMM ('E.g.
       10:15=1015'), but real values are NOT zero-padded (e.g. '730', not '0730') --
       documented here rather than silently assumed. Only present in HH and LT
-      (confirmed 2026-07-29), same as StatRec above.
+      (confirmed 2026-07-29), same as {StatisticalRectangle or StatRec} below.
     description: Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
   - name: HaulDur
     type: number(quantity)

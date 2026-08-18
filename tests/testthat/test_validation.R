@@ -1,3 +1,5 @@
+hh_path <- system.file("HH.parquet", package = "opus")
+
 test_that("op_validate_spec validates YAML dictionary", {
   dict_path <- system.file("DATRAS-data-dict.yaml", package = "opus")
   result <- op_validate_spec(dict_path = dict_path)
@@ -23,9 +25,9 @@ test_that("op_validate_spec fails with missing dictionary", {
 })
 
 test_that("op_inspect_parquet returns schema", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
-  result <- op_inspect_parquet("HH.parquet")
+  result <- op_inspect_parquet(hh_path)
   expect_type(result, "list")
   expect_true("output" %in% names(result))
   expect_true("command" %in% names(result))
@@ -40,9 +42,9 @@ test_that("op_inspect_parquet fails with missing file", {
 })
 
 test_that("op_validate_meta validates metadata against dictionary", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
-  result <- op_validate_meta("HH.parquet", "HH")
+  result <- op_validate_meta(hh_path, "HH")
   expect_type(result, "list")
   expect_true("valid" %in% names(result))
   expect_true("exit_status" %in% names(result))
@@ -51,18 +53,18 @@ test_that("op_validate_meta validates metadata against dictionary", {
 })
 
 test_that("op_validate_meta fails with missing table", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
   expect_error(
-    op_validate_meta("HH.parquet", "NONEXISTENT"),
+    op_validate_meta(hh_path, "NONEXISTENT"),
     "Table .* not found in dictionary"
   )
 })
 
 test_that("op_validate_data validates data values against constraints", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
-  result <- op_validate_data("HH.parquet", "HH")
+  result <- op_validate_data(hh_path, "HH")
   expect_type(result, "list")
   expect_true("valid" %in% names(result))
   expect_true("exit_status" %in% names(result))
@@ -71,18 +73,18 @@ test_that("op_validate_data validates data values against constraints", {
 })
 
 test_that("op_validate_data fails with missing table", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
   expect_error(
-    op_validate_data("HH.parquet", "NONEXISTENT"),
+    op_validate_data(hh_path, "NONEXISTENT"),
     "Table .* not found in dictionary"
   )
 })
 
 test_that("op_validate_full runs all validation checks", {
-  skip_if_not(file.exists("HH.parquet"), "HH.parquet not found")
+  skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
-  result <- op_validate_full("HH.parquet", "HH")
+  result <- op_validate_full(hh_path, "HH")
   expect_type(result, "list")
   expect_true("spec_valid" %in% names(result))
   expect_true("meta_valid" %in% names(result))

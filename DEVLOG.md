@@ -1395,3 +1395,117 @@ with no remaining ICES-facing angle -- both correctly informational, not
 errors).
 
 `devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+---
+
+## 2026-08-19 -- considered and declined a shipped icesVocab full-catalog csv
+
+Investigated whether to add a tidy `inst/*.csv` snapshot of the entire
+icesVocab catalog (every code-type, every code, plus the prefix-stripped
+join key Issues 7-9 already reason about) as a stable,
+`system.file()`-accessible artifact, independent of the `icesVocab` R
+package. `data-raw/build_icesvocab_snapshot.R` already does almost
+exactly this, but writes to a gitignored cache under a hashed filename
+and drops the join-key columns `op_vocab_get_types()` already computes --
+so relocating it alone wouldn't have been enough. Decided not to pursue,
+at least for now, once the shape was fully scoped; no changes made. The
+live-vs-cached distinction stays as-is regardless of this csv's fate:
+`op_vocab_get_types()`/`op_vocab_get_codes()`/`op_vocab_resolve_key()` and
+the drift-catching validator (see below) never read a shipped snapshot.
+
+## 2026-08-20 -- Quarto documentation site replaces pkgdown/vignettes; the ICES issue report becomes an article in it
+
+opus isn't a package with an external R-user audience (single user,
+feeds IMBUS/ICES directly) -- pkgdown conventions and a `vignettes/`
+directory were solving a problem opus doesn't have. Replaced both with a
+plain Quarto website at the repo root (`_quarto.yml`, `index.qmd`,
+`articles/`), rendered to `docs/` and committed so GitHub Pages can serve
+it from `main` with no build step. Removed `_pkgdown.yml` and the
+`vignettes/` directory entirely.
+
+`data-raw/ICES_ISSUE_REPORT.md` is now `articles/issues.qmd` -- confirmed
+via a full diff that nothing was lost in the move before deleting the
+original. `data-raw/build_field_gap_audit.R` and
+`data-raw/validate_issue_registry_sync.R` were re-pointed at the new
+location.
+
+`articles/dictionary.qmd` embeds a rendered profile of the shipped yaml
+against the full local archive (via the external `data-dict` CLI's own
+`render` command, `op_render_spec()`) -- deliberately a dated,
+regenerate-at-milestones snapshot rather than a live page, since the
+archive it profiles against isn't part of this repository and keeps
+growing.
+
+RStudio's own "Render Website" button doesn't work here: `opus.Rproj`'s
+`BuildType: Package` line conflicts with Quarto's website-project
+detection, and RStudio re-adds that line on every project open regardless
+of edits to the .Rproj file. Settled on `quarto preview` from the
+terminal instead of fighting the IDE.
+
+Separately, went through `articles/issues.qmd`'s prose in three passes at
+the user's request: rephrased away from insider framing ("Tier 1", "not a
+sample", process-narration like "at all before this sweep") to read as a
+novice-facing account; reordered issues by generality/severity with LT
+issues always last (display order only, verified content-preserving via
+a scripted diff check); and corrected one factual overreach -- "The two
+services do not cross-reference each other anywhere" overstated what a
+live schema check of both APIs actually shows. A user-supplied
+`icesVocab::getCodeTypeList()`/`getCodeList()` script is a *consumer's*
+name-matching workaround, not evidence of a real cross-reference, so the
+text now reads "Neither service's own metadata cross-references the
+other, anywhere."
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+## 2026-08-20 (continued) -- de-historicized the yaml's curation notes; the vocab-annotation validator no longer depends on a cached csv
+
+User flagged the yaml's own `TimeShot` entry as an example of a broader
+problem: its `details:` read like a lab notebook of opus's own discovery
+process ("corrected 2026-08-18, found via the user's own spot-check...
+traced back to a 2026-07-29 citation whose basis... isn't recoverable
+from here") rather than a description of the field itself -- "something
+that is of no interest to the user of the yaml." Went through every
+shipped `details:`/`todo:`/`mechanism:` string in
+`data-raw/spec_02_curate_dict.R` (the `corrections`, `field_specs`,
+`shared_field_specs`, and `table_specs` lists -- roughly 50 field entries
+plus the four table overviews) and stripped dates, "originally X /
+re-verified Y", internal-process citations, and discovery narrative,
+while keeping every quantitative fact and legitimate present-tense
+caveat. R-comment provenance (why the script does something, dated for
+future maintainers) was left alone -- that's workshop notes for this
+repo's own contributors, not part of the shipped deliverable.
+
+Two of the strings being touched were more than stylistic. `TimeShot`'s
+zero-padding claim had the polarity backwards relative to the real
+archive. `LTSRC` and `ThermoCline` each still said "not added to
+`values:` given the tiny count" even though a later block in the same
+pipeline does add `values:` to them -- a leftover from before that later
+block existed. Also found three citations to
+`data-raw/tier1_field_stats.R`, a file renamed to
+`data-raw/retired/tier1_field_stats_retired.R` in an earlier cleanup;
+dropped the dead pointer rather than redirect to a "retired" script,
+since the underlying claim (icesDatras's fetch pipeline scrubbing `-9` to
+NA) doesn't need one to stand on its own.
+
+Regenerated both `inst/DATRAS-data-dict-legacy.yaml` and
+`inst/DATRAS-data-dict.yaml` (`spec_02` -> `spec_03`); 0 mismatches in a
+full legacy/curated parity check across all 190 fields. Re-rendered the
+dictionary snapshot (`articles/dictionary-snapshot-2026-08-20.html`,
+replacing 08-18's -- the render embeds the yaml's own prose, so the old
+file was now visibly stale) and the full site.
+
+Separately, rewrote `data-raw/validate_vocab_annotations_sync.R` to stop
+reading `data-raw/DATRAS-vocab-field-audit.csv` -- that csv was found 8
+days stale relative to the archive it was supposedly auditing, and
+re-deriving everything live (`op_vocab_resolve_key()`/
+`op_vocab_get_types()`/`op_vocab_get_codes()` plus direct
+`.datras/*.parquet` reads) removes the staleness risk structurally rather
+than needing a fresher re-run each time. Correctly separates a mechanical
+check (enum fields missing `values:`/`details:` completeness) from an
+informational "possible enum promotion" worklist (non-enum fields with a
+live full data-fit, never auto-applied) -- an earlier version of this
+script wrongly flagged `Year`/`DepthStratum`/`StatisticalRectangle`/
+`Maturity` as errors before that distinction was added.
+
+`devtools::check()`: 0 errors, 0 warnings, 0 notes. Vocab-annotation
+validator: 0 structural errors.

@@ -4,7 +4,7 @@
 
 *Detailed dated development history lives in `DEVLOG.md`, not here. This file tracks only current backlog state.*
 
-**Latest:** 2026-08-18 — see `DEVLOG.md` for full detail.
+**Latest:** 2026-08-20 — see `DEVLOG.md` for full detail.
 
 ---
 
@@ -13,7 +13,7 @@
 ✓ **Bootstrap workflow** — Three-phase bootstrap (WSDL seed → parquet enrich → curate) with supporting R functions
 ✓ **Tier 1 (HH, HL, CA, LT)** — Curated YAML specs + descriptive/strict YAML variants + known-issues registry
 ✓ **R package** — 22 exported functions (validation, vocabulary, field name utilities)
-✓ **Documentation** — technical-notes article + Quarto reference site (why-opus.qmd/using-opus.qmd dropped 2026-08-17, see DEVLOG.md)
+✓ **Documentation** — standalone Quarto site (`_quarto.yml`, `index.qmd`, `articles/`) replacing pkgdown/vignettes entirely, rendered to `docs/` for GitHub Pages; ICES issue report is now `articles/issues.qmd` (see DEVLOG.md)
 ~~Test data — Parquet samples for each Tier 1 table~~ — dropped 2026-08-17, see DEVLOG.md
 ✓ **Git history** — Clean three-phase commits with milestone tags
 ✓ **Package build** — devtools::check() passing; .rbuildignore optimized
@@ -29,8 +29,7 @@
   - [x] ~~Prioritize escalation candidates for imbus feedback~~ — done 2026-08-18: see DEVLOG.md for the full ready-to-file / already-filed / needs-diagnosis / excluded breakdown.
 
 - [ ] **imbus/ICES liaison (WP2 handoff):**
-  - [ ] File `data-raw/ICES_ISSUE_REPORT.md` with ICES (16 confirmed issues, drafted) — held deliberately, not just stuck: the venue doesn't exist yet (next item), and ongoing work keeps surfacing more issues worth folding in before one filing.
-  - [ ] Define escalation format: memo, GitHub Issues, or direct registry submission? -- checked 2026-08-17: `vignettes/imbus-interim-note-mockup.qmd` is explicitly a mockup, "not live yet". The escalation channel itself doesn't exist yet, not just an undecided choice among existing ones -- a bigger decision than opus can resolve unilaterally (imbus liaison structure, per this file's own WP2/WP3 scope boundary).
+  - [ ] Post opus's confirmed issues (16, in `articles/issues.qmd`) to ICES's own tracker, `ices-tools-dev/IMBUS_FISHMAP#29` — the venue question is resolved (see DEVLOG.md), but posting still needs the user's explicit go-ahead each time (it's a public ICES-side ticket, not opus's own repo), and format (one comment per issue vs. a consolidated summary) is still an open choice.
   - [ ] Clarify opus's role vs. imbus's data governance work
   - [ ] Establish timeline for ICES feedback loop (e.g., HaulValidity vocab completion)
 

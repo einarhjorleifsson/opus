@@ -73,7 +73,7 @@ get_codes_cached <- function(key) {
 types <- op_vocab_get_types()
 
 known_issues_text <- paste(readLines("inst/DATRAS-known-issues.yaml"), collapse = "\n")
-ices_issue_report_text <- paste(readLines("data-raw/ICES_ISSUE_REPORT.md"), collapse = "\n")
+ices_issue_report_text <- paste(readLines("articles/issues.qmd"), collapse = "\n")
 
 excel_sheets <- list(
   HH = readxl::read_excel(excel_file, sheet = "HH-Unaggregated data"),

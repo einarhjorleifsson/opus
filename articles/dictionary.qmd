@@ -1,0 +1,37 @@
+---
+title: "The data dictionary, browsable"
+---
+
+opus's yaml dictionaries describe every field across HH, HL, CA, and LT — type, unit, valid
+range or code list, and (where the data profile below shows it's worth a
+second look) an evidence-linked `todo`. Embedded below: a relationship
+diagram, a searchable field index, and a live profile of each column's
+real values, generated directly from the shipped dictionary and the full
+local DATRAS archive via [data-dict](https://data-dict.tidyverse.org/)'s
+own `render` command.
+
+::: {.callout-important}
+## This is a dated snapshot, not a live page
+Unlike the yaml itself, this render isn't rebuilt automatically — the
+underlying archive it profiles against keeps growing as new DATRAS years
+land, and isn't part of this repository. Treat the date below as the
+"as of," not a promise of continuous freshness.
+:::
+
+**Snapshot as of 2026-08-20** (HH/HL/CA/LT coverage complete):
+
+```{=html}
+<iframe src="dictionary-snapshot-2026-08-20.html"
+        style="width:100%; height:85vh; border:1px solid #dee2e6; border-radius:4px;"
+        title="opus data dictionary, rendered by data-dict"></iframe>
+```
+
+Feels cramped? Open it on its own:
+[dictionary-snapshot-2026-08-20.html](dictionary-snapshot-2026-08-20.html).
+
+To regenerate at a later milestone: `opus::op_render_spec(data_dir = ".datras")`,
+saved under a new dated filename here rather than overwriting this one —
+so which snapshot is current stays visible, not hidden.
+
+Raw yaml, if you want the machine-readable version directly:
+[`DATRAS-data-dict.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-data-dict.yaml)

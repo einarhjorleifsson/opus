@@ -1,0 +1,74 @@
+---
+title: "How opus's data dictionaries were built"
+---
+
+::: {.callout-note}
+## Outline, not yet drafted
+This page currently sketches what each section will cover. When the prose
+gets written, favor describing method over today's snapshot numbers (row
+counts, percentages) — this page is expected to go untouched for long
+stretches, so it should age well unattended rather than rely on someone
+circling back to refresh it.
+:::
+
+## Why a structured dictionary at all
+
+- Scattered institutional knowledge (WSDL, icesVocab, Technical Reference,
+  real submissions) consolidated into one authoritative, machine-readable
+  place
+- Portable and language-independent — not an R-specific artifact; usable
+  even if opus's own R tooling is never touched again
+
+## Four sources, reconciled
+
+- **WSDL** — primary authority for field types; DATRAS-specific
+- **`getDatrasFieldList`** — secondary, and confirmed unreliable (6 filed
+  errors: LT coverage gap, wrong LT renames, a phantom field, an
+  unverifiable CA rename, missing entries, a duplication miss)
+- **icesVocab** — code semantics only, not structural types; keyed by each
+  field's *legacy* name, not its current one — a dependency that isn't
+  obvious until it bites
+- **DATRAS field-description spreadsheet** — closest thing to a real
+  Technical Reference, but hand-maintained and not kept in sync with the
+  other three
+
+## Why not `icesDatras` as the access layer
+
+- The tempting assumption: use the existing R package as the
+  retrieval/parsing middleman instead of calling ICES's services directly
+- What that would have meant inheriting: a personal fork, diverged from
+  upstream, carrying unreviewed local patches that were initially (wrongly)
+  described internally as official package behavior
+- The decision instead: call WSDL / `getDatrasFieldList` / icesVocab
+  directly, verify every claim against at least two independent live
+  sources, never trust a single package's internal handling
+- Why this still matters, concretely and currently, not just in
+  retrospect: ICES's own official package is being actively finalized right
+  now, with a faster replacement retrieval mechanism coming — a live
+  example of exactly the dependency-volatility this decision was avoiding
+- (May grow into its own page rather than a section here, once drafted —
+  not deciding that now)
+
+## How the dictionaries were actually built
+
+- Seed from live sources (WSDL + `getDatrasFieldList` + icesVocab), keyed
+  by legacy field names, no corrections yet
+- Curate against the real archive: hand-written corrections, enum
+  enrichment, evidence required for every range/constraint
+- Rename: legacy → opus's curated names, as a single, pure, final step
+- Cross-link to [Technical notes](technical-notes.qmd) for the code-level
+  version of this story
+
+## Keeping it rigorous
+
+- Real data as ground truth over any single documentation source
+- Every claim verified empirically against live, primary data — never a
+  citation, a prior note, or a single source
+- Audits are exhaustive, not sampled — legacy name and current name both
+  checked, every prefix candidate, not just the first one that resolves
+
+## Scope
+
+- This describes how the metadata *specification* was built — not domain
+  QC, not data transformation. That work is downstream, in obus/imbus's own
+  workpackages.

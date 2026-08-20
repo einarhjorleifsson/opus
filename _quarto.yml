@@ -1,0 +1,38 @@
+project:
+  type: website
+  output-dir: docs
+  render:
+    - index.qmd
+    - articles/*.qmd
+  resources:
+    - "articles/dictionary-snapshot-*.html"
+
+execute:
+  freeze: auto
+
+website:
+  title: "opus"
+  description: "ICES DATRAS data dictionary and known-issues registry"
+  page-footer: "opus — reference specification for imbus WP2, not a general-purpose R package"
+  navbar:
+    left:
+      - text: "Home"
+        file: index.qmd
+      - text: "Approach"
+        file: articles/approach.qmd
+      - text: "Data dictionary"
+        file: articles/dictionary.qmd
+      - text: "Issues found"
+        file: articles/issues.qmd
+      - text: "Technical notes"
+        file: articles/technical-notes.qmd
+    right:
+      - icon: github
+        href: https://github.com/einarhjorleifsson/opus
+        aria-label: GitHub repository
+
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3

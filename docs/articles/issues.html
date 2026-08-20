@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Issues found in ICES DATRAS web services – opus</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">opus</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/approach.html"> 
+<span class="menu-text">Approach</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/dictionary.html"> 
+<span class="menu-text">Data dictionary</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../articles/issues.html" aria-current="page"> 
+<span class="menu-text">Issues found</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/technical-notes.html"> 
+<span class="menu-text">Technical notes</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/einarhjorleifsson/opus"> <i class="bi bi-github" role="img" aria-label="GitHub repository">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#how-this-was-verified" id="toc-how-this-was-verified" class="nav-link active" data-scroll-target="#how-this-was-verified">How this was verified</a></li>
+  <li><a href="#issue-7-icesvocab-publishes-no-declared-link-between-a-vocab-key-and-the-datras-field-it-applies-to" id="toc-issue-7-icesvocab-publishes-no-declared-link-between-a-vocab-key-and-the-datras-field-it-applies-to" class="nav-link" data-scroll-target="#issue-7-icesvocab-publishes-no-declared-link-between-a-vocab-key-and-the-datras-field-it-applies-to">Issue 7: icesVocab publishes no declared link between a vocab key and the DATRAS field it applies to</a></li>
+  <li><a href="#issue-8-icesvocabs-domain-prefixes-are-undocumented-and-naming-collisions-cause-silent-resolution-to-the-wrong-survey-types-vocabulary" id="toc-issue-8-icesvocabs-domain-prefixes-are-undocumented-and-naming-collisions-cause-silent-resolution-to-the-wrong-survey-types-vocabulary" class="nav-link" data-scroll-target="#issue-8-icesvocabs-domain-prefixes-are-undocumented-and-naming-collisions-cause-silent-resolution-to-the-wrong-survey-types-vocabulary">Issue 8: icesVocab’s domain prefixes are undocumented, and naming collisions cause silent resolution to the wrong survey type’s vocabulary</a>
+  <ul class="collapse">
+  <li><a href="#proposed-correction-concrete-not-just-a-request" id="toc-proposed-correction-concrete-not-just-a-request" class="nav-link" data-scroll-target="#proposed-correction-concrete-not-just-a-request">Proposed correction (concrete, not just a request)</a></li>
+  </ul></li>
+  <li><a href="#issue-9-a-full-sweep-of-all-190-datras-fields-finds-real-icesvocab-coverage-for-6-more-fields-invisible-without-checking-every-field-individually" id="toc-issue-9-a-full-sweep-of-all-190-datras-fields-finds-real-icesvocab-coverage-for-6-more-fields-invisible-without-checking-every-field-individually" class="nav-link" data-scroll-target="#issue-9-a-full-sweep-of-all-190-datras-fields-finds-real-icesvocab-coverage-for-6-more-fields-invisible-without-checking-every-field-individually">Issue 9: A full sweep of all 190 DATRAS fields finds real icesVocab coverage for 6 more fields, invisible without checking every field individually</a></li>
+  <li><a href="#issue-12-two-independently-maintained-ices-documentation-sources-agree-with-each-other-and-both-disagree-with-live-wsdl-about-year-and-speccodes-type" id="toc-issue-12-two-independently-maintained-ices-documentation-sources-agree-with-each-other-and-both-disagree-with-live-wsdl-about-year-and-speccodes-type" class="nav-link" data-scroll-target="#issue-12-two-independently-maintained-ices-documentation-sources-agree-with-each-other-and-both-disagree-with-live-wsdl-about-year-and-speccodes-type">Issue 12: Two independently-maintained ICES documentation sources agree with each other, and both disagree with live WSDL, about <code>Year</code> and <code>SpecCode</code>’s type</a></li>
+  <li><a href="#issue-13-dateofcalculation-disagrees-between-hh-and-lt-for-the-same-haul-in-most-cases-consistent-with-each-product-being-reprocessed-independently" id="toc-issue-13-dateofcalculation-disagrees-between-hh-and-lt-for-the-same-haul-in-most-cases-consistent-with-each-product-being-reprocessed-independently" class="nav-link" data-scroll-target="#issue-13-dateofcalculation-disagrees-between-hh-and-lt-for-the-same-haul-in-most-cases-consistent-with-each-product-being-reprocessed-independently">Issue 13: <code>DateofCalculation</code> disagrees between HH and LT for the same haul in most cases, consistent with each product being reprocessed independently</a></li>
+  <li><a href="#issue-14-ca-records-with-haulno--9-cannot-be-linked-to-any-hh-haul" id="toc-issue-14-ca-records-with-haulno--9-cannot-be-linked-to-any-hh-haul" class="nav-link" data-scroll-target="#issue-14-ca-records-with-haulno--9-cannot-be-linked-to-any-hh-haul">Issue 14: CA records with <code>HaulNo</code> = <code>-9</code> cannot be linked to any HH haul</a></li>
+  <li><a href="#issue-5-getdatrasfieldlist-is-missing-dateofcalculation-hh-and-dateofcalculationvalid_aphia-hl" id="toc-issue-5-getdatrasfieldlist-is-missing-dateofcalculation-hh-and-dateofcalculationvalid_aphia-hl" class="nav-link" data-scroll-target="#issue-5-getdatrasfieldlist-is-missing-dateofcalculation-hh-and-dateofcalculationvalid_aphia-hl">Issue 5: <code>getDatrasFieldList</code> is missing <code>DateofCalculation</code> (HH) and <code>DateofCalculation</code>/<code>Valid_Aphia</code> (HL)</a></li>
+  <li><a href="#issue-4-getdatrasfieldlists-ca-individualage-row-is-unverifiable" id="toc-issue-4-getdatrasfieldlists-ca-individualage-row-is-unverifiable" class="nav-link" data-scroll-target="#issue-4-getdatrasfieldlists-ca-individualage-row-is-unverifiable">Issue 4: <code>getDatrasFieldList</code>’s CA <code>IndividualAge</code> row is unverifiable</a></li>
+  <li><a href="#issue-11-the-datras-field-description-spreadsheet-declares-two-fields-that-dont-exist-in-live-wsdl-or-any-real-submission" id="toc-issue-11-the-datras-field-description-spreadsheet-declares-two-fields-that-dont-exist-in-live-wsdl-or-any-real-submission" class="nav-link" data-scroll-target="#issue-11-the-datras-field-description-spreadsheet-declares-two-fields-that-dont-exist-in-live-wsdl-or-any-real-submission">Issue 11: The DATRAS field-description spreadsheet declares two fields that don’t exist in live WSDL or any real submission</a></li>
+  <li><a href="#issue-10-icesvocabs-own-swellheight-code-list-is-used-by-neither-hhs-nor-lts-real-submissions" id="toc-issue-10-icesvocabs-own-swellheight-code-list-is-used-by-neither-hhs-nor-lts-real-submissions" class="nav-link" data-scroll-target="#issue-10-icesvocabs-own-swellheight-code-list-is-used-by-neither-hhs-nor-lts-real-submissions">Issue 10: icesVocab’s own <code>SwellHeight</code> code list is used by neither HH’s nor LT’s real submissions</a></li>
+  <li><a href="#issue-1-getdatrasfieldlist-covers-only-22-of-lts-58-real-fields" id="toc-issue-1-getdatrasfieldlist-covers-only-22-of-lts-58-real-fields" class="nav-link" data-scroll-target="#issue-1-getdatrasfieldlist-covers-only-22-of-lts-58-real-fields">Issue 1: <code>getDatrasFieldList</code> covers only 22 of LT’s 58 real fields</a></li>
+  <li><a href="#issue-2-getdatrasfieldlist-wrongly-claims-3-lt-legacy-fields-were-never-renamed" id="toc-issue-2-getdatrasfieldlist-wrongly-claims-3-lt-legacy-fields-were-never-renamed" class="nav-link" data-scroll-target="#issue-2-getdatrasfieldlist-wrongly-claims-3-lt-legacy-fields-were-never-renamed">Issue 2: <code>getDatrasFieldList</code> wrongly claims 3 LT legacy fields were never renamed</a></li>
+  <li><a href="#issue-3-getdatrasfieldlist-documents-a-lt-field-that-doesnt-exist" id="toc-issue-3-getdatrasfieldlist-documents-a-lt-field-that-doesnt-exist" class="nav-link" data-scroll-target="#issue-3-getdatrasfieldlist-documents-a-lt-field-that-doesnt-exist">Issue 3: <code>getDatrasFieldList</code> documents a LT field that doesn’t exist</a></li>
+  <li><a href="#issue-6-lts-depth-and-bottomdepth-are-duplicate-columns" id="toc-issue-6-lts-depth-and-bottomdepth-are-duplicate-columns" class="nav-link" data-scroll-target="#issue-6-lts-depth-and-bottomdepth-are-duplicate-columns">Issue 6: LT’s <code>Depth</code> and <code>BottomDepth</code> are duplicate columns</a></li>
+  <li><a href="#issue-15-lt-has-real-records-for-a-surveyyearquarter-where-hhs-own-submission-is-empty" id="toc-issue-15-lt-has-real-records-for-a-surveyyearquarter-where-hhs-own-submission-is-empty" class="nav-link" data-scroll-target="#issue-15-lt-has-real-records-for-a-surveyyearquarter-where-hhs-own-submission-is-empty">Issue 15: LT has real records for a Survey/Year/Quarter where HH’s own submission is empty</a></li>
+  <li><a href="#issue-16-lts-param-field-uses-codes-that-are-not-in-icesvocabs-own-param-list" id="toc-issue-16-lts-param-field-uses-codes-that-are-not-in-icesvocabs-own-param-list" class="nav-link" data-scroll-target="#issue-16-lts-param-field-uses-codes-that-are-not-in-icesvocabs-own-param-list">Issue 16: LT’s <code>PARAM</code> field uses codes that are not in icesVocab’s own <code>PARAM</code> list</a></li>
+  <li><a href="#suggestion-for-consideration-not-a-bug-report" id="toc-suggestion-for-consideration-not-a-bug-report" class="nav-link" data-scroll-target="#suggestion-for-consideration-not-a-bug-report">Suggestion for consideration (not a bug report)</a>
+  <ul class="collapse">
+  <li><a href="#a-single-surrogate-haul-identifier-instead-of-an-8-field-composite-key" id="toc-a-single-surrogate-haul-identifier-instead-of-an-8-field-composite-key" class="nav-link" data-scroll-target="#a-single-surrogate-haul-identifier-instead-of-an-8-field-composite-key">A single surrogate haul identifier, instead of an 8-field composite key</a></li>
+  </ul></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Issues found in ICES DATRAS web services</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p><strong>Prepared by:</strong> opus (github.com/einarhjorleifsson/opus) <strong>Scope:</strong> ICES’s <code>DATRASWebService.asmx</code> (both <code>getDatrasFieldList</code> and the HH/HL/CA data-retrieval operations), the LT (Litter Assessment) archive data, and the icesVocab service where it concerns DATRAS fields specifically.</p>
+<section id="how-this-was-verified" class="level2">
+<h2 class="anchored" data-anchor-id="how-this-was-verified">How this was verified</h2>
+<p>Every finding below was checked against <strong>at least two independent live sources</strong>, never against documentation alone:</p>
+<ol type="1">
+<li><code>getDatrasFieldList</code> — the live field-list metadata endpoint (<code>https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList</code>)</li>
+<li>Each operation’s own ASMX description page (e.g. <code>?op=getCAdata</code>), which embeds a sample response showing the field names and types the server’s own code actually generates — independent of the separately-maintained metadata service in (1)</li>
+<li>The real archived DATRAS data (145,958 HH rows, 13,754,042 HL rows, 5,865,076 CA rows, 75,310 LT rows; full 1965-2026 history)</li>
+<li>icesVocab’s own live <code>getCodeTypes</code>/<code>getCode</code> responses (<code>https://vocab.ices.dk/services/api/...</code>), checked field-by-field against both the legacy and current DATRAS name for all 52 enum fields across HH, HL, CA, and LT – see Issue 8 for why checking only one name is not sufficient</li>
+<li>The same icesVocab check applied to all 190 fields across HH, HL, CA, and LT, regardless of each field’s current type – see Issue 9 for why limiting the check to fields that already look like coded values is itself a blind spot</li>
+<li>Raw LT exchange XML, parsed directly (at least one non-empty file per survey, all 28 surveys) and diffed against <code>inst/DATRAS-data-dict.yaml</code>’s own legacy-name annotations for all four tables – confirms Issues 1-3 (LT’s real field set, the <code>Ship</code>/<code>StNo</code>/<code>HaulNo</code> renames, and the phantom <code>RecordType</code> field) by a method independent of (1)-(2). Zero discrepancies in either direction for HH, HL, CA, or LT.</li>
+</ol>
+<p>No finding here rests on a single source, and none rest on any third-party R package’s own internal handling of these services – every claim traces directly to the live ICES endpoints listed above.</p>
+<hr>
+</section>
+<section id="issue-7-icesvocab-publishes-no-declared-link-between-a-vocab-key-and-the-datras-field-it-applies-to" class="level2">
+<h2 class="anchored" data-anchor-id="issue-7-icesvocab-publishes-no-declared-link-between-a-vocab-key-and-the-datras-field-it-applies-to">Issue 7: icesVocab publishes no declared link between a vocab key and the DATRAS field it applies to</h2>
+<p><strong>Severity: API/documentation gap – not a data-quality claim in itself, but the direct cause of Issue 8</strong></p>
+<p>icesVocab’s own live metadata (<code>getCodeTypes</code>, the source behind <code>op_vocab_get_types()</code>) returns four columns per key: <code>Key</code>, a prefix-stripped name, the prefix itself, and a human <code>Description</code> of each individual <em>code</em> within that key. None of this declares which DATRAS field, table, or operation a given key applies to. Checked the other direction too: <code>getDatrasFieldList</code> (Issue 1-3’s subject) has no column referencing an icesVocab key at all. Neither service’s own metadata cross-references the other, anywhere.</p>
+<p>The practical consequence: there is no ICES-declared way to answer “which icesVocab key, if any, applies to <code>HaulVal</code>?” The only method available to any consumer – opus included – is inferring it by string-matching a vocab key’s prefix-stripped name against the field’s own name and hoping it’s the right one. That inference is corroborated after the fact by checking whether the real archive’s values fit the candidate (see Issue 8’s evidence), but nothing about the <em>lookup</em> itself is authoritative – it is a heuristic wearing the shape of a lookup.</p>
+<p><strong>Recommendation:</strong> Publish an explicit crosswalk – e.g.&nbsp;an <code>icesVocabKey</code> column added to <code>getDatrasFieldList</code>’s existing per-field rows, or a DATRAS-scoped index on the icesVocab side – so consumers can resolve a field to its vocabulary without reverse-engineering it from naming convention. —</p>
+</section>
+<section id="issue-8-icesvocabs-domain-prefixes-are-undocumented-and-naming-collisions-cause-silent-resolution-to-the-wrong-survey-types-vocabulary" class="level2">
+<h2 class="anchored" data-anchor-id="issue-8-icesvocabs-domain-prefixes-are-undocumented-and-naming-collisions-cause-silent-resolution-to-the-wrong-survey-types-vocabulary">Issue 8: icesVocab’s domain prefixes are undocumented, and naming collisions cause silent resolution to the wrong survey type’s vocabulary</h2>
+<p><strong>Severity: Data risk – resolves silently to the wrong domain, no error or warning either service could raise</strong></p>
+<p>Direct consequence of Issue 7. icesVocab keys carry a domain prefix (<code>TS_</code>, <code>AC_</code>, or none), but the service documents nowhere, in any machine-readable field, what a prefix means or which ICES data collection it scopes to. This had to be reverse-engineered by inspecting every key under each prefix: <code>TS_</code> keys are unmistakably DATRAS’s own domain (<code>TS_DYFS_Areas</code>, <code>TS_EVHOEarea</code>, <code>TS_NIGFSstrata</code> – real DATRAS survey acronyms; and DATRAS’s own legacy field abbreviations directly as keys: <code>TS_HaulVal</code>, <code>TS_GearEx</code>, <code>TS_SpecVal</code>). <code>AC_</code> keys are unmistakably the <em>combined acoustic-trawl survey</em> domain – a different ICES data collection entirely (<code>AC_TransducerBeamType</code>, <code>AC_PingAxisIntervalUnit</code>, <code>AC_OnAxisGainUnit</code>, <code>AC_SaCategory</code>, <code>AC_TriwaveCorrection</code>).</p>
+<p>The hazard: <code>AC_</code> also carries entries for general survey-operations concepts that acoustic surveys record too (they tow calibration hauls), and several of those entries happen to be spelled out in the same plain English opus separately chose for DATRAS’s own curated field names – a naming collision between two unrelated parties, not a shared vocabulary. Resolving by field name alone, without knowing in advance which prefix is DATRAS’s own, lands on <code>AC_</code>’s badly incomplete list and produces no error – both keys “exist,” both return a superficially valid code list, just for the wrong survey type. Verified live, three pairs:</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Legacy DATRAS field</th>
+<th>Correct key (<code>TS_</code>)</th>
+<th>Wrong key if resolved by the new name (<code>AC_</code>)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>HaulVal</code></td>
+<td><code>TS_HaulVal</code>, 7 codes: <code>A,C,I,M,N,S,V</code></td>
+<td><code>AC_HaulValidity</code>, 2 codes: <code>I,V</code></td>
+</tr>
+<tr class="even">
+<td><code>GearEx</code></td>
+<td><code>TS_GearEx</code>, 13 codes</td>
+<td><code>AC_GearExceptions</code>, 1 code: <code>B</code></td>
+</tr>
+<tr class="odd">
+<td><code>SpecVal</code></td>
+<td><code>TS_SpecVal</code>, 10 codes</td>
+<td><code>AC_SpeciesValidity</code>, 2 codes: <code>0,1</code></td>
+</tr>
+</tbody>
+</table>
+<p>Every one of the 52 enum fields across HH, HL, CA, and LT was checked against icesVocab under both its legacy and current DATRAS name. Of the 27 fields that were ever renamed, 21 have a <code>TS_</code> key matching the legacy name and all 21 give a perfect bidirectional match against the real archive <em>by name and description</em> (see the correction below for two where that turned out not to mean a per-code data match); 10 of those 27 <em>also</em> have an <code>AC_</code> key matching the field’s <em>current</em> (opus-curated) name, and in every one of those 10 cases <code>AC_</code> is a clear subset, wrong for DATRAS. Across all 52 fields, <code>AC_</code> was never once the correct candidate for a DATRAS field – not occasionally wrong, categorically inapplicable, for this database specifically.</p>
+<p><strong>A second, independent ambiguity in the same prefix:</strong> <code>TS_</code> is not even reliably self-contained. At least two <code>TS_</code> keys – <code>TS_AgeSource</code> and <code>TS_AgePrepMet</code> – are themselves non-authoritative: each one’s own icesVocab <code>Description</code> field is a bare cross-reference (“see SampleType”, “see PreparationMethod”) to a <em>different</em>, non-<code>TS_</code>-prefixed (“bare”) domain, not a real code list in its own right. A name/description match alone doesn’t catch this – only testing the resolved key’s codes against real archive values one-for-one does – <code>TS_AgeSource</code>’s and <code>TS_AgePrepMet</code>’s codes have <strong>zero overlap</strong> with what CA’s real <code>AgeSource</code>/<code>AgePrepMet</code> columns actually contain, while the domains their own descriptions point to (<code>SampleType</code>, <code>PreparationMethod</code>) match exactly, code-for-code, including a literal lowercase <code>otolith</code> code in <code>SampleType</code> (not just its description). Two more <code>TS_</code> keys carry the same kind of redirect (<code>TS_Ship</code> -&gt; <code>SHIPC</code>, <code>TS_Country</code> -&gt; <code>ISO_3166</code>) – see Issue 9 for what following those two redirects turns up. The general hazard remains for any future field, or any other consumer, that resolves by prefix and by name alone: a <code>TS_</code> match is necessary but was already known not to be sufficient (the <code>AC_</code> collision above), and now isn’t even reliably a real code list rather than a pointer to one – with nothing machine-readable distinguishing an authoritative <code>TS_</code> key from a redirect one, only a <code>Description</code> string a consumer has to already know to check.</p>
+<p><strong>Recommendation:</strong> Document each vocab domain prefix’s scope in a machine-readable field (which ICES data collection(s) it applies to), and/or provide a way to scope a vocab lookup to a named collection (e.g.&nbsp;“DATRAS only”) so a consumer cannot silently receive a different survey type’s vocabulary for a same-sounding field name. Separately: where one vocab key is superseded by or merely aliases another, represent that as a structured field (e.g.&nbsp;a <code>supersededBy</code>/<code>aliasOf</code> key) rather than free text inside <code>Description</code> – a “see X” sentence is invisible to any automated consumer, including opus’s own tooling, unless someone manually reads the <code>Description</code> text for every key.</p>
+<section id="proposed-correction-concrete-not-just-a-request" class="level3">
+<h3 class="anchored" data-anchor-id="proposed-correction-concrete-not-just-a-request">Proposed correction (concrete, not just a request)</h3>
+<p>Rather than only describe the problem, here is opus’s own proposal for the correct DATRAS-field-to-vocab-key mapping. Be precise about what this table actually is: every “proposed key” below is a <strong>guess by name-matching</strong> – the field’s legacy and current name checked against every live icesVocab key (Working Principles 8-9: empirical, exhaustive, no skimming), because that is the only resolution method available at all (Issue 7). “Fits real data?” records whether that guess happens to fit the real archive’s values in both directions (no real value uncovered, no vocab code unused) – that’s corroborating evidence for the guess, not proof ICES intended this key for this field. The full table (<code>inst/DATRAS-vocab-correction.csv</code>, generated by <code>data-raw/build_vocab_correction.R</code>) carries this explicitly as its own <code>resolution_basis</code> column on every row, rather than letting a good data fit read as more authoritative than it is.</p>
+<p>This is the same table opus’s own tooling now treats as its working default (<code>op_vocab_resolve_datras_key()</code>, <code>R/vocab.R</code>) – one artifact serving both as this report’s recommendation and as opus’s internal assumption, so the two can’t silently drift apart. We’d ask ICES to confirm or correct it, and treat it as provisional – opus’s own best guess, not an ICES-declared fact – until ICES formalizes something authoritative per Issue 7’s recommendation above.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>Field (current)</th>
+<th>Legacy</th>
+<th>Proposed key (name-match guess)</th>
+<th>Fits real data?</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>CA</td>
+<td><code>AgePlusGroup</code></td>
+<td><code>PlusGr</code></td>
+<td><code>TS_PlusGr</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>AgePreparationMethod</code></td>
+<td><code>AgePrepMet</code></td>
+<td><code>PreparationMethod</code> (not <code>TS_AgePrepMet</code>, a redirect – see addendum above)</td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>AgeSource</code></td>
+<td><code>AgeSource</code></td>
+<td><code>SampleType</code> (not <code>TS_AgeSource</code>, a redirect – see addendum above)</td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>DoorType</code></td>
+<td><code>DoorType</code></td>
+<td><code>TS_DoorType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>GearExceptions</code></td>
+<td><code>GearEx</code></td>
+<td><code>TS_GearEx</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>GeneticSamplingFlag</code></td>
+<td><code>GenSamp</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>IndividualSex</code></td>
+<td><code>Sex</code></td>
+<td><code>TS_Sex</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>LengthCode</code></td>
+<td><code>LngtCode</code></td>
+<td><code>TS_LngtCode</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>MaturityScale</code></td>
+<td><code>MaturityScale</code></td>
+<td><code>TS_MaturityScale</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>OtolithGrading</code></td>
+<td><code>OtGrading</code></td>
+<td><code>TS_OtGrading</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>ParasiteSamplingFlag</code></td>
+<td><code>ParSamp</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>Quarter</code></td>
+<td><code>Quarter</code></td>
+<td><code>TS_Quarter</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>RecordHeader</code></td>
+<td><code>RecordType</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="odd">
+<td>CA</td>
+<td><code>SpeciesCodeType</code></td>
+<td><code>SpecCodeType</code></td>
+<td><code>TS_SpecCodeType</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>CA</td>
+<td><code>StomachSamplingFlag</code></td>
+<td><code>StomSamp</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>BycatchSpeciesCode</code></td>
+<td><code>BySpecRecCode</code></td>
+<td><code>TS_BySpecRecCode</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>DataType</code></td>
+<td><code>DataType</code></td>
+<td><code>TS_DataType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>DayNight</code></td>
+<td><code>DayNight</code></td>
+<td><code>TS_DayNight</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>DoorType</code></td>
+<td><code>DoorType</code></td>
+<td><code>TS_DoorType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>GearExceptions</code></td>
+<td><code>GearEx</code></td>
+<td><code>TS_GearEx</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>HaulValidity</code></td>
+<td><code>HaulVal</code></td>
+<td><code>TS_HaulVal</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>Month</code></td>
+<td><code>Month</code></td>
+<td><code>TS_Month</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>PelagicSamplingType</code></td>
+<td><code>PelSampType</code></td>
+<td><code>TS_PelSampType</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>Quarter</code></td>
+<td><code>Quarter</code></td>
+<td><code>TS_Quarter</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>RecordHeader</code></td>
+<td><code>RecordType</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>Rigging</code></td>
+<td><code>Rigging</code></td>
+<td><code>TS_Rigging</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HH</td>
+<td><code>StandardSpeciesCode</code></td>
+<td><code>StdSpecRecCode</code></td>
+<td><code>TS_StdSpecRecCode</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HH</td>
+<td><code>ThermoCline</code></td>
+<td><code>ThermoCline</code></td>
+<td><code>TS_ThermoCline</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>DevelopmentStage</code></td>
+<td><code>DevStage</code></td>
+<td><code>TS_DevStage</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HL</td>
+<td><code>DoorType</code></td>
+<td><code>DoorType</code></td>
+<td><code>TS_DoorType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HL</td>
+<td><code>GearExceptions</code></td>
+<td><code>GearEx</code></td>
+<td><code>TS_GearEx</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>LengthCode</code></td>
+<td><code>LngtCode</code></td>
+<td><code>TS_LngtCode</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HL</td>
+<td><code>LengthType</code></td>
+<td><code>LenMeasType</code></td>
+<td><code>TS_LenMeasType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>Quarter</code></td>
+<td><code>Quarter</code></td>
+<td><code>TS_Quarter</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HL</td>
+<td><code>RecordHeader</code></td>
+<td><code>RecordType</code></td>
+<td><em>(none)</em></td>
+<td>no vocab exists</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>SpeciesCodeType</code></td>
+<td><code>SpecCodeType</code></td>
+<td><code>TS_SpecCodeType</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>HL</td>
+<td><code>SpeciesSex</code></td>
+<td><code>Sex</code></td>
+<td><code>TS_Sex</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>HL</td>
+<td><code>SpeciesValidity</code></td>
+<td><code>SpecVal</code></td>
+<td><code>TS_SpecVal</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>DataType</code></td>
+<td><code>DataType</code></td>
+<td><code>TS_DataType</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>LT</td>
+<td><code>DoorType</code></td>
+<td><code>DoorType</code></td>
+<td><code>TS_DoorType</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td><code>Gear</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>LT</td>
+<td><code>GearExceptions</code></td>
+<td><code>GearEx</code></td>
+<td><code>TS_GearEx</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>HaulValidity</code></td>
+<td><code>HaulVal</code></td>
+<td><code>TS_HaulVal</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>LT</td>
+<td><code>LTREF</code></td>
+<td><code>LTREF</code></td>
+<td><code>LTREF</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>LTSRC</code></td>
+<td><code>LTSRC</code></td>
+<td><code>LTSRC</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>LT</td>
+<td><code>Month</code></td>
+<td><code>Month</code></td>
+<td><code>TS_Month</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>Quarter</code></td>
+<td><code>Quarter</code></td>
+<td><code>TS_Quarter</code></td>
+<td>full match</td>
+</tr>
+<tr class="odd">
+<td>LT</td>
+<td><code>Rigging</code></td>
+<td><code>Rigging</code></td>
+<td><code>TS_Rigging</code></td>
+<td>full match</td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td><code>SwellHeight</code></td>
+<td><code>SwellHeight</code></td>
+<td><code>SwellHeight</code></td>
+<td>full match</td>
+</tr>
+</tbody>
+</table>
+<p>“No vocab exists” (6 fields) is not a gap to fix by force-matching something – confirmed empirically that no icesVocab entry exists under either name; these are legitimately manual/local enums (record-type markers, CA’s Sampling Flag fields). —</p>
+</section>
+</section>
+<section id="issue-9-a-full-sweep-of-all-190-datras-fields-finds-real-icesvocab-coverage-for-6-more-fields-invisible-without-checking-every-field-individually" class="level2">
+<h2 class="anchored" data-anchor-id="issue-9-a-full-sweep-of-all-190-datras-fields-finds-real-icesvocab-coverage-for-6-more-fields-invisible-without-checking-every-field-individually">Issue 9: A full sweep of all 190 DATRAS fields finds real icesVocab coverage for 6 more fields, invisible without checking every field individually</h2>
+<p><strong>Severity: Same root cause as Issue 7 (no declared field-to-key link) – shown here to hide good, applicable matches, not just cause bad ones</strong></p>
+<p>icesVocab coverage was checked for all 190 fields across HH, HL, CA, and LT, by legacy name, regardless of each field’s current type – not limited to the 52 fields already curated as <code>type: enum</code>. A field’s own type says nothing about whether ICES happens to maintain a matching vocabulary for it, so limiting the check to fields that already look coded would itself be a blind spot.</p>
+<p><strong>Results:</strong> 115/190 fields have no name-match candidate at all (expected – mostly genuine measurements: haul duration, temperatures, depths, etc.). 75/190 have at least one candidate. Of those 75: 46 are the enum fields Issue 8’s table already covers. The remaining 29 are fields NOT currently typed <code>enum</code> that still returned a name match. 16 of those 29 are already documented elsewhere in opus’s own curation notes (<code>Country</code>, <code>Survey</code>, <code>StatRec</code>, <code>AreaType</code>, <code>LTPRP</code>, <code>LTSZC</code>, <code>PARAM</code>, <code>TYPPL</code>, <code>SwellHeight</code>).</p>
+<p>The other 13 rows (6 distinct fields, appearing once per table where each occurs) had never been checked against icesVocab before, because none had ever been judged enum-worthy. Each was confirmed directly against the real archive, since a name match alone proves nothing (see Issue 7):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 25%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Legacy field</th>
+<th>Table(s)</th>
+<th>icesVocab key</th>
+<th>Real value coverage</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Ship</code></td>
+<td>HH, HL, CA, LT</td>
+<td><code>TS_Ship</code> (a redirect – see Issue 8 – to <code>SHIPC</code>)</td>
+<td><code>SHIPC</code> covers 109 of 112 real distinct values (97%); the exceptions are <code>AA36</code>, <code>DCA</code>, <code>HOL</code></td>
+</tr>
+<tr class="even">
+<td><code>Year</code></td>
+<td>HH, HL, CA, LT</td>
+<td><code>Year</code></td>
+<td>62/62 real distinct years, 0 missing either direction</td>
+</tr>
+<tr class="odd">
+<td><code>Maturity</code></td>
+<td>CA</td>
+<td><code>TS_Maturity</code></td>
+<td>47/47 real values, 0 missing either direction</td>
+</tr>
+<tr class="even">
+<td><code>DepthStratum</code></td>
+<td>HH</td>
+<td><code>TS_DepthStratum</code></td>
+<td>186/186 real values, 0 missing either direction</td>
+</tr>
+<tr class="odd">
+<td><code>Tickler</code></td>
+<td>HH, LT</td>
+<td><code>TS_Tickler</code></td>
+<td>9/9 real values, 0 missing either direction</td>
+</tr>
+<tr class="even">
+<td><code>CatIdentifier</code></td>
+<td>HL</td>
+<td><code>TS_CatIdentifier</code></td>
+<td>13/13 real values, 0 missing either direction</td>
+</tr>
+</tbody>
+</table>
+<p>Two related fields, checked the same way, are worth noting alongside this table even though neither is one of the 13 new rows above. <code>Survey</code> (name match <code>TS_Survey</code>/<code>AC_Survey</code>, both registered) remains a genuine false lead: the bare <code>Survey</code> key’s 133 codes share zero overlap with the 28 real DATRAS survey acronyms in the archive – an unrelated code list, not a redirect, so following any prefix here doesn’t help. <code>Country</code> looked like a second false lead for the same reason <code>Ship</code> did (<code>TS_Country</code> misses 20 of 23 real values) until its own redirect (<code>TS_Country</code> -&gt; <code>see ISO_3166</code>, also noted in Issue 8) is followed: <code>ISO_3166</code>’s 288 codes cover 22 of the 23 real values exactly, including historical entries the archive still carries (e.g.&nbsp;<code>SUHH</code> = USSR); the one exception, <code>DUM</code> (CA only), reads as a placeholder rather than a real country code.</p>
+<p>All six table fields resolve cleanly once each key’s actual code list is checked and any redirect is followed first – five with a full bidirectional fit, <code>Ship</code> with three single-value exceptions out of 112. None of these fields’ own ICES field-list descriptions mention icesVocab, and nothing about <code>getDatrasFieldList</code>’s metadata points a consumer toward checking. They were only discoverable by checking every field against every vocab key directly and comparing the result against real data – exactly the gap Issue 7 already describes, now with concrete, currently-unused matches as evidence of what that gap costs, not just what it risks.</p>
+<p>Two of the five originally-clean matches (<code>Tickler</code>, <code>CatIdentifier</code>) have since been adopted into opus’s own curated spec as <code>type: enum</code> – <code>inst/DATRAS-data-dict.yaml</code> now reflects this directly, opus’s own downstream reaction to a gap that remains ICES’s to close, noted here for completeness rather than because it changes the finding. The other three were deliberately left as-is, each for a distinct reason rather than a shared threshold: <code>Year</code> is a continuously-advancing ordinal (next year needs a code that doesn’t exist yet), not a fixed closed set, regardless of icesVocab happening to enumerate past years as codes; <code>Maturity</code>’s own field description says its coding depends on the sibling <code>MaturityScale</code> field, so <code>TS_Maturity</code>’s codes are plausibly a union across several distinct scales, not one flat list; <code>DepthStratum</code>’s own description says strata are survey-specific, in tension with treating one vocab key as universal. Neither reservation applies to <code>Tickler</code> (a real gear-count code, not growing) or <code>CatIdentifier</code> (already independently documented as a coded scheme, not a sequence).</p>
+<p><strong>Recommendation:</strong> Same as Issue 7’s – publish the field-to-key crosswalk. Until then, matches like these (and genuine false leads like <code>Survey</code>) stay indistinguishable from each other to anyone who doesn’t independently check every field against every vocab key and follow every redirect. —</p>
+</section>
+<section id="issue-12-two-independently-maintained-ices-documentation-sources-agree-with-each-other-and-both-disagree-with-live-wsdl-about-year-and-speccodes-type" class="level2">
+<h2 class="anchored" data-anchor-id="issue-12-two-independently-maintained-ices-documentation-sources-agree-with-each-other-and-both-disagree-with-live-wsdl-about-year-and-speccodes-type">Issue 12: Two independently-maintained ICES documentation sources agree with each other, and both disagree with live WSDL, about <code>Year</code> and <code>SpecCode</code>’s type</h2>
+<p><strong>Severity: Institutional governance – the same wrong answer from two unrelated sources, never reconciled against the live contract</strong></p>
+<p>Comparing live WSDL against <code>getDatrasFieldList</code> for <code>Year</code>: WSDL declares <code>Year</code> as <code>int</code> for all four tables (<code>getHHdata</code>, <code>getHLdata</code>, <code>getCAdata</code>, <code>getLitterAssessmentOutput</code>), but <code>getDatrasFieldList</code> declares it <code>char</code>. The real archive (<code>.datras/*.parquet</code>) agrees with WSDL – every <code>Year</code> value is a clean 4-digit integer, never a non-numeric string.</p>
+<p>A third, independent source, the DATRAS field-description spreadsheet (see Issue 11), also declares <code>Year</code> as <code>char</code>, in all four tables, agreeing with <code>getDatrasFieldList</code> and disagreeing with WSDL and the real archive. The same spreadsheet independently makes the identical kind of claim for <code>SpecCode</code> (HL and CA): <code>char</code>, while live WSDL declares <code>int</code> – consistent with <code>SpecCode</code> being a WoRMS AphiaID, a numeric species identifier, not a text field.</p>
+<p>So this isn’t one stale citation from one source: two separately-maintained ICES documentation artifacts have independently landed on the same wrong answer, and neither has ever been reconciled against the live WSDL contract they’re both supposed to describe.</p>
+<p><strong>Recommendation:</strong> Confirm which is actually correct (real submitted data already answers this: numeric, for both fields) and align <code>getDatrasFieldList</code> and the field-description spreadsheet with what WSDL and real submissions already agree on, rather than leaving two independent documentation sources both wrong in the same direction. —</p>
+</section>
+<section id="issue-13-dateofcalculation-disagrees-between-hh-and-lt-for-the-same-haul-in-most-cases-consistent-with-each-product-being-reprocessed-independently" class="level2">
+<h2 class="anchored" data-anchor-id="issue-13-dateofcalculation-disagrees-between-hh-and-lt-for-the-same-haul-in-most-cases-consistent-with-each-product-being-reprocessed-independently">Issue 13: <code>DateofCalculation</code> disagrees between HH and LT for the same haul in most cases, consistent with each product being reprocessed independently</h2>
+<p><strong>Severity: Data quality / institutional governance – the field does not mean what its own name suggests</strong></p>
+<p><code>DateofCalculation</code> (present in HH, HL, CA, and LT; already covered by Issue 5 above for its absence from <code>getDatrasFieldList</code> entirely) reads, by name and by HH’s own field description, as a single per-haul fact: when ICES last recalculated and reprocessed that haul’s record. It is not. LT’s own copy of a haul’s <code>DateofCalculation</code> frequently disagrees with HH’s copy of the same haul.</p>
+<p><strong>Evidence.</strong> Joining HH to LT on the standard 8-field composite haul key (Survey, Year, Quarter, Country, Ship, Gear, StNo, HaulNo – LT’s own value is internally consistent across all of a haul’s own LT rows where a haul has more than one), 30,364 distinct hauls carry a <code>DateofCalculation</code> value on both sides. Of those, 19,193 (63.21%) disagree – not a small or one-sided drift: the median gap when they disagree is 120 days, the largest is 2,557 days (~7 years), and it runs in both directions (LT dated later than HH in 11,224 cases; HH later in 7,969).</p>
+<p>This differs in kind from the other confirmed HH/child-table conflict, <code>RecordType</code>/<code>RecordHeader</code> (Issue 2 above): that one differs <em>by design</em> (each table’s own row states its own record type). Nothing in either table’s documentation suggests <code>DateofCalculation</code> is meant to vary by product for the same real-world haul.</p>
+<p><strong>Independent corroboration.</strong> A related internal downstream project has separately documented the same category of behavior for a different DATRAS product: <code>getFlexFile()</code> (the FL/fishing-effort product) returns multiple rows for the same haul, identical in every field except <code>DateofCalculation</code> – confirmed reprocessing revisions, not submission duplicates (739 of 53,859 distinct FL haul keys in a full 2000-2026 pull). That project also found <code>DateofCalculation</code>’s own digit order differs by product (<code>YYYYMMDD</code> in HH, <code>YYYYDDMM</code> in FlexFile). Checked directly against HH and LT: neither shows the same pattern (both stay at or under 12 in the digit position that would expose a day-before-month encoding), so that specific sub-finding is FL-specific, not evidence of a wider encoding problem.</p>
+<p><strong>Recommendation:</strong> Confirm whether <code>DateofCalculation</code> is intended as a single per-haul fact (in which case HH/LT/FL disagreeing this often and this widely is itself the defect to fix) or is genuinely a per-product processing timestamp that happens to share one field name across products with no documented distinction (in which case the field’s eventual published description – see Issue 5 – should say so explicitly, since nothing today tells a consumer not to expect one answer per haul). —</p>
+</section>
+<section id="issue-14-ca-records-with-haulno--9-cannot-be-linked-to-any-hh-haul" class="level2">
+<h2 class="anchored" data-anchor-id="issue-14-ca-records-with-haulno--9-cannot-be-linked-to-any-hh-haul">Issue 14: CA records with <code>HaulNo</code> = <code>-9</code> cannot be linked to any HH haul</h2>
+<p><strong>Severity: Data quality — orphaned records</strong></p>
+<p>CA’s composite-key field <code>HaulNo</code> carries the sentinel value <code>-9</code> (ICES’s own documented “no information” convention, confirmed against the DATRAS field-description spreadsheet) in 288,581 of 5,865,076 rows (4.92%). These rows do not match any HH haul on the documented composite key (<code>Survey</code>, <code>Year</code>, <code>Quarter</code>, <code>Country</code>, <code>Ship</code>, <code>Gear</code>, <code>StNo</code>, <code>HaulNo</code>), even when <code>HaulNo</code> itself is dropped from the join – not a join-key formatting problem, genuinely orphaned CA records with no corresponding HH haul anywhere in the archive.</p>
+<p>A separate, much smaller residual of 700 rows (0.01%) carries a plausible (non-sentinel) <code>HaulNo</code> value that still fails to match HH on the same key, for a cause not yet identified.</p>
+<p><strong>Recommendation:</strong> Confirm whether these CA records correspond to hauls that were never submitted to HH at all (a genuine cross-table submission gap), or whether some other linking mechanism, not the documented composite key, is intended for this subset. —</p>
+</section>
+<section id="issue-5-getdatrasfieldlist-is-missing-dateofcalculation-hh-and-dateofcalculationvalid_aphia-hl" class="level2">
+<h2 class="anchored" data-anchor-id="issue-5-getdatrasfieldlist-is-missing-dateofcalculation-hh-and-dateofcalculationvalid_aphia-hl">Issue 5: <code>getDatrasFieldList</code> is missing <code>DateofCalculation</code> (HH) and <code>DateofCalculation</code>/<code>Valid_Aphia</code> (HL)</h2>
+<p><strong>Severity: Documentation gap</strong></p>
+<p><code>DateofCalculation</code> is a real column in both the HH and HL archives (server-inserted processing timestamp), and <code>Valid_Aphia</code> is a real column in HL (server-validated WoRMS AphiaID) — none of the three appear under their respective <code>RecordHeader</code> in <code>getDatrasFieldList</code> at all, under any name.</p>
+<p><strong>Recommendation:</strong> Add these fields to the field-list’s HH and HL sections. —</p>
+</section>
+<section id="issue-4-getdatrasfieldlists-ca-individualage-row-is-unverifiable" class="level2">
+<h2 class="anchored" data-anchor-id="issue-4-getdatrasfieldlists-ca-individualage-row-is-unverifiable">Issue 4: <code>getDatrasFieldList</code>’s CA <code>IndividualAge</code> row is unverifiable</h2>
+<p><strong>Severity: Data quality — orphaned metadata</strong></p>
+<p>The field-list pairs <code>FieldName = "IndividualAge"</code> with <code>FieldNameOld = "AgeRings"</code> for CA. <code>"AgeRings"</code> is not a real CA field — confirmed against both the real CA archive and <code>getCAdata</code>’s own live ASMX sample response, both of which show the real field is named <code>Age</code>.</p>
+<p>Because the row’s old-name half is already shown not to correspond to anything real, its new-name half (<code>"IndividualAge"</code>) cannot be trusted to apply to the real <code>Age</code> field either — it may be stale, a typo, or describe a field removed from <code>getCAdata</code> at some point without the field-list being updated to match. This field is deliberately not treated as renamed to <code>IndividualAge</code> on the strength of this row alone.</p>
+<p><strong>Recommendation:</strong> Confirm whether <code>Age</code> should be documented as <code>IndividualAge</code>, and if so, correct the row’s old-name to <code>Age</code> (not <code>AgeRings</code>) so the pairing is actually verifiable. —</p>
+</section>
+<section id="issue-11-the-datras-field-description-spreadsheet-declares-two-fields-that-dont-exist-in-live-wsdl-or-any-real-submission" class="level2">
+<h2 class="anchored" data-anchor-id="issue-11-the-datras-field-description-spreadsheet-declares-two-fields-that-dont-exist-in-live-wsdl-or-any-real-submission">Issue 11: The DATRAS field-description spreadsheet declares two fields that don’t exist in live WSDL or any real submission</h2>
+<p><strong>Severity: Institutional governance – ICES’s own sources disagree with each other about what the current schema is</strong></p>
+<p>The DATRAS field-description spreadsheet (<code>DATRAS_Field_descriptions_and_example_file_December2025.xlsx</code>, linked from <code>https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx</code>) states in its own version notes: “New field in HH ReasonHaulDisruption added” and “New field in CA PreservationMethod added.” Checked both against opus’s other two structural sources:</p>
+<ul>
+<li>Live WSDL (<code>getHHdata</code>, 69 fields; <code>getCAdata</code>, 34 fields) declares neither field.</li>
+<li>The real archive (<code>.datras/HH_legacy.parquet</code>, <code>.datras/CA_legacy.parquet</code> – both also 69/34 columns) contains zero occurrences of either field name, anywhere in the full archive.</li>
+</ul>
+<p>So ICES’s own published schema description and ICES’s own live service/submitted-data reality disagree: one source says these fields exist, the other two (both authoritative for what’s actually implemented) say they don’t. This isn’t a data-quality problem on any submitter’s side – nobody can populate a field the live service doesn’t ask for.</p>
+<p><code>CA.PreservationMethod</code>’s spreadsheet entry does include one thing the other two sources never provide for any field: a direct icesVocab code-type GUID (<code>2f5a5876-c572-42bc-9348-3526ce413c59</code>), confirmed to resolve exactly to the real <code>PreservationMethod</code> code-type. Once this field actually appears in live WSDL and real submissions, that GUID link removes the name-matching guesswork every other vocab-key resolution in this project has had to do.</p>
+<p><strong>Recommendation:</strong> Confirm whether these two fields are genuinely rolled out yet, or whether the spreadsheet’s version notes describe an intended future addition rather than a completed one. If intended, align WSDL with the published spreadsheet so the two sources agree; if not yet live, consider noting that distinction in the spreadsheet itself (e.g.&nbsp;“planned” vs.&nbsp;“added”). —</p>
+</section>
+<section id="issue-10-icesvocabs-own-swellheight-code-list-is-used-by-neither-hhs-nor-lts-real-submissions" class="level2">
+<h2 class="anchored" data-anchor-id="issue-10-icesvocabs-own-swellheight-code-list-is-used-by-neither-hhs-nor-lts-real-submissions">Issue 10: icesVocab’s own <code>SwellHeight</code> code list is used by neither HH’s nor LT’s real submissions</h2>
+<p><strong>Severity: Institutional governance – a maintained vocabulary that appears unused, not a data-quality problem on submitters’ side</strong></p>
+<p>icesVocab has exactly one relevant key for this field: a single, unprefixed <code>SwellHeight</code> entry (not following the usual <code>TS_</code>/<code>AC_</code> domain-prefix convention), with 6 non-deprecated codes – <code>N</code> (None, 0m), <code>L</code> (Low, 0-1m), <code>M</code> (Medium, 1-2m), <code>H</code> (High, 2-3m), <code>VH</code> (Very high, 3+m), <code>NR</code> (Not recorded). Confirmed there is no second, differently-named key for the same concept: checked all 580 currently-registered icesVocab keys by substring match on both <code>Key</code> and <code>Description</code>.</p>
+<p>Both HH and LT carry a <code>SwellHeight</code> field (LT’s own value is a verified byte-for-byte copy of HH’s for the same haul – 55,113 of 55,113 matched non-null rows identical, not an independent second measurement). Checked the full real archive for both, after correcting an unrelated archive-pipeline bug that had been silently converting this field’s own <code>-9</code> sentinel to a null (see opus’s own <code>known-issues.yaml</code>, <code>sentinel_replacement_data_loss</code> – opus-internal, not an ICES-side issue):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+<col style="width: 20%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Table</th>
+<th>Rows</th>
+<th><code>-9</code> (“not recorded”)</th>
+<th>Real measurements</th>
+<th>Using any of the 6 vocab codes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>HH</td>
+<td>145,958</td>
+<td>108,698 (74.47%)</td>
+<td>37,260</td>
+<td><strong>0</strong></td>
+</tr>
+<tr class="even">
+<td>LT</td>
+<td>75,310 (57,940 non-null)</td>
+<td>19,005 (32.80% of non-null)</td>
+<td>38,935</td>
+<td><strong>0</strong></td>
+</tr>
+</tbody>
+</table>
+<p>Every real (non-<code>-9</code>) value in both tables is a continuous metric measurement (HH: 0-60m; LT: 0-25m), never one of the vocab’s 6 category codes. This is not a data-quality problem in the usual sense – nothing here is wrong or missing from a submitter’s perspective, since neither table ever attempts to use the coded scheme at all. It reads instead as ICES maintaining a controlled vocabulary that real DATRAS submissions have never adopted in practice, in either of the two tables that carry this field.</p>
+<p><strong>Recommendation:</strong> Confirm whether this vocabulary is genuinely intended for these DATRAS submissions at all, or whether it was designed for a different DATRAS context (or a different ICES data product entirely) that never fed into HH/LT the way its presence here would suggest. If it is intended for HH/LT, DATRAS’s own submission guidance doesn’t appear to communicate it to data providers, since 100% of real submissions in both carrying tables use a continuous measurement instead. —</p>
+</section>
+<section id="issue-1-getdatrasfieldlist-covers-only-22-of-lts-58-real-fields" class="level2">
+<h2 class="anchored" data-anchor-id="issue-1-getdatrasfieldlist-covers-only-22-of-lts-58-real-fields">Issue 1: <code>getDatrasFieldList</code> covers only 22 of LT’s 58 real fields</h2>
+<p><strong>Severity: Data quality / documentation gap</strong></p>
+<p>The live <code>getDatrasFieldList</code> endpoint documents 22 fields under <code>RecordHeader = "LT"</code>. The <code>getLitterAssessmentOutput</code> operation’s own ASMX page, and the real archived LT data, both independently show <strong>58</strong> real fields — an exact match between the two, confirming 58 is correct and the field-list’s 22 is the gap, not the other way round.</p>
+<p>The 36 undocumented real fields include ordinary gear, environment, and timing fields shared with HH/HL/CA (e.g.&nbsp;<code>SweepLngt</code>, <code>GearEx</code>, <code>DoorType</code>, <code>TimeShot</code>, <code>HaulDur</code>, <code>StatRec</code>, <code>Rigging</code>, <code>Tickler</code>, <code>SwellHeight</code>) — none of these appear under <code>RecordHeader = "LT"</code> in the field-list at all.</p>
+<p><strong>Recommendation:</strong> Extend <code>getDatrasFieldList</code>’s LT section to cover all 58 fields <code>getLitterAssessmentOutput</code> actually returns. —</p>
+</section>
+<section id="issue-2-getdatrasfieldlist-wrongly-claims-3-lt-legacy-fields-were-never-renamed" class="level2">
+<h2 class="anchored" data-anchor-id="issue-2-getdatrasfieldlist-wrongly-claims-3-lt-legacy-fields-were-never-renamed">Issue 2: <code>getDatrasFieldList</code> wrongly claims 3 LT legacy fields were never renamed</h2>
+<p><strong>Severity: Data quality — actively incorrect, not just incomplete</strong></p>
+<p>Of the 22 LT fields the field-list <em>does</em> document, 3 real legacy fields are claimed to have no rename at all (<code>FieldNameOld == FieldName</code>):</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 33%">
+<col style="width: 33%">
+<col style="width: 33%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Real legacy field</th>
+<th>Field-list’s current-name row</th>
+<th>Field-list wrongly sets <code>FieldNameOld</code> to</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>Ship</code></td>
+<td><code>Platform</code></td>
+<td><code>Platform</code> (should be <code>Ship</code>)</td>
+</tr>
+<tr class="even">
+<td><code>StNo</code></td>
+<td><code>StationName</code></td>
+<td><code>StationName</code> (should be <code>StNo</code>)</td>
+</tr>
+<tr class="odd">
+<td><code>HaulNo</code></td>
+<td><code>HaulNumber</code></td>
+<td><code>HaulNumber</code> (should be <code>HaulNo</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>The field-list’s own HH, HL, and CA sections correctly document these same three legacy fields as renamed (<code>Ship</code>→<code>Platform</code>, <code>StNo</code>→<code>StationName</code>, <code>HaulNo</code>→<code>HaulNumber</code>) — only the LT section claims otherwise. Confirmed against the real archived LT parquet data (columns are literally named <code>Ship</code>, <code>StNo</code>, <code>HaulNo</code>, matching HH/HL/CA) and independently against <code>getLitterAssessmentOutput</code>’s own ASMX sample response.</p>
+<p>Opus’s own resolution of this (LT’s <code>Ship</code>/<code>StNo</code>/<code>HaulNo</code> mapped to <code>Platform</code>/<code>StationName</code>/<code>HaulNumber</code>, matching the other three tables) is recorded in <code>inst/DATRAS-data-dict.yaml</code>’s own field annotations, not here — this section reports ICES’s metadata bug; it isn’t opus’s naming ledger.</p>
+<p><strong>Recommendation:</strong> Correct the LT section’s <code>FieldNameOld</code> for <code>Platform</code>, <code>StationName</code>, and <code>HaulNumber</code> to <code>Ship</code>, <code>StNo</code>, and <code>HaulNo</code> respectively, matching HH/HL/CA. —</p>
+</section>
+<section id="issue-3-getdatrasfieldlist-documents-a-lt-field-that-doesnt-exist" class="level2">
+<h2 class="anchored" data-anchor-id="issue-3-getdatrasfieldlist-documents-a-lt-field-that-doesnt-exist">Issue 3: <code>getDatrasFieldList</code> documents a LT field that doesn’t exist</h2>
+<p><strong>Severity: Data quality — inverse of Issues 1–2</strong></p>
+<p>Under <code>RecordHeader = "LT"</code> (the metadata service’s own table selector — a different sense of “RecordHeader” from the per-record field below), the field-list documents a per-record legacy field <code>RecordType</code> (current name <code>RecordHeader</code>). Neither <code>getLitterAssessmentOutput</code>’s own live sample response nor the real archived LT data contain any such column — LT genuinely has no record-type indicator field at all, unlike HH/HL/CA.</p>
+<p><strong>Recommendation:</strong> Either confirm LT is intentionally exempt from carrying a <code>RecordType</code>/<code>RecordHeader</code> field and remove the phantom entry from the field-list, or add the field to the live <code>getLitterAssessmentOutput</code> response if one was intended. —</p>
+</section>
+<section id="issue-6-lts-depth-and-bottomdepth-are-duplicate-columns" class="level2">
+<h2 class="anchored" data-anchor-id="issue-6-lts-depth-and-bottomdepth-are-duplicate-columns">Issue 6: LT’s <code>Depth</code> and <code>BottomDepth</code> are duplicate columns</h2>
+<p><strong>Severity: Data quality — genuine data redundancy, not a metadata issue</strong></p>
+<p>Unlike Issues 1–5, this is not about the field-list metadata service — it’s about the archived data itself. LT’s real archive carries <strong>two separate columns</strong>, <code>Depth</code> and <code>BottomDepth</code>, that are byte-for-byte identical across all 75,310 rows (100% populated in both, 0 differences, 0 one-sided nulls). This is not a naming variant of the same field (as Issue 2’s fields are) — both columns genuinely exist side by side with fully duplicate content.</p>
+<p><strong>Recommendation:</strong> Confirm whether this duplication is intentional (e.g.&nbsp;a legacy field retained for backward compatibility) or an artifact of how LT records are assembled, and if the latter, remove the redundant column from future LT submissions/exports. —</p>
+</section>
+<section id="issue-15-lt-has-real-records-for-a-surveyyearquarter-where-hhs-own-submission-is-empty" class="level2">
+<h2 class="anchored" data-anchor-id="issue-15-lt-has-real-records-for-a-surveyyearquarter-where-hhs-own-submission-is-empty">Issue 15: LT has real records for a Survey/Year/Quarter where HH’s own submission is empty</h2>
+<p><strong>Severity: Data quality — cross-table submission gap</strong></p>
+<p>Joining LT to HH on the standard composite key (<code>Survey</code>, <code>Year</code>, <code>Quarter</code>, <code>Country</code>, <code>Ship</code>, <code>Gear</code>, <code>StNo</code>, <code>HaulNo</code>), 2,026 of 75,310 LT rows (2.7%) do not match any HH haul. 2,010 of those (99.2%) share one exact cell: Survey=BTS, Year=2025, Quarter=1 – HH’s own submission for that exact survey/year/quarter is entirely empty (0 rows), while LT independently carries real litter-assessment records for it. The remaining 16 rows (Survey=NS-IBTS, split across two other survey/year/ quarter cells) are a different, unexplained mismatch: HH has abundant real data for both of those exact cells, so this small residual is not a missing-submission gap.</p>
+<p><strong>Recommendation:</strong> Confirm whether HH’s BTS/2025/Q1 submission is genuinely missing (and if so, whether it is expected to be backfilled) given LT independently has data for the same survey/year/quarter. —</p>
+</section>
+<section id="issue-16-lts-param-field-uses-codes-that-are-not-in-icesvocabs-own-param-list" class="level2">
+<h2 class="anchored" data-anchor-id="issue-16-lts-param-field-uses-codes-that-are-not-in-icesvocabs-own-param-list">Issue 16: LT’s <code>PARAM</code> field uses codes that are not in icesVocab’s own <code>PARAM</code> list</h2>
+<p><strong>Severity: Institutional governance — vocabulary coverage gap</strong></p>
+<p>LT’s <code>PARAM</code> field takes 49 distinct real values across 75,308 of 75,310 non-null rows. icesVocab’s own <code>PARAM</code> code list carries 1,938 codes (confirmed present: e.g.&nbsp;<code>LT-TOT</code> = “Litter - total”) – but 6 common real values (<code>A2</code>, <code>A3</code>, <code>A5</code>, <code>A6</code>, <code>A7</code>, <code>A14</code>) do not appear anywhere in the full list.</p>
+<p><strong>Recommendation:</strong> Add the missing codes to icesVocab’s <code>PARAM</code> list, or confirm they belong to a different or superseding code list not covered here. —</p>
+</section>
+<section id="suggestion-for-consideration-not-a-bug-report" class="level2">
+<h2 class="anchored" data-anchor-id="suggestion-for-consideration-not-a-bug-report">Suggestion for consideration (not a bug report)</h2>
+<p>Everything above documents a confirmed error, gap, or unused feature in an existing ICES service. This section is different in kind: a design idea for ICES’s own future consideration, not a defect being reported.</p>
+<section id="a-single-surrogate-haul-identifier-instead-of-an-8-field-composite-key" class="level3">
+<h3 class="anchored" data-anchor-id="a-single-surrogate-haul-identifier-instead-of-an-8-field-composite-key">A single surrogate haul identifier, instead of an 8-field composite key</h3>
+<p>HL, CA, and LT each reference haul-level data in HH via the same 8-field composite identifier (<code>Survey</code>, <code>Year</code>, <code>Quarter</code>, <code>Country</code>, <code>Platform</code>/<code>Ship</code>, <code>Gear</code>, <code>StationName</code>/<code>StNo</code>, <code>HaulNumber</code>/<code>HaulNo</code>). Beyond the join key itself, HL, CA, and LT also each carry a substantial number of additional columns that are literal copies of HH’s own values for the same haul – confirmed for roughly 30 fields across the three tables (gear geometry, positions, environmental readings), at 100% or near-100% match rates.</p>
+<p>A single, ICES-assigned surrogate identifier per haul – present on HH and carried onto every haul-referencing record in HL/CA/LT – would let the 8-field composite key, and potentially some of the other repeated columns, be replaced by one join column. It would also sidestep composite-key edge cases like CA’s own well-documented <code>-9</code>/orphaned-record gap (Issue 14 above, opus’s own known issues, <code>ca_haulno_unlinkable_to_hh</code>/<code>ca_haulno_tail_mismatch</code>) is a direct consequence of the composite key’s correctness depending on several independently-submitted fields all agreeing at once, something a single assigned identifier would not be exposed to in the same way.</p>
+<p>This isn’t something opus can adopt unilaterally – it would require a real change to ICES’s own submission format, not a documentation or vocabulary fix, so it is offered here as an idea for ICES’s own future consideration rather than a request for immediate action.</p>
+
+
+</section>
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>opus — reference specification for imbus WP2, not a general-purpose R package</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

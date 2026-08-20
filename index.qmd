@@ -1,0 +1,36 @@
+---
+title: "opus"
+subtitle: "ICES DATRAS data dictionary and known-issues registry"
+---
+
+opus consolidates ICES DATRAS's own field-level metadata — types, units, valid
+ranges and codes, plus a growing registry of "ICES documents X, but the
+service actually does Y" findings — into two machine-readable YAML
+specifications, covering four exchange tables:
+
+- **HH** (Haul Information), **HL** (Length Frequency), **CA** (Catch at
+  Age) — primary exchange tables
+- **LT** (Litter Assessment) — a hybrid: some novel
+  observations, some fields joined in from HH; not purely exchange data in
+  the same sense as the other three
+
+The R package around these files is thin tooling only (validation,
+curation, no domain QC) — the yaml is the deliverable, independent of R or
+any other language. It feeds imbus WP2 (reference specification).
+
+## Where to go next
+
+- **[Approach](articles/approach.qmd)** — how the dictionaries were built:
+  the sources consolidated, why some were rejected, how the reconciliation
+  actually works
+- **[Data dictionary](articles/dictionary.qmd)** — the yaml itself,
+  rendered as a browsable, dated snapshot
+- **[Issues found](articles/issues.qmd)** — confirmed gaps and
+  inconsistencies in ICES's own DATRAS metadata services, reported upstream
+- **[Technical notes](articles/technical-notes.qmd)** —
+  implementation-level decisions and discoveries, for anyone who wants more
+  depth than Approach covers
+
+Raw yaml, for anyone who wants the machine-readable version directly:
+[`DATRAS-data-dict.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-data-dict.yaml) ·
+[`DATRAS-known-issues.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-known-issues.yaml)

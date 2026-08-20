@@ -8,8 +8,10 @@
 ^\.gitignore$
 ^_pkgdown\.yml$
 ^_pkgdown\.site$
-^_quarto\.yaml$
-^vignettes$
+^_quarto\.yml$
+^index\.qmd$
+^articles$
+^\.quarto$
 ^AGENTS\.*
 ^TODO\.md$
 ^DEVLOG\.md$

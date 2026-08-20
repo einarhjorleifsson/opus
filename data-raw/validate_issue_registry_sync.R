@@ -1,7 +1,7 @@
 #' Structural consistency check between opus's two issue-tracking documents
 #'
 #' `inst/DATRAS-known-issues.yaml` (opus's internal escalation registry) and
-#' `data-raw/ICES_ISSUE_REPORT.md` (the document meant for ICES) cross-
+#' `articles/issues.qmd` (the document meant for ICES) cross-
 #' reference each other by hand -- a yaml entry says "Filed as ...
 #' Issue N", and the .md's "Suggestion for consideration" section cites
 #' yaml `id`s directly. Nothing had ever checked those references stay
@@ -45,7 +45,7 @@
 #' Exit status: 0 if no structural errors found, 1 otherwise.
 
 KNOWN_ISSUES_YAML <- "inst/DATRAS-known-issues.yaml"
-ISSUE_REPORT_MD <- "data-raw/ICES_ISSUE_REPORT.md"
+ISSUE_REPORT_MD <- "articles/issues.qmd"
 
 known_issues <- yaml::read_yaml(KNOWN_ISSUES_YAML)
 md_lines <- readLines(ISSUE_REPORT_MD, warn = FALSE)

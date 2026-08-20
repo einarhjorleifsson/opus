@@ -4,9 +4,12 @@
 .RData
 .Ruserdata
 
-# Generated website content
+# Generated website content -- except the built site itself (docs/,
+# committed so GitHub Pages can serve it directly from main) and the
+# dated data-dict snapshots under articles/
 *.html
-docs/
+!docs/**/*.html
+!articles/*.html
 
 # Parquet files — test/seed data (tracked via Git LFS)
 # Tracked with git lfs track "*.parquet"
@@ -18,8 +21,9 @@ docs/
 /opus.Rcheck/
 /opus_*.tar.gz
 
-# Quarto/vignette build cache (regenerated on render)
-/vignettes/.quarto/
+# Quarto build cache and per-page side-folders (regenerated on render)
+/.quarto/
+**/*_files/
 
 # Generated HTML assets from Quarto processing
 /data-raw/DATRAS-data-dict_files/
@@ -42,3 +46,5 @@ logs/
 /imbus-interim-note-mockup.qmd
 /tmp
 contract.md
+
+**/*.quarto_ipynb

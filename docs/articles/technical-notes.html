@@ -1,0 +1,1027 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.8.26">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2026-08-02">
+<meta name="description" content="In-depth technical documentation of key implementation decisions, design tradeoffs, and discoveries during opus development.">
+
+<title>Technical Notes: Implementation Decisions &amp; Discoveries – opus</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script id="quarto-search-options" type="application/json">{
+  "location": "navbar",
+  "copy-button": false,
+  "collapse-after": 3,
+  "panel-placement": "end",
+  "type": "overlay",
+  "limit": 50,
+  "keyboard-shortcut": [
+    "f",
+    "/",
+    "s"
+  ],
+  "show-item-context": false,
+  "language": {
+    "search-no-results-text": "No results",
+    "search-matching-documents-text": "matching documents",
+    "search-copy-link-title": "Copy link to search",
+    "search-hide-matches-text": "Hide additional matches",
+    "search-more-match-text": "more match in this document",
+    "search-more-matches-text": "more matches in this document",
+    "search-clear-button-title": "Clear",
+    "search-text-placeholder": "",
+    "search-detached-cancel-button-title": "Cancel",
+    "search-submit-button-title": "Submit",
+    "search-label": "Search"
+  }
+}</script>
+
+
+</head>
+
+<body class="nav-fixed quarto-light">
+
+<div id="quarto-search-results"></div>
+  <header id="quarto-header" class="headroom fixed-top">
+    <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
+      <div class="navbar-container container-fluid">
+      <div class="navbar-brand-container mx-auto">
+    <a class="navbar-brand" href="../index.html">
+    <span class="navbar-title">opus</span>
+    </a>
+  </div>
+            <div id="quarto-search" class="" title="Search"></div>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" role="menu" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
+  <span class="navbar-toggler-icon"></span>
+</button>
+          <div class="collapse navbar-collapse" id="navbarCollapse">
+            <ul class="navbar-nav navbar-nav-scroll me-auto">
+  <li class="nav-item">
+    <a class="nav-link" href="../index.html"> 
+<span class="menu-text">Home</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/approach.html"> 
+<span class="menu-text">Approach</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/dictionary.html"> 
+<span class="menu-text">Data dictionary</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link" href="../articles/issues.html"> 
+<span class="menu-text">Issues found</span></a>
+  </li>  
+  <li class="nav-item">
+    <a class="nav-link active" href="../articles/technical-notes.html" aria-current="page"> 
+<span class="menu-text">Technical notes</span></a>
+  </li>  
+</ul>
+            <ul class="navbar-nav navbar-nav-scroll ms-auto">
+  <li class="nav-item compact">
+    <a class="nav-link" href="https://github.com/einarhjorleifsson/opus"> <i class="bi bi-github" role="img" aria-label="GitHub repository">
+</i> 
+<span class="menu-text"></span></a>
+  </li>  
+</ul>
+          </div> <!-- /navcollapse -->
+            <div class="quarto-navbar-tools">
+</div>
+      </div> <!-- /container-fluid -->
+    </nav>
+</header>
+<!-- content -->
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<!-- sidebar -->
+<!-- margin-sidebar -->
+    <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+        <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">On this page</h2>
+   
+  <ul>
+  <li><a href="#field-name-mapping-old-new-and-icesvocab-dependency" id="toc-field-name-mapping-old-new-and-icesvocab-dependency" class="nav-link active" data-scroll-target="#field-name-mapping-old-new-and-icesvocab-dependency">1. Field Name Mapping: Old → New and icesVocab Dependency</a>
+  <ul class="collapse">
+  <li><a href="#the-discovery" id="toc-the-discovery" class="nav-link" data-scroll-target="#the-discovery">The Discovery</a></li>
+  <li><a href="#pattern-analysis" id="toc-pattern-analysis" class="nav-link" data-scroll-target="#pattern-analysis">Pattern Analysis</a></li>
+  <li><a href="#the-risk-silent-validation-failure" id="toc-the-risk-silent-validation-failure" class="nav-link" data-scroll-target="#the-risk-silent-validation-failure">The Risk: Silent Validation Failure</a></li>
+  <li><a href="#implementation-approach" id="toc-implementation-approach" class="nav-link" data-scroll-target="#implementation-approach">Implementation Approach</a></li>
+  <li><a href="#references" id="toc-references" class="nav-link" data-scroll-target="#references">References</a></li>
+  </ul></li>
+  <li><a href="#enum-value-descriptions-storage-without-violating-data-dict-spec" id="toc-enum-value-descriptions-storage-without-violating-data-dict-spec" class="nav-link" data-scroll-target="#enum-value-descriptions-storage-without-violating-data-dict-spec">2. Enum Value Descriptions: Storage Without Violating data-dict Spec</a>
+  <ul class="collapse">
+  <li><a href="#the-challenge" id="toc-the-challenge" class="nav-link" data-scroll-target="#the-challenge">The Challenge</a></li>
+  <li><a href="#options-evaluated" id="toc-options-evaluated" class="nav-link" data-scroll-target="#options-evaluated">Options Evaluated</a></li>
+  <li><a href="#chosen-approach-standardized-prefix" id="toc-chosen-approach-standardized-prefix" class="nav-link" data-scroll-target="#chosen-approach-standardized-prefix">Chosen Approach: Standardized Prefix</a></li>
+  <li><a href="#implementation" id="toc-implementation" class="nav-link" data-scroll-target="#implementation">Implementation</a></li>
+  <li><a href="#references-1" id="toc-references-1" class="nav-link" data-scroll-target="#references-1">References</a></li>
+  </ul></li>
+  <li><a href="#enum-value-descriptions-source-and-coverage" id="toc-enum-value-descriptions-source-and-coverage" class="nav-link" data-scroll-target="#enum-value-descriptions-source-and-coverage">3. Enum Value Descriptions: Source and Coverage</a>
+  <ul class="collapse">
+  <li><a href="#coverage-summary" id="toc-coverage-summary" class="nav-link" data-scroll-target="#coverage-summary">Coverage Summary</a></li>
+  <li><a href="#fields-not-enriched-why" id="toc-fields-not-enriched-why" class="nav-link" data-scroll-target="#fields-not-enriched-why">Fields Not Enriched (Why)</a></li>
+  <li><a href="#design-decision-vocab_code_limit-20" id="toc-design-decision-vocab_code_limit-20" class="nav-link" data-scroll-target="#design-decision-vocab_code_limit-20">Design Decision: VOCAB_CODE_LIMIT = 20</a></li>
+  <li><a href="#references-2" id="toc-references-2" class="nav-link" data-scroll-target="#references-2">References</a></li>
+  </ul></li>
+  <li><a href="#global-sentinel-replacement-a-silent-data-destruction-bug-and-why--9-doesnt-mean-the-same-thing-everywhere" id="toc-global-sentinel-replacement-a-silent-data-destruction-bug-and-why--9-doesnt-mean-the-same-thing-everywhere" class="nav-link" data-scroll-target="#global-sentinel-replacement-a-silent-data-destruction-bug-and-why--9-doesnt-mean-the-same-thing-everywhere">4. Global Sentinel Replacement: A Silent Data-Destruction Bug, and Why -9 Doesn’t Mean the Same Thing Everywhere</a>
+  <ul class="collapse">
+  <li><a href="#the-discovery-1" id="toc-the-discovery-1" class="nav-link" data-scroll-target="#the-discovery-1">The Discovery</a></li>
+  <li><a href="#root-cause" id="toc-root-cause" class="nav-link" data-scroll-target="#root-cause">Root Cause</a></li>
+  <li><a href="#the-scale" id="toc-the-scale" class="nav-link" data-scroll-target="#the-scale">The Scale</a></li>
+  <li><a href="#why-this-was-architecturally-wrong" id="toc-why-this-was-architecturally-wrong" class="nav-link" data-scroll-target="#why-this-was-architecturally-wrong">Why This Was Architecturally Wrong</a></li>
+  <li><a href="#the-fix" id="toc-the-fix" class="nav-link" data-scroll-target="#the-fix">The Fix</a></li>
+  <li><a href="#telling-standard-missing-apart-from-field-specific-meaning" id="toc-telling-standard-missing-apart-from-field-specific-meaning" class="nav-link" data-scroll-target="#telling-standard-missing-apart-from-field-specific-meaning">Telling “Standard Missing” Apart from “Field-Specific Meaning”</a></li>
+  <li><a href="#a-useful-cross-check-co-parameters" id="toc-a-useful-cross-check-co-parameters" class="nav-link" data-scroll-target="#a-useful-cross-check-co-parameters">A Useful Cross-Check: Co-Parameters</a></li>
+  <li><a href="#shared-fields-are-sometimes-literal-copies-not-independent-observations" id="toc-shared-fields-are-sometimes-literal-copies-not-independent-observations" class="nav-link" data-scroll-target="#shared-fields-are-sometimes-literal-copies-not-independent-observations">Shared Fields Are Sometimes Literal Copies, Not Independent Observations</a></li>
+  <li><a href="#practical-guidance-for-anyone-reading-.datras.parquet-directly" id="toc-practical-guidance-for-anyone-reading-.datras.parquet-directly" class="nav-link" data-scroll-target="#practical-guidance-for-anyone-reading-.datras.parquet-directly">Practical Guidance for Anyone Reading <code>.datras/*.parquet</code> Directly</a></li>
+  <li><a href="#references-3" id="toc-references-3" class="nav-link" data-scroll-target="#references-3">References</a></li>
+  </ul></li>
+  <li><a href="#how-to-contribute-technical-notes" id="toc-how-to-contribute-technical-notes" class="nav-link" data-scroll-target="#how-to-contribute-technical-notes">How to Contribute Technical Notes</a></li>
+  </ul>
+</nav>
+    </div>
+<!-- main -->
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Technical Notes: Implementation Decisions &amp; Discoveries</h1>
+</div>
+
+<div>
+  <div class="description">
+    In-depth technical documentation of key implementation decisions, design tradeoffs, and discoveries during opus development.
+  </div>
+</div>
+
+
+<div class="quarto-title-meta">
+
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">August 2, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>This page collects detailed technical notes on implementation decisions, tradeoffs, and discoveries that don’t fit neatly into other documentation. These notes are kept here for future maintainers and for transparency about how design decisions were made.</p>
+<section id="field-name-mapping-old-new-and-icesvocab-dependency" class="level2">
+<h2 class="anchored" data-anchor-id="field-name-mapping-old-new-and-icesvocab-dependency">1. Field Name Mapping: Old → New and icesVocab Dependency</h2>
+<p><strong>Date:</strong> 2026-08-02<br>
+<strong>Status:</strong> Superseded 2026-08-09 (see note below) — kept for historical design rationale, not current behavior.</p>
+<blockquote class="blockquote">
+<p><strong>2026-08-09 update:</strong> Sections 1 and 2 below describe recording a column’s legacy name as a <code>Legacy field name: X</code> annotation inside its <code>details:</code> text, extracted via <code>op_legacy_field_name()</code>/<code>op_field_name_map()</code> (still live, exported functions — this isn’t removed). As of 2026-08-09 the curation pipeline (<code>data-raw/spec_01_seed_dict.R</code>/<code>spec_02_curate_dict.R</code>) no longer uses that mechanism: legacy names are the <em>primary</em> key throughout seeding and curation, and opus’s curated names are introduced exactly once, as a pure rename, by <code>data-raw/spec_03_translate_new_names.R</code> (crosswalk via the new <code>op_datras_rename_crosswalk()</code>, <code>R/field_names.R</code>). Both the legacy-named (<code>inst/DATRAS-data-dict-legacy.yaml</code>) and curated (<code>inst/DATRAS-data-dict.yaml</code>) dictionaries now exist as real, complete files side by side, so annotating one name inside the other’s <code>details:</code> text is redundant. The design-tradeoff discussion below (why a <code>details:</code> prefix over a non-standard key, etc.) is still accurate history for <em>why that approach was chosen at the time</em> — just not what the pipeline does today.</p>
+</blockquote>
+<section id="the-discovery" class="level3">
+<h3 class="anchored" data-anchor-id="the-discovery">The Discovery</h3>
+<p>icesVocab code lookups are <strong>dependent on field names</strong> — and those field names are both old and new, sometimes pointing to <strong>different vocabularies</strong>.</p>
+</section>
+<section id="pattern-analysis" class="level3">
+<h3 class="anchored" data-anchor-id="pattern-analysis">Pattern Analysis</h3>
+<p>From a 20-field sample of renamed fields across HH/HL/CA/LT:</p>
+<ul>
+<li><strong>NEITHER</strong> (55%): No vocab under either old or new name (e.g., SweepLength, HaulNumber)</li>
+<li><strong>OLD ONLY</strong> (30%): Vocab exists ONLY under old name (e.g., Sex → TS_Sex, but no TS_IndividualSex)</li>
+<li><strong>BOTH (different)</strong> (15%): Same field has vocabs under both names pointing to different keys (e.g., GearEx → TS_GearEx vs GearExceptions → AC_GearExceptions)</li>
+</ul>
+</section>
+<section id="the-risk-silent-validation-failure" class="level3">
+<h3 class="anchored" data-anchor-id="the-risk-silent-validation-failure">The Risk: Silent Validation Failure</h3>
+<p>If opus’s YAML documents field names using NEW names only:</p>
+<pre><code>Example: Sex → IndividualSex
+- icesVocab has vocab: TS_Sex (under OLD name only)
+- icesDatras::getDatrasFieldList() uses: IndividualSex (new name)
+- When op_vocab_first_usable("IndividualSex") is called
+  → NOT FOUND (no TS_IndividualSex exists)
+  → enum validation silently skipped</code></pre>
+<p>For “BOTH (different)” fields, downstream code may pick different vocabs depending on which name is used:</p>
+<pre><code>Example: GearEx → GearExceptions
+- TS_GearEx: 1 code
+- AC_GearExceptions: 14 codes
+→ Validation rules differ depending on lookup method</code></pre>
+</section>
+<section id="implementation-approach" class="level3">
+<h3 class="anchored" data-anchor-id="implementation-approach">Implementation Approach</h3>
+<p><strong>1. Dual-name vocabulary lookup in R</strong></p>
+<p>Add to <code>R/vocab.R</code>:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>op_vocab_get_codes_with_fallback <span class="ot">&lt;-</span> <span class="cf">function</span>(field_name, <span class="at">field_name_old =</span> <span class="cn">NULL</span>, types) {</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>  <span class="co"># Try new name first</span></span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>  vocab <span class="ot">&lt;-</span> <span class="fu">op_vocab_first_usable</span>(field_name, types)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>  <span class="co"># If not found AND old name provided, fallback to old name</span></span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.na</span>(vocab<span class="sc">$</span>key) <span class="sc">&amp;&amp;</span> <span class="sc">!</span><span class="fu">is.null</span>(field_name_old)) {</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>    vocab <span class="ot">&lt;-</span> <span class="fu">op_vocab_first_usable</span>(field_name_old, types)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.na</span>(vocab<span class="sc">$</span>key)) {</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>      <span class="fu">warning</span>(<span class="fu">sprintf</span>(</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>        <span class="st">"Field '%s' (legacy: '%s'): vocab found under legacy name only (%s)"</span>,</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>        field_name, field_name_old, vocab<span class="sc">$</span>key</span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>      ))</span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>  vocab</span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>2. Document legacy names in YAML details</strong></p>
+<p>In each column with a legacy name:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb4"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> IndividualSex</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> enum</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  details</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    Legacy field name: Sex (icesVocab: TS_Sex).</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    Gender of the described species category. In CA-records should be</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>    defined by dissection. If no determination was performed, report '-9'.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>3. Curation script enhancements</strong></p>
+<p>Flag patterns during YAML generation:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In spec_02_curate_dict.R:</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>vocab_coverage <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">field =</span> ...,</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">vocab_via_old =</span> ...,</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">vocab_via_new =</span> ...,</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">pattern =</span> ... <span class="co"># NEITHER, OLD_ONLY, NEW_ONLY, BOTH_SAME, BOTH_DIFF</span></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Emit warnings for risky patterns</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>4. Document conflicts explicitly</strong></p>
+<p>For “BOTH (different)” fields, add clarification to details:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb6"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> GearExceptions</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> enum</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  details</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    Legacy field name: GearEx.</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>    NOTE: icesVocab maintains separate vocabs for this field:</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    - TS_GearEx (legacy, 1 code)</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>    - AC_GearExceptions (current, 14 codes)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>    This YAML uses AC_GearExceptions (current standard).</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>    See DATRAS-known-issues.yaml for details on the discrepancy.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="references" class="level3">
+<h3 class="anchored" data-anchor-id="references">References</h3>
+<ul>
+<li>Source of truth (updated 2026-08-06): <code>op_datras_field_list()</code> (<code>R/field_names.R</code>), which replaced a direct call to <code>getDatrasFieldList()</code>. Correction, 2026-08-09: the “hand-patch layered on top of the same live endpoint” this bullet used to describe was traced to a personal development fork of <code>icesDatras</code>, not the official <code>ices-tools-prod/icesDatras</code> (whose own <code>getDatrasFieldList()</code> has no patch of any kind). <code>op_datras_field_list()</code> cross-verifies ICES’s live metadata against each operation’s own ASMX response before trusting a rename regardless – that cross-verification is the actual reason it’s more reliable, not a claim about what any version of the <code>icesDatras</code> package does.</li>
+<li>icesVocab: https://vocab.ices.dk/</li>
+<li>Related working principle: AGENTS.md principle 1 (“Real data is ground truth”) and principle 4 (“Don’t guess; document”)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="enum-value-descriptions-storage-without-violating-data-dict-spec" class="level2">
+<h2 class="anchored" data-anchor-id="enum-value-descriptions-storage-without-violating-data-dict-spec">2. Enum Value Descriptions: Storage Without Violating data-dict Spec</h2>
+<p><strong>Date:</strong> 2026-08-02<br>
+<strong>Status:</strong> Implemented (see inst/DATRAS-data-dict.yaml)</p>
+<section id="the-challenge" class="level3">
+<h3 class="anchored" data-anchor-id="the-challenge">The Challenge</h3>
+<p>Enum value descriptions need to be: 1. Stored in the YAML persistently 2. Machine-readable for downstream code 3. Fully compliant with data-dict v0.1.0 spec (no non-standard keys)</p>
+</section>
+<section id="options-evaluated" class="level3">
+<h3 class="anchored" data-anchor-id="options-evaluated">Options Evaluated</h3>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 25%">
+<col style="width: 28%">
+<col style="width: 21%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Option</th>
+<th>Format</th>
+<th>Viable?</th>
+<th>Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>YAML comments</td>
+<td><code># Old name: X</code></td>
+<td>✗</td>
+<td>Lost in round-trip (write_yaml → read_yaml)</td>
+</tr>
+<tr class="even">
+<td>Non-standard keys</td>
+<td><code>old_name: X</code></td>
+<td>✗</td>
+<td>Violates data-dict’s closed schema</td>
+</tr>
+<tr class="odd">
+<td>JSON in details</td>
+<td>Mixed prose + JSON struct</td>
+<td>✓</td>
+<td>Verbose, mixes formats</td>
+</tr>
+<tr class="even">
+<td><strong>Standardized prefix</strong></td>
+<td><code>Legacy field name: X</code></td>
+<td>✓</td>
+<td><strong>CHOSEN</strong></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="chosen-approach-standardized-prefix" class="level3">
+<h3 class="anchored" data-anchor-id="chosen-approach-standardized-prefix">Chosen Approach: Standardized Prefix</h3>
+<p>Store legacy names using a fixed prefix in the <code>details</code> field:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb7"><pre class="sourceCode yaml code-with-copy"><code class="sourceCode yaml"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="kw">-</span><span class="at"> </span><span class="fu">name</span><span class="kw">:</span><span class="at"> SweepLength</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">type</span><span class="kw">:</span><span class="at"> number(quantity)</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="fu">  details</span><span class="kw">: </span><span class="ch">|</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>    Legacy field name: SweepLngt (verified via op_datras_field_list()).</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    Length of sweep in metres. Recommended values depend on survey and quarter,</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    see survey manuals for further details.</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p><strong>Regex extraction:</strong> <code>/Legacy field name: (\w+)/</code></p>
+<p><strong>Advantages:</strong> - ✓ Fully spec-compliant (details is free-text, unlimited length) - ✓ Human-readable AND machine-readable - ✓ No additional YAML keys needed - ✓ Easy to scan visually - ✓ Survives YAML round-trips</p>
+</section>
+<section id="implementation" class="level3">
+<h3 class="anchored" data-anchor-id="implementation">Implementation</h3>
+<p>Add to <code>R/field_names.R</code> (new file):</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co">#' Extract legacy field name from column details</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="co">#' </span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param details Character string from column$details field</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="co">#' @return Character: legacy field name, or NA if not found</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="co">#' @examples</span></span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a><span class="co">#'   op_legacy_field_name("Legacy field name: SweepLngt (see ...)")</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a><span class="co">#'   # Returns "SweepLngt"</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>op_legacy_field_name <span class="ot">&lt;-</span> <span class="cf">function</span>(details) {</span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">is.null</span>(details) <span class="sc">||</span> <span class="fu">is.na</span>(details)) <span class="fu">return</span>(<span class="cn">NA_character_</span>)</span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>  m <span class="ot">&lt;-</span> <span class="fu">regexec</span>(<span class="st">"Legacy field name: (</span><span class="sc">\\</span><span class="st">w+)"</span>, details)</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>  match <span class="ot">&lt;-</span> <span class="fu">regmatches</span>(details, m)</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>  <span class="cf">if</span> (<span class="fu">length</span>(match) <span class="sc">&gt;</span> <span class="dv">0</span> <span class="sc">&amp;&amp;</span> <span class="fu">length</span>(match[[<span class="dv">1</span>]]) <span class="sc">&gt;</span> <span class="dv">1</span>) {</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>    match[[<span class="dv">1</span>]][<span class="dv">2</span>]</span>
+<span id="cb8-18"><a href="#cb8-18" aria-hidden="true" tabindex="-1"></a>  } <span class="cf">else</span> {</span>
+<span id="cb8-19"><a href="#cb8-19" aria-hidden="true" tabindex="-1"></a>    <span class="cn">NA_character_</span></span>
+<span id="cb8-20"><a href="#cb8-20" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-21"><a href="#cb8-21" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb8-22"><a href="#cb8-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-23"><a href="#cb8-23" aria-hidden="true" tabindex="-1"></a><span class="co">#' Build field name mapping from data-dict</span></span>
+<span id="cb8-24"><a href="#cb8-24" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb8-25"><a href="#cb8-25" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param dict List: parsed DATRAS-data-dict.yaml</span></span>
+<span id="cb8-26"><a href="#cb8-26" aria-hidden="true" tabindex="-1"></a><span class="co">#' @param table_name Character: HH, HL, CA, LT (optional, defaults to all)</span></span>
+<span id="cb8-27"><a href="#cb8-27" aria-hidden="true" tabindex="-1"></a><span class="co">#' @return Data frame: columns = (RecordHeader, new_name, old_name, has_legacy)</span></span>
+<span id="cb8-28"><a href="#cb8-28" aria-hidden="true" tabindex="-1"></a><span class="co">#'</span></span>
+<span id="cb8-29"><a href="#cb8-29" aria-hidden="true" tabindex="-1"></a><span class="co">#' @export</span></span>
+<span id="cb8-30"><a href="#cb8-30" aria-hidden="true" tabindex="-1"></a>op_field_name_map <span class="ot">&lt;-</span> <span class="cf">function</span>(dict, <span class="at">table_name =</span> <span class="cn">NULL</span>) {</span>
+<span id="cb8-31"><a href="#cb8-31" aria-hidden="true" tabindex="-1"></a>  rows <span class="ot">&lt;-</span> <span class="fu">list</span>()</span>
+<span id="cb8-32"><a href="#cb8-32" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-33"><a href="#cb8-33" aria-hidden="true" tabindex="-1"></a>  <span class="cf">for</span> (table <span class="cf">in</span> dict<span class="sc">$</span>tables) {</span>
+<span id="cb8-34"><a href="#cb8-34" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="sc">!</span><span class="fu">is.null</span>(table_name) <span class="sc">&amp;&amp;</span> table<span class="sc">$</span>name <span class="sc">!=</span> table_name) <span class="cf">next</span></span>
+<span id="cb8-35"><a href="#cb8-35" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb8-36"><a href="#cb8-36" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> (col <span class="cf">in</span> table<span class="sc">$</span>columns) {</span>
+<span id="cb8-37"><a href="#cb8-37" aria-hidden="true" tabindex="-1"></a>      old <span class="ot">&lt;-</span> <span class="fu">op_legacy_field_name</span>(col<span class="sc">$</span>details)</span>
+<span id="cb8-38"><a href="#cb8-38" aria-hidden="true" tabindex="-1"></a>      rows[[<span class="fu">length</span>(rows) <span class="sc">+</span> <span class="dv">1</span>]] <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb8-39"><a href="#cb8-39" aria-hidden="true" tabindex="-1"></a>        <span class="at">RecordHeader =</span> table<span class="sc">$</span>name,</span>
+<span id="cb8-40"><a href="#cb8-40" aria-hidden="true" tabindex="-1"></a>        <span class="at">new_name =</span> col<span class="sc">$</span>name,</span>
+<span id="cb8-41"><a href="#cb8-41" aria-hidden="true" tabindex="-1"></a>        <span class="at">old_name =</span> old,</span>
+<span id="cb8-42"><a href="#cb8-42" aria-hidden="true" tabindex="-1"></a>        <span class="at">has_legacy =</span> <span class="sc">!</span><span class="fu">is.na</span>(old),</span>
+<span id="cb8-43"><a href="#cb8-43" aria-hidden="true" tabindex="-1"></a>        <span class="at">stringsAsFactors =</span> <span class="cn">FALSE</span></span>
+<span id="cb8-44"><a href="#cb8-44" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb8-45"><a href="#cb8-45" aria-hidden="true" tabindex="-1"></a>    }</span>
+<span id="cb8-46"><a href="#cb8-46" aria-hidden="true" tabindex="-1"></a>  }</span>
+<span id="cb8-47"><a href="#cb8-47" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb8-48"><a href="#cb8-48" aria-hidden="true" tabindex="-1"></a>  <span class="fu">do.call</span>(rbind, rows)</span>
+<span id="cb8-49"><a href="#cb8-49" aria-hidden="true" tabindex="-1"></a>}</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</section>
+<section id="references-1" class="level3">
+<h3 class="anchored" data-anchor-id="references-1">References</h3>
+<ul>
+<li>data-dict spec: http://data-dict.tidyverse.org/</li>
+<li>AGENTS.md principle 4: “Don’t guess; document”</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="enum-value-descriptions-source-and-coverage" class="level2">
+<h2 class="anchored" data-anchor-id="enum-value-descriptions-source-and-coverage">3. Enum Value Descriptions: Source and Coverage</h2>
+<p><strong>Date:</strong> 2026-08-02<br>
+<strong>Status:</strong> Implemented (see inst/DATRAS-data-dict.yaml)</p>
+<section id="coverage-summary" class="level3">
+<h3 class="anchored" data-anchor-id="coverage-summary">Coverage Summary</h3>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Metric</th>
+<th>Count</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Total enum fields across HH/HL/CA/LT</td>
+<td>48</td>
+</tr>
+<tr class="even">
+<td>Fields with value descriptions</td>
+<td>31 (65%)</td>
+</tr>
+<tr class="odd">
+<td>Fields without vocab matches</td>
+<td>17 (35%)</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="fields-not-enriched-why" class="level3">
+<h3 class="anchored" data-anchor-id="fields-not-enriched-why">Fields Not Enriched (Why)</h3>
+<ul>
+<li><strong>Synthetic numeric codes</strong> (StandardSpeciesCode, BycatchSpeciesCode) — no vocab in icesVocab</li>
+<li><strong>Context-specific codes</strong> (SpeciesCodeType, LengthType) — no matching vocab</li>
+<li><strong>Partial matches</strong> (LengthCode: codes ‘.’ and ‘0’ not in icesVocab)</li>
+<li><strong>Boolean flags</strong> (Y/N, T/F) — not formally defined in icesVocab</li>
+</ul>
+</section>
+<section id="design-decision-vocab_code_limit-20" class="level3">
+<h3 class="anchored" data-anchor-id="design-decision-vocab_code_limit-20">Design Decision: VOCAB_CODE_LIMIT = 20</h3>
+<p>Fields with &gt;20 enum codes are stored as <code>examples</code> instead of full value maps. This is a deliberate constraint:</p>
+<ul>
+<li><strong>Why:</strong> Enums are for small, fixed, meaningful sets (e.g., DayNight: 2 codes)</li>
+<li><strong>Threshold:</strong> 20 codes is the pragmatic boundary for “human-readable enum”</li>
+<li><strong>Above threshold:</strong> Use <code>examples</code> + <code>details</code> instead (e.g., Gear: 99 codes)</li>
+</ul>
+</section>
+<section id="references-2" class="level3">
+<h3 class="anchored" data-anchor-id="references-2">References</h3>
+<ul>
+<li>icesVocab: https://vocab.ices.dk/</li>
+<li>AGENTS.md principle 4: “Don’t guess; document”</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="global-sentinel-replacement-a-silent-data-destruction-bug-and-why--9-doesnt-mean-the-same-thing-everywhere" class="level2">
+<h2 class="anchored" data-anchor-id="global-sentinel-replacement-a-silent-data-destruction-bug-and-why--9-doesnt-mean-the-same-thing-everywhere">4. Global Sentinel Replacement: A Silent Data-Destruction Bug, and Why -9 Doesn’t Mean the Same Thing Everywhere</h2>
+<p><strong>Date:</strong> 2026-08-16<br>
+<strong>Status:</strong> Implemented</p>
+<section id="the-discovery-1" class="level3">
+<h3 class="anchored" data-anchor-id="the-discovery-1">The Discovery</h3>
+<p>Investigating a <code>SwellHeight</code> type mismatch (icesVocab declares it an enum; opus’s curated spec had HH correctly typed as a numeric quantity, but LT was still wrongly typed <code>enum</code>) led to checking <code>LT.SwellHeight</code>’s real archive values directly. They were continuous numbers, not the vocab’s six codes — consistent with HH. But cross-checking <code>CA.HaulNo</code>, a field with an <em>already-documented</em> known issue (<code>ca_haulno_unlinkable_to_hh</code>: 288,581 rows carry a <code>-9</code> sentinel, explicitly “not null”), the real archive showed the opposite: 288,581 <strong>true nulls</strong>, zero literal <code>-9</code> values. Same count, contradictory representation.</p>
+</section>
+<section id="root-cause" class="level3">
+<h3 class="anchored" data-anchor-id="root-cause">Root Cause</h3>
+<p><code>data-raw/archive_04_parse_phase2.R</code> and <code>archive_05_backfill_lt_partitions.R</code> each carried a <code>GLOBAL_SENTINELS</code> list (<code>-9, -99, -999, -1, -5, -95, -100, -900, 88888888</code>) and a <code>replace_sentinels()</code> function applying it <strong>unconditionally, across every column</strong>, before type casting. Git history confirms this did not exist in the pipeline’s original 2026-08-05 commit; it appears by the 2026-08-08 reorg commit — i.e.&nbsp;it was introduced <em>after</em> the <code>-9</code> sentinel had already been verified as real, non-null data on 2026-08-07. Nobody connected the two changes until this investigation.</p>
+<p>Checking raw XML directly confirmed the mechanism: <code>CA_BTS_2004_Q3</code>’s own file has 513 literal <code>&lt;HaulNo&gt;-9&lt;/HaulNo&gt;</code> tags. The archive-building pipeline was silently converting every one of them to <code>NA</code>.</p>
+</section>
+<section id="the-scale" class="level3">
+<h3 class="anchored" data-anchor-id="the-scale">The Scale</h3>
+<p>Not confined to one field. A full re-scan of the archive for all 9 sentinel values across every numeric column, once the values were recoverable, found <strong>101 (table, column, sentinel) combinations with real, non-zero counts</strong>. Most dramatically: <code>HH.Tickler</code> — <code>-9</code> is icesVocab’s own documented code for <em>“No ticklers are allowed”</em>, a real, meaningful answer, not a missing value — was <code>-9</code> for <strong>113,645 of 145,958 rows (78%)</strong>. Not a rare edge case; it was the modal value for the entire column, and the bug had been silently erasing it.</p>
+</section>
+<section id="why-this-was-architecturally-wrong" class="level3">
+<h3 class="anchored" data-anchor-id="why-this-was-architecturally-wrong">Why This Was Architecturally Wrong</h3>
+<p><code>archive_00_wsdl_types.R</code>’s own design already establishes the relevant principle, just applied to a different question: type-casting relies solely on live WSDL and <em>deliberately doesn’t know the word “enum” exists</em>, because enum-ness is a curation conclusion reached by analyzing real data — depending on it at the parsing stage is circular (you can’t discover a field is a clean enum before you can reliably read it at all).</p>
+<p>Sentinel <em>meaning</em> is the same kind of curation conclusion. Whether <code>-9</code> means “genuinely absent” or a real, specific code is something you decide by looking at real data (or icesVocab) — not something the raw XML→parquet stage should decide for you. Worse: if that stage erases the value before anyone can look, curation can never discover it was meaningful later, no matter how carefully it’s done. That’s exactly what happened to <code>Tickler</code>: a 2026-08-10 vocab-coverage check concluded “zero gaps” for its enum — correctly, given what it could see — but it was checking an archive that had already lost every <code>-9</code> row. The conclusion wasn’t wrong; the data it was drawn from was incomplete in a way nobody knew about.</p>
+</section>
+<section id="the-fix" class="level3">
+<h3 class="anchored" data-anchor-id="the-fix">The Fix</h3>
+<p>Removed <code>GLOBAL_SENTINELS</code>/<code>replace_sentinels()</code> entirely from both scripts. Validated on a single known file first (<code>HaulNo</code> in <code>CA_BTS_2004_Q3</code> now shows all 513 real <code>-9</code> values, correctly typed <code>integer</code>, not silently <code>NA</code>). Then rebuilt the full archive from raw XML for all four tables (<code>Success: 2968 | Error: 813</code>, identical to the already-documented 2026-08-08/09 run; all 813 “errors” confirmed still the known-benign <code>EMPTY_RECORDS</code> case — no new failure mode introduced).</p>
+</section>
+<section id="telling-standard-missing-apart-from-field-specific-meaning" class="level3">
+<h3 class="anchored" data-anchor-id="telling-standard-missing-apart-from-field-specific-meaning">Telling “Standard Missing” Apart from “Field-Specific Meaning”</h3>
+<p>Not every field needs the same scrutiny. There’s a principled shortcut:</p>
+<ul>
+<li><strong><code>number(quantity)</code> fields</strong> (continuous physical measurements — temperatures, depths, speeds, directions, weights, distances) <strong>can only plausibly mean “not recorded”</strong> for a sentinel value. A continuous quantity has no way to encode a specific <em>meaning</em> the way a discrete code can — there’s no such thing as “<code>-9</code> degrees means something specific” the way “<code>-9</code> ticklers means none were used.” This matches the global sentinel convention already documented in <code>DATRAS-known-issues.yaml</code>’s <code>sentinels: global</code>.</li>
+<li><strong><code>number(ordinal)</code>/<code>number(id)</code>/<code>enum</code> fields are where a real, field-specific meaning is actually possible</strong>, because these are code-like by nature. A much shorter list to check individually.</li>
+</ul>
+<p>Verified so far, each against real archive data (not assumed): <code>Tickler</code> (HH, LT) — <code>-9</code> = “No ticklers are allowed”, a real code, not missing. <code>SpeciesCategory</code> (HL) — <code>-9</code> = “Unknown”, already correctly declared. <code>Age</code> (CA) — <code>-9</code> (1,995,814 rows, 34%) reads as standard “not recorded”, same basis as the smaller, already-documented <code>-1</code>/<code>-5</code>/<code>-95</code> cluster. <code>DateofCalculation</code> (HH/HL/CA) — <code>-9</code> reads as “not yet (re)calculated”, a server-side processing fact, standard “not recorded” in spirit. <code>SwellHeight</code> (HH, LT) — see <code>swell_height_type_mismatch</code>/<code>swell_height_vocab_unused</code> in <code>DATRAS-known-issues.yaml</code>.</p>
+<p><strong>Not yet individually verified:</strong> roughly 26 more enum fields declare <code>-9</code> as one of their own curated codes (<code>GearExceptions</code>, <code>DoorType</code>, <code>DataType</code>, <code>Rigging</code>, <code>ThermoCline</code>, <code>PelagicSamplingType</code>, <code>SpeciesSex</code>, <code>LengthCode</code>, <code>DevelopmentStage</code>, <code>LengthType</code>, <code>IndividualSex</code>, <code>AgePlusGroup</code>, <code>AgeSource</code>, <code>AgePreparationMethod</code>, <code>OtolithGrading</code>, <code>MaturityScale</code>, <code>LTSRC</code>, and others) — structurally similar to <code>Tickler</code>, but only <code>Tickler</code> has had the raw-XML/icesVocab cross-check actually done.</p>
+</section>
+<section id="a-useful-cross-check-co-parameters" class="level3">
+<h3 class="anchored" data-anchor-id="a-useful-cross-check-co-parameters">A Useful Cross-Check: Co-Parameters</h3>
+<p>Where a value’s plausibility is ambiguous (e.g., deciding whether an extreme <code>SwellHeight</code> reading is real or a decimal-point entry error), a physically-related co-parameter can corroborate or refute it independently. <code>WindSpeed</code> at the same haul turned out to be exactly this for <code>SwellHeight</code>: median <code>WindSpeed</code> rises smoothly with <code>SwellHeight</code> for values later confirmed genuine (8m→24 m/s, 9m→26, 12m→28, 13m→24), and drops implausibly low for values later excluded as errors (15m→5 m/s, 20m→4) — a real discontinuity, not an arbitrary cutoff. Worth remembering as a technique, not just a one-off fix.</p>
+</section>
+<section id="shared-fields-are-sometimes-literal-copies-not-independent-observations" class="level3">
+<h3 class="anchored" data-anchor-id="shared-fields-are-sometimes-literal-copies-not-independent-observations">Shared Fields Are Sometimes Literal Copies, Not Independent Observations</h3>
+<p>A related discovery along the way: <code>LT.SwellHeight</code> isn’t independently measured at all — it’s HH’s own value, recorded again on the LT record for the same haul (confirmed by joining on the full composite key: 55,914 of 55,914 matched non-null rows identical, zero exceptions). The same check across ~35 other “shared-name” fields in HL/CA/LT found the same pattern holds almost everywhere (gear geometry, positions, environmental readings — all 100% or near-100% identical to HH), with a few real exceptions worth their own look: <code>RecordHeader</code> (0% match — a record-type discriminator, correctly different by design), <code>CA.GearExceptions</code> (92.27%), and <code>LT.Rigging</code>/<code>HaulValidity</code> (95.33%/99.97%). Where a field is confirmed a literal copy, its spec (type/range/units) should be forced identical to HH’s rather than independently re-derived per table — that divergence is exactly what had gone unnoticed for <code>SwellHeight</code> before this investigation.</p>
+</section>
+<section id="practical-guidance-for-anyone-reading-.datras.parquet-directly" class="level3">
+<h3 class="anchored" data-anchor-id="practical-guidance-for-anyone-reading-.datras.parquet-directly">Practical Guidance for Anyone Reading <code>.datras/*.parquet</code> Directly</h3>
+<p>Before computing statistics on this archive without going through the curated spec: <code>-9</code> (and the other 8 sentinel values) are now <strong>real, literal values</strong>, not silently removed. A naive <code>mean(Turbidity)</code> today would be badly wrong — 99.86% of that column’s “measurements” are the sentinel, not real turbidity. Always check the field’s declared <code>range</code>/<code>values</code> in <code>inst/DATRAS-data-dict.yaml</code> first, or use <code>op_flag_violations()</code>, which already treats declared out-of-range/non-enum values as violations.</p>
+</section>
+<section id="references-3" class="level3">
+<h3 class="anchored" data-anchor-id="references-3">References</h3>
+<ul>
+<li><code>data-raw/archive_04_parse_phase2.R</code>, <code>data-raw/archive_05_backfill_lt_partitions.R</code> — the fix and its own header commentary</li>
+<li><code>data-raw/archive_00_wsdl_types.R</code> — the earlier enum-detection precedent this fix mirrors</li>
+<li><code>inst/DATRAS-known-issues.yaml</code> — <code>sentinel_replacement_data_loss</code>, <code>ca_haulno_unlinkable_to_hh</code>, <code>swell_height_type_mismatch</code>, <code>swell_height_vocab_unused</code>, and the <code>sentinels: field_specific</code> entries for <code>Tickler</code>/<code>Age</code></li>
+<li>AGENTS.md Working Principle 8 (“Verify empirically”) and Principle 9 (“Audit exhaustively”)</li>
+</ul>
+<hr>
+</section>
+</section>
+<section id="how-to-contribute-technical-notes" class="level2">
+<h2 class="anchored" data-anchor-id="how-to-contribute-technical-notes">How to Contribute Technical Notes</h2>
+<p>When you discover something worth documenting that doesn’t fit other docs:</p>
+<ol type="1">
+<li><p><strong>Add a new section</strong> to this file with:</p>
+<ul>
+<li>Clear title</li>
+<li>Date discovered</li>
+<li>Status (Discovery, Under implementation, Implemented)</li>
+<li>Problem statement</li>
+<li>Solution/approach</li>
+<li>Implementation details (if applicable)</li>
+<li>References to related code/docs</li>
+</ul></li>
+<li><p><strong>Keep it technical</strong> — this is for developers, not users</p></li>
+<li><p><strong>Include code examples</strong> when they illustrate the point</p></li>
+<li><p><strong>Cross-reference AGENTS.md principles</strong> when a decision relates to them</p></li>
+<li><p><strong>Update this TOC</strong> when adding new sections</p></li>
+</ol>
+
+
+</section>
+
+</main> <!-- /main -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+<footer class="footer">
+  <div class="nav-footer">
+    <div class="nav-footer-left">
+      &nbsp;
+    </div>   
+    <div class="nav-footer-center">
+<p>opus — reference specification for imbus WP2, not a general-purpose R package</p>
+</div>
+    <div class="nav-footer-right">
+      &nbsp;
+    </div>
+  </div>
+</footer>
+
+
+
+
+</body></html>

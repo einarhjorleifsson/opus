@@ -10,7 +10,7 @@ description: >-
   for the curated/new-named version this package actually ships.
 origin: data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R
 version:
-  date: '2026-08-18'
+  date: '2026-08-20'
 tables:
 - name: HH
   columns:
@@ -35,13 +35,12 @@ tables:
     - 'DYFS'
     - Can-Mar
     details: >-
-      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS
-      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey'
-      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
-      lead, not this field's source: its 133 codes are ICES's own cross-domain internal
-      survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own
-      short acronyms -- confirmed by checking real codes against it directly, not
-      assumed. Not used.
+      29 distinct values in HH's archive; ICES DATRAS survey acronym, an
+      open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name
+      but it's a false lead, not this field's source: its 133 codes are ICES's
+      own cross-domain internal survey IDs (e.g. 'A1012'), a completely different
+      scheme from DATRAS's own short acronyms -- confirmed by checking real codes
+      against it directly, not assumed. Not used.
     constraints:
     - primary_key
   - name: Quarter
@@ -50,18 +49,21 @@ tables:
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
     values:
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '1': 1. quarter
+      '2': 2. quarter
+      '3': 3. quarter
+      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata, checked 2026-08-16) declares this
-      field int, not string. An accepted, permanent M01 divergence between the WSDL-driven
-      archive (which stays int, per archive_00_wsdl_types.R's own WSDL-only design)
-      and this curated enum spec (whose values must be quoted strings per the data-dict
-      spec's own S24 rule) -- the same class of divergence already accepted for Valid_Aphia
-      (number(id) vs WSDL's own 'character') and Tickler/CatIdentifier above (enum
-      vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
+      An accepted, permanent M01 divergence between the WSDL-driven archive (which
+      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
+      enum spec (whose values must be quoted strings per the data-dict spec's own
+      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
+      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
+      also resolves this field (a bare 'Quarter' key is separately registered too,
+      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
+      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
     constraints:
     - primary_key
   - name: Country
@@ -75,13 +77,13 @@ tables:
     - 'DK'
     - GB-SCT
     details: >-
-      22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT'
-      illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region
-      codes (per the field's own description), not plain ISO 3166 alone. icesVocab
-      DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false
-      lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN',
-      'ENG'), a different scheme entirely from this field's own 2-letter-plus-region
-      codes -- confirmed by checking real codes against it directly. Not used.
+      22 distinct values in HH's archive; 'GB-SCT' illustrates that this
+      is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's
+      own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country'
+      key by name but it's a false lead too, same as Survey above: its 25 codes are
+      3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from
+      this field's own 2-letter-plus-region codes -- confirmed by checking real codes
+      against it directly. Not used.
     constraints:
     - primary_key
   - name: Ship
@@ -95,8 +97,8 @@ tables:
     - 64SS
     - 18NE
     details: >-
-      110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
-      ship/platform codes, an open list, not a fixed enum.
+      110 distinct values in HH's archive; SeaDataNet ship/platform codes,
+      an open list, not a fixed enum.
     constraints:
     - primary_key
   - name: Gear
@@ -205,11 +207,10 @@ tables:
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
     details: >-
-      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
-      2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
-      ICES definitions (may be used in future submissions or by other surveys). Each
-      code has a full description in icesVocab. Validation: enum restricts submissions
-      to these codes.
+      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded).
+      55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions
+      (may be used in future submissions or by other surveys). Each code has a full
+      description in icesVocab. Validation: enum restricts submissions to these codes.
     constraints:
     - primary_key
   - name: SweepLngt
@@ -227,36 +228,47 @@ tables:
       Deviations of the standard gear. Depends on survey, see survey manuals
       for further details.
     values:
-    - '-9'
-    - B
-    - D
-    - DB
-    - I2
-    - MN
-    - MY
-    - R
-    - S
-    - S1
-    - S2
-    - SB
-    - ST
+      '-9': Not know
+      B: Bobbins
+      D: Double sweeps
+      DB: Double beam, catch from two beam trawls put together
+      I2: Groundgear D with 16" bobbins
+      MN: Without multisampler
+      MY: With multisampler
+      R: Rockhopper
+      S: Standard
+      S1: Groundgear with 21" hoppers
+      S2: Groundgear with 16" hoppers
+      SB: Single beam, catch from one beam trawl
+      ST: Strapping
+    details: >-
+      icesVocab's TS_GearEx resolves this as a controlled 13-code gear-exception
+      list (AC_GearExceptions also registered, a 1-code subset -- never the right
+      prefix for a DATRAS field, Issue 8). Against the real archive: CA uses 11 of
+      13 codes, HH and HL 9 of 13 each, LT 8 of 13; 0 real values fall outside the
+      vocab in any table.
   - name: DoorType
     type: enum
     description: >-
       Type of door used
     values:
-    - '-9'
-    - F
-    - K
-    - P
-    - PE
-    - PI
-    - R
-    - T
-    - T4
-    - T6
-    - V
-    - WR
+      '-9': Not known
+      F: Flat
+      K: Karm waco
+      P: Polyvalent
+      PE: Portuguese Euronete round nose
+      PI: Poly Ice Oval
+      R: Rectangle
+      T: Thyboroen Trawl Doors Type 2
+      T4: Thyboroen Trawl Doors Type 4
+      T6: Thyboroen Type 16 straight oval doors
+      V: Vee
+      WR: Wooden rectangular doors
+    details: >-
+      icesVocab's TS_DoorType resolves this as a controlled 12-code gear-door-type
+      list (AC_DoorType also registered, never the right prefix for a DATRAS field
+      -- Issue 8). Against the real archive: CA and HH each use 11 of 12 codes, HL
+      11 of 12, LT 6 of 12; 0 real values fall outside the vocab in any table.
   - name: StNo
     type: string
     description: >-
@@ -271,18 +283,13 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
-      2026-07-29 against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '6,899 of 150,262 rows unpopulated', which was really
-      the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 20,319 distinct values), -9 accounts for exactly those 6,899
-      rows, not a null. ICES's own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms the ICES-wide '-9 = no information' convention applies here, same
-      as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning
-      problem: CA's own matching StNo=-9 rows for these same hauls (191,893 rows,
-      verified 2026-08-17) join HH successfully via the other 7 composite-key fields,
-      since both sides consistently carry -9 for the same haul rather than disagreeing.
+      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
+      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      spreadsheet confirms the ICES-wide '-9 = no information' convention applies
+      here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
+      orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
+      rows) join HH successfully via the other 7 composite-key fields, since both
+      sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - primary_key
   - name: HaulNo
@@ -299,13 +306,12 @@ tables:
       Sequential per-cruise numbering, but countries vary in whether it resets
       each cruise or runs continuously -- the archive-wide range spans many cruises'
       own counts pooled together, not one cruise's own haul tally. No icesVocab entry
-      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
-      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
-      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms Mandatory: Yes and documents an ICES-wide convention applicable to
-      any field with a header: submit -9 for 'no information' -- so the -9 sentinel
-      seen in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
-      value, not an undocumented one.
+      exists under any name or prefix (none of the 580 registered vocab keys match)
+      -- expected for a plain sequential identifier, not a coded field. ICES's own
+      field-description spreadsheet confirms Mandatory: Yes and documents an ICES-wide
+      convention applicable to any field with a header: submit -9 for 'no information'
+      -- so the -9 sentinel seen in CA (see known-issues.yaml: ca_haulno_unlinkable_to_hh)
+      is a sanctioned value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: >-
@@ -321,22 +327,25 @@ tables:
     description: >-
       Sampling month, as part of the calendar date.
     values:
-    - '1'
-    - '10'
-    - '11'
-    - '12'
-    - '2'
-    - '3'
-    - '4'
-    - '5'
-    - '6'
-    - '7'
-    - '8'
-    - '9'
+      '1': January
+      '10': October
+      '11': November
+      '12': December
+      '2': February
+      '3': March
+      '4': April
+      '5': May
+      '6': June
+      '7': July
+      '8': August
+      '9': September
     details: >-
-      Live WSDL (getHHdata, checked 2026-08-16) declares this field int, not
-      string -- the same accepted, permanent M01 divergence as Quarter above (curated
-      enum vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata) declares this field int, not string -- the same
+      accepted, permanent M01 divergence as Quarter above (curated enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Month
+      also resolves this field (a bare 'Month' key is separately registered too,
+      redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT
+      11 of 12; 0 real values fall outside the vocab in either table.
     constraints:
     - required
   - name: Day
@@ -361,15 +370,9 @@ tables:
     details: >-
       1,440 distinct values, always populated (145,958/145,958). Field's
       own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'); real values
-      ARE zero-padded to 4 digits (e.g. '0730', not '730') -- corrected 2026-08-18,
-      found via the user's own spot-check: this entry previously claimed the opposite
-      ('NOT zero-padded', with 3-digit examples like '730'), traced back to a
-      2026-07-29 citation whose basis (a different archive snapshot, or a plain mistake)
-      isn't recoverable from here; the row-count denominator (150,262) was stale
-      too, from the same uncorrected citation. Re-verified 2026-08-18 directly against
-      .datras/HH_legacy.parquet and .datras/LT_legacy.parquet (both 100% 4-char, 0
-      true nulls). Only present in HH and LT (confirmed 2026-07-29), same as {StatisticalRectangle
-      or StatRec} below.
+      are zero-padded to 4 digits (e.g. '0730', not '730'), confirmed against
+      the full archive: 100% 4-char, 0 true nulls in either table. Only present in
+      HH and LT, same as {StatisticalRectangle or StatRec} below.
     constraints:
     - required
   - name: DepthStratum
@@ -386,12 +389,9 @@ tables:
     details: >-
       Field's own description says depth strata are survey-specific, not
       an ICES-wide vocabulary -- examples illustrate the shape seen in practice (mix
-      of letter-prefixed and bare-number codes), not an exhaustive domain. Originally
-      verified 2026-07-29 against obus's own pre-fix icesDatras archive (same sentinel-scrubbing
-      caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed then as 'only
-      half of surveys report it'. Re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows): -9 is present and dominant (74,509 rows, 51.05%), not a null
-      -- 0 true nulls in the current archive.
+      of letter-prefixed and bare-number codes), not an exhaustive domain. Of 145,958
+      rows: -9 is present and dominant (74,509 rows, 51.05%), not a null -- 0 true
+      nulls in the current archive.
     label: Depth Stratum
   - name: HaulDur
     type: number(quantity)
@@ -409,7 +409,7 @@ tables:
       rather than a genuine instantaneous haul. Upper bound set at 2 hours: DATRAS
       carries no passive/soak gear, so a longer tow is highly suspect -- observed
       values run as high as 1470 min with no repeating marker pattern (i.e. not a
-      clean sentinel, just unreliable). Verified 2026-07-29 against the full archive.
+      clean sentinel, just unreliable).
     label: Haul Duration (minutes)
     constraints:
     - required
@@ -419,8 +419,11 @@ tables:
       Timing of sampling: at daytime or at night. See survey manuals for
       further details
     values:
-    - D
-    - 'N'
+      D: Day
+      'N': Night
+    details: >-
+      icesVocab's TS_DayNight resolves this as a controlled 2-code list.
+      Against the real HH archive: both codes in use, a clean bidirectional match.
     constraints:
     - required
   - name: ShootLat
@@ -445,8 +448,7 @@ tables:
       A genuine value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS
       longitude off Ireland/Iberia) would be indistinguishable from missing here:
       icesDatras's fetch pipeline scrubs literal -9 to NA for every numeric column,
-      not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R's
-      header.
+      not just where -9 is a documented sentinel.
     constraints:
     - required
   - name: HaulLat
@@ -489,17 +491,12 @@ tables:
     - '36F6'
     details: >-
       Real ICES statistical rectangle codes (0.5 deg lat x 1 deg lon grid),
-      not a fixed enum given the size of the grid -- independently corroborated 2026-08-17
-      by ICES's own field-description spreadsheet, which describes this field via
-      the same geometric grid rule rather than a code list (data-raw/build_field_description_snapshot.R).
-      Only present in HH and LT (confirmed 2026-07-29) -- consistent with LT's assessment
-      output joining in a set of HH-style columns. Originally verified 2026-07-29
-      against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '12,235 of 150,262 HH rows unpopulated', which was
-      really the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 685 distinct values), -9 accounts for exactly those 12,235 rows,
-      not a null.
+      not a fixed enum given the size of the grid -- independently corroborated by
+      ICES's own field-description spreadsheet, which describes this field via the
+      same geometric grid rule rather than a code list. Only present in HH and LT
+      -- consistent with LT's assessment output joining in a set of HH-style columns.
+      Of 145,958 HH rows (685 distinct values), -9 accounts for exactly 12,235, not
+      a null.
   - name: Depth
     type: number(quantity)
     description: >-
@@ -515,13 +512,17 @@ tables:
     description: >-
       Haul validity code
     values:
-    - A
-    - C
-    - I
-    - M
-    - 'N'
-    - S
-    - V
+      A: Additional valid stations not used for index calculations
+      C: Calibrated (BITS only)
+      I: Invalid haul
+      M: Pelagic Midwater Trawl (BITS only)
+      'N': No oxygen (BITS only)
+      S: Standard haul
+      V: Valid haul
+    details: >-
+      icesVocab's TS_HaulVal resolves this as a controlled 7-code haul-validity
+      list. Against the real archive: HH uses 6 of 7 codes, LT 4 of 7; 0 real values
+      fall outside the vocab in either table.
     constraints:
     - required
   - name: HydroStNo
@@ -541,23 +542,25 @@ tables:
       an undocumented all-8s placeholder/sentinel (the same kind of pattern seen elsewhere
       in HH, e.g. HaulDuration's zeros) rather than a real station ID, but is kept
       in `examples` (unlike a `range` exclusion, `examples` isn't a validity gate)
-      since a reader should know it's a real recurring value. Originally verified
-      2026-07-29 against obus's own pre-fix icesDatras archive (same sentinel-scrubbing
-      caveat as GenSamp below) -- framed then as 'only 79,371 of 150,262 rows populated'.
-      Re-verified 2026-08-17 directly against .datras/HH.parquet (145,958 rows): 0
-      true nulls -- 69,762 rows (47.79%) carry either -9 or the 88888888 placeholder,
-      the rest a real station ID.
+      since a reader should know it's a real recurring value. Of 145,958 rows: 0
+      true nulls -- 69,762 (47.79%) carry either -9 or the 88888888 placeholder, the
+      rest a real station ID.
   - name: StdSpecRecCode
     type: enum
     description: >-
       Information on the whether standard species have been recorded. Standard
       species depend on survey, see survey manuals for details.
     values:
-    - '0'
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '0': No standard species recorded
+      '1': All standard species recorded
+      '2': Pelagic standard species recorded
+      '3': Roundfish standard species recorded
+      '4': Individual standard species recorded
+    details: >-
+      icesVocab's TS_StdSpecRecCode resolves this as a controlled 5-code
+      list (0=No standard species recorded, 1=All, 2=Pelagic, 3=Roundfish, 4=Individual
+      standard species recorded). Against the real HH archive: 4 of 5 codes in use,
+      0 real values outside the vocab.
     constraints:
     - required
   - name: BySpecRecCode
@@ -565,13 +568,16 @@ tables:
     description: >-
       Information on which bycatch species have been recorded.
     values:
-    - '0'
-    - '1'
-    - '2'
-    - '3'
-    - '4'
-    - '5'
-    - '6'
+      '0': No by-catch species recorded
+      '1': Open ended by-catch list - all species, even species complexes
+      '2': Closed by-catch list - All species recorded
+      '3': Closed by-catch list - Gadoid species recorded
+      '4': Closed by-catch list - Flatfish species recorded
+      '5': Closed by-catch list - Various species recorded
+      '6': Open ended fish species list and limited benthos list
+    details: >-
+      icesVocab's TS_BySpecRecCode resolves this as a controlled 7-code list.
+      Against the real HH archive: all 7 codes in use, a clean bidirectional match.
     constraints:
     - required
   - name: DataType
@@ -582,18 +588,17 @@ tables:
       S (subsample of the entire catch): data as recorded during the cruise, and P
       (pseudocategory sampling, only used by Scotland).
     values:
-    - '-9'
-    - C
-    - P
-    - R
-    - S
+      '-9': Invalid hauls
+      C: Data calculated as CPUE (number per hour)
+      P: Pseudocategory sampling
+      R: Data by haul
+      S: Sub sampled data
     details: >-
       icesVocab's TS_DataType gives -9 its own specific meaning: 'Invalid
       hauls' -- not a generic missing-value placeholder like most of this field's
-      sibling enums (checked 2026-08-16, part of a full sweep of every enum field
-      with -9 as a declared code; see vignettes/articles/technical-notes.md). Low
-      prevalence in both tables that carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310,
-      0.03%).
+      sibling enums (part of a full sweep of every enum field with -9 as a declared
+      code; see articles/technical-notes.qmd). Low prevalence in both tables that
+      carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%).
     constraints:
     - required
   - name: Netopening
@@ -606,31 +611,34 @@ tables:
     - 0.0
     - 76.0
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows
-      (32.82%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
   - name: Rigging
     type: enum
     description: >-
       The way the gear is rigged. Rigging depends on survey, see survey
       manuals for further details.
     values:
-    - '-9'
-    - BC
-    - BM
-    - BN
-    - D
-    - F
-    - FB
-    - FM
-    - FT
-    - FW
-    - M
-    - S
-    - T
-    - TS
-    - TT
+      '-9': Not provided
+      BC: Bobbin, tickler, chain groundrope
+      BM: Bobbin, mixed metal-nylon groundrope
+      BN: Bobbin, nylon groundrope
+      D: Tooth tickler
+      F: Flip-up rope
+      FB: Flip-up rope and chain mat, poly prop net with blinder
+      FM: Flip-up rope and chain mat, standard net with blinder
+      FT: Flip-up rope and tickler chains
+      FW: Flip-up rope and chain mat, poly prop net without blinder
+      M: Chain mat
+      S: Sumwing
+      T: Tickler chains
+      TS: Tickler and sumwing
+      TT: Tickler
+    details: >-
+      icesVocab's TS_Rigging resolves this as a controlled 15-code list.
+      Against the real archive: HH uses 13 of 15 codes, LT 9 of 15; 0 real values
+      fall outside the vocab in either table.
   - name: Tickler
     type: enum
     description: >-
@@ -671,18 +679,14 @@ tables:
     details: >-
       icesVocab's TS_Tickler resolves this as a controlled tickler-chain
       count code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed'
-      sentinel) -- not an open numeric quantity, found via the full-field vocab sweep
-      (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly against
-      the real archive -- but against data an archive-pipeline bug (known-issues.yaml's
-      sentinel_replacement_data_loss) had already silently scrubbed -9 out of: at
-      the time HH showed 9 distinct values and LT 3, neither including -9. Re-verified
-      2026-08-16 after that bug's fix: HH now shows 10 distinct values (-9, 0, 1,
-      4, 5, 8, 10, 20, 21, 27) and LT 4 (-9, 0, 5, 8, a subset of HH's own); -9 turns
-      out to be the DOMINANT value in both (78% of HH, 41% of LT), not absent -- still
-      zero gaps against the vocab's 32 codes, either direction. Live WSDL (getHHdata)
-      declares this field int, not string -- an accepted, permanent M01 divergence
-      between the WSDL-driven archive and this curated enum spec (see Valid_Aphia's
-      own note for the general pattern), not a bug to fix by changing either side.
+      sentinel) -- not an open numeric quantity. Against the real archive: HH shows
+      10 distinct values (-9, 0, 1, 4, 5, 8, 10, 20, 21, 27) and LT 4 (-9, 0, 5, 8,
+      a subset of HH's own); -9 is the dominant value in both (78% of HH, 41% of
+      LT), not absent -- zero gaps against the vocab's 32 codes, either direction.
+      Live WSDL (getHHdata) declares this field int, not string -- an accepted, permanent
+      M01 divergence between the WSDL-driven archive and this curated enum spec (see
+      Valid_Aphia's own note for the general pattern), not a bug to fix by changing
+      either side.
   - name: Distance
     type: number(quantity)
     description: >-
@@ -692,9 +696,9 @@ tables:
     - 0
     - 59995
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%),
-      0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in
+      either table.
     constraints:
     - required
   - name: Warplngt
@@ -707,9 +711,9 @@ tables:
     - 0
     - 4065
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%),
-      0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in
+      either table.
   - name: Warpdia
     type: number(quantity)
     description: >-
@@ -722,10 +726,10 @@ tables:
       A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
       from it with no comparable support and are treated as data-entry errors, excluded
-      here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows
-      (38.18%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception (already excluded by the range above, [16,30]).
+      here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception (already
+      excluded by the range above, [16,30]).
   - name: WarpDen
     type: number(quantity)
     description: >-
@@ -736,10 +740,9 @@ tables:
     - 0
     - 26
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows
-      (60.34%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
   - name: DoorSurface
     type: number(quantity)
     description: >-
@@ -749,9 +752,9 @@ tables:
     - 0.0
     - 20.2
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows
-      (35.88%), 0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls
+      in either table.
   - name: DoorWgt
     type: number(quantity)
     description: >-
@@ -761,9 +764,9 @@ tables:
     - 0
     - 1720
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows
-      (35.72%), 0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls
+      in either table.
   - name: DoorSpread
     type: number(quantity)
     description: >-
@@ -778,9 +781,9 @@ tables:
       above everything else in the archive (next highest is 250m) and are treated
       as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
       likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
-      information' convention (data-raw/build_field_description_snapshot.R), confirmed
-      2026-08-17: HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%),
-      0 true nulls in either table -- already excluded by the range above.
+      information' convention (data-raw/build_field_description_snapshot.R): HH 83,779/145,958
+      rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table
+      -- already excluded by the range above.
   - name: WingSpread
     type: number(quantity)
     description: >-
@@ -795,9 +798,9 @@ tables:
       with real support -- a well-populated cluster starts at 4m (1074 rows, likely
       a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
       value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
-      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows
-      (41.21%), 0 true nulls in either table -- already excluded by the range above.
+      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls
+      in either table -- already excluded by the range above.
   - name: Buoyancy
     type: number(quantity)
     description: >-
@@ -841,9 +844,9 @@ tables:
       deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by
       10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg).
       Both groups are outside the documented 0-360 domain and excluded here. -9 is
-      the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows
-      (3.17%), 0 true nulls in either table -- already excluded by the range above.
+      the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls
+      in either table -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -860,9 +863,9 @@ tables:
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
       gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
-      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH 56,805/145,958
-      rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in either table
-      -- already excluded by the range above.
+      (data-raw/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%),
+      LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded
+      by the range above.
   - name: SpeedWater
     type: number(quantity)
     description: >-
@@ -872,10 +875,9 @@ tables:
     - 0.0
     - 22.0
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows
-      (55.11%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
   - name: SurCurDir
     type: number(quantity)
     description: >-
@@ -935,10 +937,10 @@ tables:
       -1 is documented ('varying direction'). 999 (57 rows) reads as an
       undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
-      present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows
-      (6.79%), 0 true nulls in either table -- already excluded by the range above
-      (unlike -1, which the range explicitly keeps).
+      present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls
+      in either table -- already excluded by the range above (unlike -1, which the
+      range explicitly keeps).
   - name: WindSpeed
     type: number(quantity)
     description: >-
@@ -952,13 +954,7 @@ tables:
       -- no vessel would be actively trawling above this. Excluding the -9 sentinel:
       HH 1,407 of 106,109 real measurements (1.33%) exceed it, up to a max of 342
       m/s; LT 1,149 of 64,985 (1.77%), up to 77 m/s. Both tail off smoothly, consistent
-      with a real distribution below and noise above. Corrected 2026-08-18: this entry
-      previously cited one shared, undated '1,641 of 109,012' figure with no per-table
-      breakdown, which matches neither table's current real (non-sentinel) count
-      -- likely predates -9 being preserved as a raw value rather than scrubbed to
-      NA, same root cause as SubFactor/Turbidity above; a further undated claim of
-      '357 rows right at exactly 28' isn't reconcilable against either table's
-      real data (HH: 300, LT: 203) and has been dropped rather than guessed at.
+      with a real distribution below and noise above.
   - name: SwellDir
     type: number(quantity)
     description: >-
@@ -969,10 +965,9 @@ tables:
     - 0
     - 360
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows
-      (37.79%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
   - name: SwellHeight
     type: number(quantity)
     description: >-
@@ -985,21 +980,16 @@ tables:
       See known issue swell_height_type_mismatch (DATRAS-known-issues.yaml,
       not yet filed): icesVocab declares this an enum (codes H/L/M/N/NR/VH for height
       classes), but real HH archive data shows this is a measured quantity, not a
-      categorized class. Full picture (rechecked 2026-08-16 after removing an unrelated
-      archive-pipeline bug that had been silently converting this field's own -9
-      sentinel to NA): 0 true nulls; 108,698 rows (74.47% of all 145,958) carry the
-      standard DATRAS -9 'not recorded' sentinel; the remaining 37,260 are real,
+      categorized class. Of all 145,958 rows: 0 true nulls; 108,698 (74.47%) carry
+      the standard DATRAS -9 'not recorded' sentinel; the remaining 37,260 are real,
       continuous numeric measurements (0-60m). Range set to 0-13m using WindSpeed
       as an independent co-parameter check: median WindSpeed rises smoothly with SwellHeight
       through 13m (8m/24, 9m/26, 10m/22, 12m/28, 13m/24 m/s), consistent with genuine
       rough-weather readings, but breaks down sharply above it (15m/5, 16m/8, 20m/4,
       25m/13, 30m/7, 60m/16 m/s -- implausibly calm for the claimed swell height,
-      and matching the wind speeds already seen at 1.5m/1.6m/2.0m/2.5m/3.0m/6.0m,
-      the values these look like decimal-shifted versions of). The 23 rows above 13m
-      are excluded as data-entry errors on this evidence, not genuine extreme swells.
-      Candidate for DATRAS-known-issues.yaml formal escalation to imbus/ICES -- both
-      the type mismatch and the fact that neither table's real data uses icesVocab's
-      own declared code scheme at all.
+      matching the wind speeds already seen at 1.5m/1.6m/2.0m/2.5m/3.0m/6.0m, the
+      values these look like decimal-shifted versions of). The 23 rows above 13m are
+      excluded as data-entry errors on this evidence, not genuine extreme swells.
   - name: SurTemp
     type: number(quantity)
     description: >-
@@ -1038,14 +1028,16 @@ tables:
       Indication whether thermocline (min. 2 degrees temperature changes
       over 10 metres depth) was observed
     values:
-    - '-9'
-    - 'N'
-    - 'Y'
+      '-9': Not known
+      'N': 'No'
+      'Y': 'Yes'
     details: >-
       145,958 rows: 144,726 carry the -9 sentinel, 1,062 are 'Y', 167 are
       'N'. 3 rows carry a lowercase 'y' instead of 'Y' -- a real submitter case
-      slip, not a separate value; confirmed 2026-08-18 against the full HH archive.
-      Not added to `values:` given the tiny count.
+      slip, not a separate value. icesVocab's TS_ThermoCline resolves this as a controlled
+      3-code list (-9/N/Y) -- fully consistent with the case-slip already noted above:
+      the archive's only values are exactly these three codes plus the lowercase
+      'y' slip, not a genuine 4th value.
   - name: ThClineDepth
     type: number(quantity)
     description: >-
@@ -1067,10 +1059,10 @@ tables:
       0mm (202 rows) excluded as a placeholder -- a codend by definition has
       some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
       644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide
-      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows
-      (30.11%), 0 true nulls in either table -- the modal value in both tables, already
-      excluded by the range above.
+      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls
+      in either table -- the modal value in both tables, already excluded by the range
+      above.
   - name: SecchiDepth
     type: number(quantity)
     description: >-
@@ -1091,12 +1083,7 @@ tables:
       145,756 of 145,958 rows carry the -9 sentinel; 0 true nulls. The remaining
       202 rows all carry exactly 0 -- too sparse to characterize a real range beyond
       that single value; this reflects what was actually observed, not a claim that
-      Turbidity never varies. Originally verified 2026-07-29 against obus's own pre-fix
-      icesDatras archive (same sentinel-scrubbing caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      elsewhere) -- framed then as 'only 202 of 150,262 hauls carry a value at all',
-      the same sentinel misread as the other fields this session already corrected,
-      missed by that earlier pass. Re-verified 2026-08-18 directly against .datras/HH_legacy.parquet
-      (145,958 rows), -9 accounts for exactly the other 145,756 rows, not a null.
+      Turbidity never varies.
   - name: TidePhase
     type: number(quantity)
     description: >-
@@ -1111,8 +1098,7 @@ tables:
       rounding to the nearest hour, not an error. Separately: a genuine reading of
       exactly -9 minutes (9 minutes before high tide) would be indistinguishable from
       missing, since icesDatras's fetch pipeline scrubs literal -9 to NA for every
-      numeric column regardless of whether -9 is that field's own sentinel -- see
-      data-raw/tier1_field_stats.R's header.
+      numeric column regardless of whether -9 is that field's own sentinel.
   - name: TideSpeed
     type: number(quantity)
     description: >-
@@ -1126,10 +1112,14 @@ tables:
     description: >-
       Pelagic trawl sampling type
     values:
-    - '-9'
-    - '1'
-    - '2'
-    - '3'
+      '-9': Not known
+      '1': Shallower than DSL, in which redfish could be acoustically identified
+      '2': Shallower than 500m and within DSL
+      '3': Zones deeper than 500m
+    details: >-
+      icesVocab's TS_PelSampType resolves this as a controlled 4-code pelagic-sampling-type
+      list. Against the real HH archive: only 1 of the 4 codes is actually in use,
+      but that one value is a valid code, not an outside value.
   - name: MinTrawlDepth
     type: number(quantity)
     description: >-
@@ -1183,9 +1173,9 @@ tables:
     submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a
     valid join key and must be paired with all seven other fields -- but even the
     full composite key doesn't recover everything: 288,581 CA rows (4.92%) carry
-    a -9 sentinel (not a null; verified 2026-08-07) in HaulNumber/HaulNo and match
-    no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh)
-    and obus::dr_add_id for the composite ID construction logic.
+    a -9 sentinel (not a null) in HaulNumber/HaulNo and match no HH haul on any subset
+    of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh) and
+    obus::dr_add_id for the composite ID construction logic.
   origin: data-raw/spec_02_curate_dict.R
 - name: HL
   columns:
@@ -1210,13 +1200,12 @@ tables:
     - 'DYFS'
     - Can-Mar
     details: >-
-      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS
-      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey'
-      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
-      lead, not this field's source: its 133 codes are ICES's own cross-domain internal
-      survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own
-      short acronyms -- confirmed by checking real codes against it directly, not
-      assumed. Not used.
+      29 distinct values in HH's archive; ICES DATRAS survey acronym, an
+      open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name
+      but it's a false lead, not this field's source: its 133 codes are ICES's
+      own cross-domain internal survey IDs (e.g. 'A1012'), a completely different
+      scheme from DATRAS's own short acronyms -- confirmed by checking real codes
+      against it directly, not assumed. Not used.
     constraints:
     - required
     - foreign_key
@@ -1226,18 +1215,21 @@ tables:
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
     values:
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '1': 1. quarter
+      '2': 2. quarter
+      '3': 3. quarter
+      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata, checked 2026-08-16) declares this
-      field int, not string. An accepted, permanent M01 divergence between the WSDL-driven
-      archive (which stays int, per archive_00_wsdl_types.R's own WSDL-only design)
-      and this curated enum spec (whose values must be quoted strings per the data-dict
-      spec's own S24 rule) -- the same class of divergence already accepted for Valid_Aphia
-      (number(id) vs WSDL's own 'character') and Tickler/CatIdentifier above (enum
-      vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
+      An accepted, permanent M01 divergence between the WSDL-driven archive (which
+      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
+      enum spec (whose values must be quoted strings per the data-dict spec's own
+      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
+      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
+      also resolves this field (a bare 'Quarter' key is separately registered too,
+      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
+      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
     constraints:
     - required
     - foreign_key
@@ -1252,13 +1244,13 @@ tables:
     - 'DK'
     - GB-SCT
     details: >-
-      22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT'
-      illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region
-      codes (per the field's own description), not plain ISO 3166 alone. icesVocab
-      DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false
-      lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN',
-      'ENG'), a different scheme entirely from this field's own 2-letter-plus-region
-      codes -- confirmed by checking real codes against it directly. Not used.
+      22 distinct values in HH's archive; 'GB-SCT' illustrates that this
+      is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's
+      own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country'
+      key by name but it's a false lead too, same as Survey above: its 25 codes are
+      3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from
+      this field's own 2-letter-plus-region codes -- confirmed by checking real codes
+      against it directly. Not used.
     constraints:
     - required
     - foreign_key
@@ -1273,8 +1265,8 @@ tables:
     - 64SS
     - 18NE
     details: >-
-      110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
-      ship/platform codes, an open list, not a fixed enum.
+      110 distinct values in HH's archive; SeaDataNet ship/platform codes,
+      an open list, not a fixed enum.
     constraints:
     - required
     - foreign_key
@@ -1384,11 +1376,10 @@ tables:
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
     details: >-
-      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
-      2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
-      ICES definitions (may be used in future submissions or by other surveys). Each
-      code has a full description in icesVocab. Validation: enum restricts submissions
-      to these codes.
+      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded).
+      55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions
+      (may be used in future submissions or by other surveys). Each code has a full
+      description in icesVocab. Validation: enum restricts submissions to these codes.
     constraints:
     - required
     - foreign_key
@@ -1407,36 +1398,47 @@ tables:
       Deviations of the standard gear. Depends on survey, see survey manuals
       for further details.
     values:
-    - '-9'
-    - B
-    - D
-    - DB
-    - I2
-    - MN
-    - MY
-    - R
-    - S
-    - S1
-    - S2
-    - SB
-    - ST
+      '-9': Not know
+      B: Bobbins
+      D: Double sweeps
+      DB: Double beam, catch from two beam trawls put together
+      I2: Groundgear D with 16" bobbins
+      MN: Without multisampler
+      MY: With multisampler
+      R: Rockhopper
+      S: Standard
+      S1: Groundgear with 21" hoppers
+      S2: Groundgear with 16" hoppers
+      SB: Single beam, catch from one beam trawl
+      ST: Strapping
+    details: >-
+      icesVocab's TS_GearEx resolves this as a controlled 13-code gear-exception
+      list (AC_GearExceptions also registered, a 1-code subset -- never the right
+      prefix for a DATRAS field, Issue 8). Against the real archive: CA uses 11 of
+      13 codes, HH and HL 9 of 13 each, LT 8 of 13; 0 real values fall outside the
+      vocab in any table.
   - name: DoorType
     type: enum
     description: >-
       Type of door used
     values:
-    - '-9'
-    - F
-    - K
-    - P
-    - PE
-    - PI
-    - R
-    - T
-    - T4
-    - T6
-    - V
-    - WR
+      '-9': Not known
+      F: Flat
+      K: Karm waco
+      P: Polyvalent
+      PE: Portuguese Euronete round nose
+      PI: Poly Ice Oval
+      R: Rectangle
+      T: Thyboroen Trawl Doors Type 2
+      T4: Thyboroen Trawl Doors Type 4
+      T6: Thyboroen Type 16 straight oval doors
+      V: Vee
+      WR: Wooden rectangular doors
+    details: >-
+      icesVocab's TS_DoorType resolves this as a controlled 12-code gear-door-type
+      list (AC_DoorType also registered, never the right prefix for a DATRAS field
+      -- Issue 8). Against the real archive: CA and HH each use 11 of 12 codes, HL
+      11 of 12, LT 6 of 12; 0 real values fall outside the vocab in any table.
   - name: StNo
     type: string
     description: >-
@@ -1451,18 +1453,13 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
-      2026-07-29 against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '6,899 of 150,262 rows unpopulated', which was really
-      the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 20,319 distinct values), -9 accounts for exactly those 6,899
-      rows, not a null. ICES's own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms the ICES-wide '-9 = no information' convention applies here, same
-      as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning
-      problem: CA's own matching StNo=-9 rows for these same hauls (191,893 rows,
-      verified 2026-08-17) join HH successfully via the other 7 composite-key fields,
-      since both sides consistently carry -9 for the same haul rather than disagreeing.
+      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
+      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      spreadsheet confirms the ICES-wide '-9 = no information' convention applies
+      here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
+      orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
+      rows) join HH successfully via the other 7 composite-key fields, since both
+      sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - required
     - foreign_key
@@ -1480,13 +1477,12 @@ tables:
       Sequential per-cruise numbering, but countries vary in whether it resets
       each cruise or runs continuously -- the archive-wide range spans many cruises'
       own counts pooled together, not one cruise's own haul tally. No icesVocab entry
-      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
-      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
-      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms Mandatory: Yes and documents an ICES-wide convention applicable to
-      any field with a header: submit -9 for 'no information' -- so the -9 sentinel
-      seen in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
-      value, not an undocumented one.
+      exists under any name or prefix (none of the 580 registered vocab keys match)
+      -- expected for a plain sequential identifier, not a coded field. ICES's own
+      field-description spreadsheet confirms Mandatory: Yes and documents an ICES-wide
+      convention applicable to any field with a header: submit -9 for 'no information'
+      -- so the -9 sentinel seen in CA (see known-issues.yaml: ca_haulno_unlinkable_to_hh)
+      is a sanctioned value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: >-
@@ -1503,8 +1499,12 @@ tables:
       Type of species code used for species definition at the record. Use
       'W' for WoRMS AphiaID
     values:
-    - T
-    - W
+      T: TSN code - should not be used for data submissions
+      W: WoRMS AphiaID code
+    details: >-
+      icesVocab's TS_SpecCodeType resolves this as a controlled 2-code species-code-type
+      list. Against the real archive: both CA and HL use both codes, a clean bidirectional
+      match.
     constraints:
     - required
   - name: SpecCode
@@ -1530,16 +1530,31 @@ tables:
       Validity of species records, e.g. to specify if species has only
       been counted, measured, weighed, etc.
     values:
-    - '0'
-    - '1'
-    - '10'
-    - '2'
-    - '4'
-    - '5'
-    - '6'
-    - '7'
-    - '8'
-    - '9'
+      '0': 'Invalid information. Use in data products: no.'
+      '1': 'Representative length information (length measurements, numbers and category
+        catch weights). Use in data products: yes.'
+      '10': 'Length measurements and numbers only. No category catch weights. Use
+        in data products: yes.'
+      '2': 'Representative length information only for commercial/assessed species.
+        Full set of species to be completed next year after a two-years ban to allow
+        national data use. Use in data products: yes, only for commercial/assessed
+        species.'
+      '4': 'Total number only. No length measurements or category catch weight. Use
+        in data products: yes.'
+      '5': 'Presence/absence only. No length measurements, numbers or category catch
+        weights. Use in DATRAS products: yes.'
+      '6': 'Category catch weight only. No length measurements or numbers. Use in
+        DATRAS products: yes.'
+      '7': 'Numbers and category catch weights only. No length measurements. Use in
+        DATRAS products: yes.'
+      '8': 'Volume only. No length measurements, numbers or category catch weights.
+        Use in DATRAS products: yes.'
+      '9': 'Representative length information (length measurements, numbers and category
+        catch weights). Use in DATRAS products: no.'
+    details: >-
+      icesVocab's TS_SpecVal resolves this as a controlled 10-code species-validity
+      list. Against the real HL archive: 8 of 10 codes in use, 0 real values outside
+      the vocab.
     constraints:
     - required
   - name: Sex
@@ -1549,13 +1564,18 @@ tables:
       defined by dissection. If no determination was performed, report '-9'. If determination
       failed, report 'U'.
     values:
-    - '-9'
-    - B
-    - F
-    - M
-    - 'N'
-    - T
-    - U
+      '-9': not sampled
+      B: Berried
+      F: Female
+      M: Male
+      'N': Not included when calculating data
+      T: Neutral
+      U: Unidentified
+    details: >-
+      icesVocab's TS_Sex resolves this as a controlled 7-code list (AC_Sex
+      also registered, never the right prefix for a DATRAS field -- Issue 8). Against
+      the real archive: both CA and HL use 5 of the 7 codes; 0 real values fall outside
+      the vocab in either table.
   - name: TotalNo
     type: number(quantity)
     description: >-
@@ -1639,18 +1659,12 @@ tables:
       icesVocab's TS_CatIdentifier resolves this as a controlled, leveled
       code list (56 active codes: '1. Level' through '55. Level', plus a '-9'/'Unknown'
       sentinel) -- not an open numeric ID, confirming this field's own already-documented
-      shape (a coded scheme, not a sequence, verified 2026-07-29 against the full
-      archive; not this field's own values map until the full-field vocab sweep found
-      it, data-raw/build_vocab_field_audit.R, Issue 9). Re-checked 2026-08-10 -- but
-      against data an archive-pipeline bug (known-issues.yaml's sentinel_replacement_data_loss)
-      had already silently scrubbed -9 out of: at the time, 13 real distinct values
-      were found, not including -9. Re-verified 2026-08-16 after that bug's fix:
-      14 real distinct values (-9, 1-5, 11-14, 21-23, 31), still zero gaps against
-      the vocab's 56 codes either direction; 42 of the 56 are valid ICES definitions
-      not yet observed in this archive. Live WSDL (getHLdata) declares this field
-      int, not string -- an accepted, permanent M01 divergence between the WSDL-driven
-      archive and this curated enum spec (see Valid_Aphia's own note for the general
-      pattern), not a bug to fix by changing either side.
+      shape (a coded scheme, not a sequence). 14 real distinct values (-9, 1-5, 11-14,
+      21-23, 31), zero gaps against the vocab's 56 codes either direction; 42 of
+      the 56 are valid ICES definitions not yet observed in this archive. Live WSDL
+      (getHLdata) declares this field int, not string -- an accepted, permanent M01
+      divergence between the WSDL-driven archive and this curated enum spec (see Valid_Aphia's
+      own note for the general pattern), not a bug to fix by changing either side.
     label: Species Category
     constraints:
     - required
@@ -1681,14 +1695,10 @@ tables:
       144,395 of 13,754,042 rows (1.05%) show values below 1 at face value,
       but 144,041 of those are the -9 sentinel, not a genuine sub-1 measurement --
       leaving 354 real anomalies (0.0026%), contradicting the field's own description
-      (documented as always >=1, for every DataType) -- excluded. Corrected 2026-08-18:
-      this entry previously cited 356 of a stale 14,256,091-row total, from before
-      -9 was preserved as a raw value rather than scrubbed to NA; the 356 was coincidentally
-      close to today's 354 non-sentinel count, but the total itself and the un-separated
-      sentinel count were both wrong. The high end is genuine, not an error: top values
-      cluster at power-of-2-like numbers (4096 recurs 133 times; 8192, 5120, 6144
-      also recur with real support), consistent with repeatedly halving a very abundant
-      catch to reach a manageable subsample.
+      (documented as always >=1, for every DataType) -- excluded. The high end is
+      genuine, not an error: top values cluster at power-of-2-like numbers (4096 recurs
+      133 times; 8192, 5120, 6144 also recur with real support), consistent with repeatedly
+      halving a very abundant catch to reach a manageable subsample.
     constraints:
     - required
   - name: SubWgt
@@ -1723,16 +1733,20 @@ tables:
       to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
       cm in LngtClass
     values:
-    - '-9'
-    - '.'
-    - '0'
-    - '1'
-    - '2'
-    - '5'
-    - '9'
+      '-9': Missing Value
+      '.': '1 mm length class, reporting units: mm'
+      '0': '0.5 cm length class, reporting units: mm'
+      '1': '1 cm length class, reporting units: cm'
+      '2': '2 cm length class, reporting units: cm'
+      '5': '5 cm length class, reporting units: cm'
+      '9': + group
     todo: Confirm whether -9 (2.69% of non-null rows) is a genuine LengthCode code
       or just the generic missing-value sentinel -- no icesVocab key resolves for
       this field under either name, so nothing external confirms it either way.
+    details: >-
+      icesVocab's TS_LngtCode resolves this as a controlled 7-code length-measurement-type
+      list. Against the real archive: CA uses 4 of 7 codes, HL uses 5 of 7; 0 real
+      values fall outside the vocab in either table.
     constraints:
     - required
   - name: LngtClass
@@ -1745,9 +1759,9 @@ tables:
     - 4500
     details: >-
       Unit varies by the sibling LngtCode field (mm or cm; see LngtCode's
-      own values map), so no fixed units here. Two isolated outliers excluded, 2026-07-29:
-      11930 (LngtCode '.', i.e. 11.93m) and 900 (LngtCode '1', i.e. 9m) -- each
-      a lone occurrence far above the next-highest real value. Everything else, including
+      own values map), so no fixed units here. Two isolated outliers excluded: 11930
+      (LngtCode '.', i.e. 11.93m) and 900 (LngtCode '1', i.e. 9m) -- each a lone
+      occurrence far above the next-highest real value. Everything else, including
       a cluster around 420-460 under LngtCode '1' (4.2-4.6m -- large but not implausible
       for occasional large elasmobranch/tuna bycatch), is kept as-is: this is a first
       curation pass from data patterns alone, not a domain-expert review, and a tighter
@@ -1782,35 +1796,43 @@ tables:
     description: >-
       Development or maturity stage defined by non-invasive observations
     values:
-    - '-9'
-    - B
-    - E
-    - J
+      '-9': No information
+      B: Berried
+      E: Egg
+      J: Juvenile
     todo: Confirm whether -9 (99.80% of non-null rows) is a genuine DevelopmentStage
       code or just the generic missing-value sentinel -- no icesVocab key resolves
       for this field under either name, so nothing external confirms it either way.
+    details: >-
+      icesVocab's TS_DevStage resolves this as a controlled 4-code development-stage
+      list. Against the real HL archive: all 4 codes in use, a clean bidirectional
+      match.
   - name: LenMeasType
     type: enum
     description: >-
       Type of length measurement
     values:
-    - '-9'
-    - '1'
-    - '10'
-    - '11'
-    - '12'
-    - '13'
-    - '2'
-    - '3'
-    - '4'
-    - '5'
-    - '6'
-    - '7'
-    - '8'
-    - '9'
+      '-9': Not known
+      '1': Total Length, linear
+      '10': Shell Width
+      '11': Wing Width
+      '12': Total length, curved
+      '13': Pinched tail Length
+      '2': Standard Length
+      '3': Pre Supra-Caudal Fin Length
+      '4': Pre Anal-Fin Length
+      '5': Mantle Length
+      '6': Carapace Length
+      '7': Carapace Width
+      '8': Second Dorsal Fin Length
+      '9': Shell Height
     todo: Confirm whether -9 (71.59% of non-null rows) is a genuine LengthType code
       or just the generic missing-value sentinel -- no icesVocab key resolves for
       this field under either name, so nothing external confirms it either way.
+    details: >-
+      icesVocab's TS_LenMeasType resolves this as a controlled 14-code length-measurement-type
+      list. Against the real HL archive: 11 of 14 codes in use, 0 real values outside
+      the vocab.
   - name: DateofCalculation
     type: number(ordinal)
     range:
@@ -1878,13 +1900,12 @@ tables:
     - 'DYFS'
     - Can-Mar
     details: >-
-      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS
-      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey'
-      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
-      lead, not this field's source: its 133 codes are ICES's own cross-domain internal
-      survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own
-      short acronyms -- confirmed by checking real codes against it directly, not
-      assumed. Not used.
+      29 distinct values in HH's archive; ICES DATRAS survey acronym, an
+      open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name
+      but it's a false lead, not this field's source: its 133 codes are ICES's
+      own cross-domain internal survey IDs (e.g. 'A1012'), a completely different
+      scheme from DATRAS's own short acronyms -- confirmed by checking real codes
+      against it directly, not assumed. Not used.
     constraints:
     - required
     - foreign_key
@@ -1894,18 +1915,21 @@ tables:
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
     values:
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '1': 1. quarter
+      '2': 2. quarter
+      '3': 3. quarter
+      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata, checked 2026-08-16) declares this
-      field int, not string. An accepted, permanent M01 divergence between the WSDL-driven
-      archive (which stays int, per archive_00_wsdl_types.R's own WSDL-only design)
-      and this curated enum spec (whose values must be quoted strings per the data-dict
-      spec's own S24 rule) -- the same class of divergence already accepted for Valid_Aphia
-      (number(id) vs WSDL's own 'character') and Tickler/CatIdentifier above (enum
-      vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
+      An accepted, permanent M01 divergence between the WSDL-driven archive (which
+      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
+      enum spec (whose values must be quoted strings per the data-dict spec's own
+      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
+      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
+      also resolves this field (a bare 'Quarter' key is separately registered too,
+      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
+      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
     constraints:
     - required
     - foreign_key
@@ -1920,13 +1944,13 @@ tables:
     - 'DK'
     - GB-SCT
     details: >-
-      22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT'
-      illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region
-      codes (per the field's own description), not plain ISO 3166 alone. icesVocab
-      DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false
-      lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN',
-      'ENG'), a different scheme entirely from this field's own 2-letter-plus-region
-      codes -- confirmed by checking real codes against it directly. Not used.
+      22 distinct values in HH's archive; 'GB-SCT' illustrates that this
+      is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's
+      own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country'
+      key by name but it's a false lead too, same as Survey above: its 25 codes are
+      3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from
+      this field's own 2-letter-plus-region codes -- confirmed by checking real codes
+      against it directly. Not used.
     constraints:
     - required
     - foreign_key
@@ -1941,8 +1965,8 @@ tables:
     - 64SS
     - 18NE
     details: >-
-      110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
-      ship/platform codes, an open list, not a fixed enum.
+      110 distinct values in HH's archive; SeaDataNet ship/platform codes,
+      an open list, not a fixed enum.
     constraints:
     - required
     - foreign_key
@@ -2052,11 +2076,10 @@ tables:
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
     details: >-
-      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
-      2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
-      ICES definitions (may be used in future submissions or by other surveys). Each
-      code has a full description in icesVocab. Validation: enum restricts submissions
-      to these codes.
+      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded).
+      55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions
+      (may be used in future submissions or by other surveys). Each code has a full
+      description in icesVocab. Validation: enum restricts submissions to these codes.
     constraints:
     - required
     - foreign_key
@@ -2075,45 +2098,53 @@ tables:
       Deviations of the standard gear. Depends on survey, see survey manuals
       for further details.
     values:
-    - '-9'
-    - B
-    - D
-    - DB
-    - I2
-    - MN
-    - MY
-    - R
-    - S
-    - S1
-    - S2
-    - SB
-    - ST
+      '-9': Not know
+      B: Bobbins
+      D: Double sweeps
+      DB: Double beam, catch from two beam trawls put together
+      I2: Groundgear D with 16" bobbins
+      MN: Without multisampler
+      MY: With multisampler
+      R: Rockhopper
+      S: Standard
+      S1: Groundgear with 21" hoppers
+      S2: Groundgear with 16" hoppers
+      SB: Single beam, catch from one beam trawl
+      ST: Strapping
     details: >-
       Mostly a copy of HH's own GearExceptions for the same haul (92.27%
-      of 5,563,036 matched non-null rows identical, checked 2026-08-16), but in 430,289
-      rows (7.73%) CA carries a real code (S, SB, B, D, MY, R, or MN) where HH has
-      only the generic '-9' placeholder for the same haul -- CA never contradicts
-      a real HH code, only supplements HH's own '-9' with something more specific.
-      Not forced identical to HH's spec as a result (contrast SwellHeight above,
-      a genuine byte-for-byte copy): this field carries real information HH's own
-      copy doesn't have.
+      of 5,563,036 matched non-null rows identical), but in 430,289 rows (7.73%) CA
+      carries a real code (S, SB, B, D, MY, R, or MN) where HH has only the generic
+      '-9' placeholder for the same haul -- CA never contradicts a real HH code,
+      only supplements HH's own '-9' with something more specific. Not forced identical
+      to HH's spec as a result (contrast SwellHeight above, a genuine byte-for-byte
+      copy): this field carries real information HH's own copy doesn't have. icesVocab's
+      TS_GearEx resolves this as a controlled 13-code gear-exception list (AC_GearExceptions
+      also registered, a 1-code subset -- never the right prefix for a DATRAS field,
+      Issue 8). Against the real archive: CA uses 11 of 13 codes, HH and HL 9 of 13
+      each, LT 8 of 13; 0 real values fall outside the vocab in any table.
   - name: DoorType
     type: enum
     description: >-
       Type of door used
     values:
-    - '-9'
-    - F
-    - K
-    - P
-    - PE
-    - PI
-    - R
-    - T
-    - T4
-    - T6
-    - V
-    - WR
+      '-9': Not known
+      F: Flat
+      K: Karm waco
+      P: Polyvalent
+      PE: Portuguese Euronete round nose
+      PI: Poly Ice Oval
+      R: Rectangle
+      T: Thyboroen Trawl Doors Type 2
+      T4: Thyboroen Trawl Doors Type 4
+      T6: Thyboroen Type 16 straight oval doors
+      V: Vee
+      WR: Wooden rectangular doors
+    details: >-
+      icesVocab's TS_DoorType resolves this as a controlled 12-code gear-door-type
+      list (AC_DoorType also registered, never the right prefix for a DATRAS field
+      -- Issue 8). Against the real archive: CA and HH each use 11 of 12 codes, HL
+      11 of 12, LT 6 of 12; 0 real values fall outside the vocab in any table.
   - name: StNo
     type: string
     description: >-
@@ -2128,18 +2159,13 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
-      2026-07-29 against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '6,899 of 150,262 rows unpopulated', which was really
-      the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 20,319 distinct values), -9 accounts for exactly those 6,899
-      rows, not a null. ICES's own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms the ICES-wide '-9 = no information' convention applies here, same
-      as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning
-      problem: CA's own matching StNo=-9 rows for these same hauls (191,893 rows,
-      verified 2026-08-17) join HH successfully via the other 7 composite-key fields,
-      since both sides consistently carry -9 for the same haul rather than disagreeing.
+      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
+      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      spreadsheet confirms the ICES-wide '-9 = no information' convention applies
+      here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
+      orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
+      rows) join HH successfully via the other 7 composite-key fields, since both
+      sides consistently carry -9 for the same haul rather than disagreeing.
     constraints:
     - required
     - foreign_key
@@ -2157,13 +2183,12 @@ tables:
       Sequential per-cruise numbering, but countries vary in whether it resets
       each cruise or runs continuously -- the archive-wide range spans many cruises'
       own counts pooled together, not one cruise's own haul tally. No icesVocab entry
-      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
-      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
-      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms Mandatory: Yes and documents an ICES-wide convention applicable to
-      any field with a header: submit -9 for 'no information' -- so the -9 sentinel
-      seen in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
-      value, not an undocumented one.
+      exists under any name or prefix (none of the 580 registered vocab keys match)
+      -- expected for a plain sequential identifier, not a coded field. ICES's own
+      field-description spreadsheet confirms Mandatory: Yes and documents an ICES-wide
+      convention applicable to any field with a header: submit -9 for 'no information'
+      -- so the -9 sentinel seen in CA (see known-issues.yaml: ca_haulno_unlinkable_to_hh)
+      is a sanctioned value, not an undocumented one.
   - name: Year
     type: number(ordinal)
     description: >-
@@ -2180,8 +2205,12 @@ tables:
       Type of species code used for species definition at the record. Use
       'W' for WoRMS AphiaID
     values:
-    - T
-    - W
+      T: TSN code - should not be used for data submissions
+      W: WoRMS AphiaID code
+    details: >-
+      icesVocab's TS_SpecCodeType resolves this as a controlled 2-code species-code-type
+      list. Against the real archive: both CA and HL use both codes, a clean bidirectional
+      match.
     constraints:
     - required
   - name: SpecCode
@@ -2214,15 +2243,13 @@ tables:
     details: >-
       Field's own description ('Age sampling aggregation level') doesn't
       explain what the codes themselves mean, but icesVocab's TS_AreaType resolves
-      them (checked 2026-07-29, data-raw/datras_vocabulary.R): '0'=ICES Statistical
-      Rectangles, '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish
-      North Areas, '13'=ICES Divisions. Not retyped enum because TS_AreaType has
-      27 official codes total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec_01_seed_dict.R)
-      for a usable `values` map -- and confirms the true domain genuinely is wider
-      than what's observed here (17 of 27 codes appear in this archive). The name-match
-      check above never tested real-data sentinel coverage: checked 2026-08-17 directly
-      against .datras/CA.parquet (5,865,076 rows), -9 is present and substantial (1,968,019
-      rows, 33.55%), 0 true nulls -- not previously documented either way.
+      them: '0'=ICES Statistical Rectangles, '2'=Standard NS Roundfish Areas,
+      '6'=EVHOE areas, '12'=Spanish North Areas, '13'=ICES Divisions. Not retyped
+      enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT
+      (20, data-raw/spec_01_seed_dict.R) for a usable `values` map -- and the true
+      domain genuinely is wider than what's observed here (17 of 27 codes appear
+      in this archive). Of 5,865,076 rows, -9 is present and substantial (1,968,019
+      rows, 33.55%), 0 true nulls.
     constraints:
     - required
   - name: AreaCode
@@ -2236,17 +2263,11 @@ tables:
     - 37G1
     - 44G0
     details: >-
-      Field's own description says coding is 'according to AreaType' (its
-      sibling field) -- meaning depends on that field's own value, same pattern as
-      LngtClass/LngtCode. Codes mix ICES-area style (VIIg) and rectangle-like style
-      (38G3). Originally verified 2026-07-29 against obus's own icesDatras-fetched
-      archive, whose parseDatras(fix_types=TRUE) scrubs literal -9 to NA before opus
-      ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource below) -- framed
-      then as '1,898,151 of 5,966,950 rows unpopulated', which undercounted the
-      true picture: re-verified 2026-08-17 directly against .datras/CA.parquet (5,865,076
-      rows), -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No icesVocab
-      entry exists for this field under any name (checked against all 580 registered
-      keys).
+      Field's own description says coding is 'according to AreaType' (its sibling
+      field) -- meaning depends on that field's own value, same pattern as LngtClass/LngtCode.
+      Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). Of 5,865,076
+      rows, -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No icesVocab
+      entry exists for this field under any name.
     constraints:
     - required
   - name: LngtCode
@@ -2257,16 +2278,20 @@ tables:
       to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
       cm in LngtClass
     values:
-    - '-9'
-    - '.'
-    - '0'
-    - '1'
-    - '2'
-    - '5'
-    - '9'
+      '-9': Missing Value
+      '.': '1 mm length class, reporting units: mm'
+      '0': '0.5 cm length class, reporting units: mm'
+      '1': '1 cm length class, reporting units: cm'
+      '2': '2 cm length class, reporting units: cm'
+      '5': '5 cm length class, reporting units: cm'
+      '9': + group
     todo: Confirm whether -9 is a genuine LengthCode code or just the generic missing-value
       sentinel -- no icesVocab key resolves for this field under either name, so nothing
       external confirms it either way.
+    details: >-
+      icesVocab's TS_LngtCode resolves this as a controlled 7-code length-measurement-type
+      list. Against the real archive: CA uses 4 of 7 codes, HL uses 5 of 7; 0 real
+      values fall outside the vocab in either table.
     constraints:
     - required
   - name: LngtClass
@@ -2279,12 +2304,11 @@ tables:
     - 5630
     details: >-
       Unit varies by the sibling LngtCode field (mm or cm; see LngtCode's
-      own values map), so no fixed units here. One isolated outlier excluded, 2026-07-29:
-      932 (LngtCode '1', i.e. 9.32m) -- a lone occurrence with a 2.3x gap to the
-      next-highest value (405). Curated separately from HL's own LngtClass: CA's
-      population is aged individuals only, a different (and differently distributed)
-      subset from HL's whole-catch length-frequency tally, so the two are not assumed
-      identical (Working principles, rule 12).
+      own values map), so no fixed units here. One isolated outlier excluded: 932
+      (LngtCode '1', i.e. 9.32m) -- a lone occurrence with a 2.3x gap to the next-highest
+      value (405). Curated separately from HL's own LngtClass: CA's population is
+      aged individuals only, a different (and differently distributed) subset from
+      HL's whole-catch length-frequency tally, so the two are not assumed identical.
     label: Length Class (cm)
     constraints:
     - required
@@ -2295,13 +2319,18 @@ tables:
       defined by dissection. If no determination was performed, report '-9'. If determination
       failed, report 'U'.
     values:
-    - '-9'
-    - B
-    - F
-    - M
-    - 'N'
-    - T
-    - U
+      '-9': not sampled
+      B: Berried
+      F: Female
+      M: Male
+      'N': Not included when calculating data
+      T: Neutral
+      U: Unidentified
+    details: >-
+      icesVocab's TS_Sex resolves this as a controlled 7-code list (AC_Sex
+      also registered, never the right prefix for a DATRAS field -- Issue 8). Against
+      the real archive: both CA and HL use 5 of the 7 codes; 0 real values fall outside
+      the vocab in either table.
   - name: Maturity
     type: string
     description: >-
@@ -2318,12 +2347,8 @@ tables:
       Field's own description says the scheme depends on the sibling MaturityScale
       field ('MaturityScale should be filled in when...') -- explains the observed
       mix of numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales
-      using different code sets, not an inconsistency. Originally verified 2026-07-29
-      against obus's own pre-fix icesDatras archive (same sentinel-scrubbing caveat
-      as GenSamp below) -- framed then as '3,173,580 rows unpopulated'. Re-verified
-      2026-08-17 directly against .datras/CA.parquet (5,865,076 rows): -9 is present
-      and dominant (3,100,723 rows, 52.87%), not a null -- 0 true nulls in the current
-      archive.
+      using different code sets, not an inconsistency. Of 5,865,076 rows: -9 is present
+      and dominant (3,100,723 rows, 52.87%), not a null -- 0 true nulls.
   - name: PlusGr
     type: enum
     description: >-
@@ -2331,11 +2356,14 @@ tables:
       If the plus group age is specified, no higher ages can be reported for the species
       in the haul.
     values:
-    - +
-    - '-9'
+      +: Age plus group
+      '-9': No plus group
     todo: Confirm whether -9 (99.92% of non-null rows) is a genuine AgePlusGroup code
       or just the generic missing-value sentinel -- the resolved vocab key (AC_AgePlusGroup)
       has no -9 code at all, so nothing external confirms it either way.
+    details: >-
+      icesVocab's TS_PlusGr resolves this as a controlled 2-code list. Against
+      the real CA archive: both codes in use, 0 real values outside the vocab.
   - name: Age
     type: number(quantity)
     units: years
@@ -2343,20 +2371,17 @@ tables:
     - 0
     - 99
     details: >-
-      -9 (1,995,814 rows, 34.03% of all 5,865,076 CA rows -- not visible until
-      an unrelated archive-pipeline bug that had been silently converting it to NA
-      was fixed 2026-08-16) reads as the standard DATRAS 'not recorded' convention
-      and is excluded on the same basis as the -1/-5/-95 cluster below, just far larger.
-      -1 (1757 rows) reads as a systematic, undocumented 'not determined' sentinel;
-      -5 and -95 (1 row each) are isolated anomalies -- all three excluded. 99 (54
-      rows) is kept: real, repeated support, not a fluke -- reads like a plus-group/max-age
-      reporting convention, though that mechanism isn't confirmed here, just noted
-      as an observation. ICES's getDatrasFieldList documents a field 'IndividualAge'
-      for CA, paired with old-name 'AgeRings' -- but 'AgeRings' is not a real
-      CA field (verified 2026-08-06 against both the archive and getCAdata's own
-      live ASMX response; the real field is 'Age', used here). Since that row's
-      old-name half is already wrong, its proposed new name isn't trusted either.
-      Filed with ICES; not yet resolved upstream.
+      -9 (1,995,814 rows, 34.03% of all 5,865,076 CA rows) reads as the standard
+      DATRAS 'not recorded' convention and is excluded on the same basis as the
+      -1/-5/-95 cluster below, just far larger. -1 (1757 rows) reads as a systematic,
+      undocumented 'not determined' sentinel; -5 and -95 (1 row each) are isolated
+      anomalies -- all three excluded. 99 (54 rows) is kept: real, repeated support,
+      not a fluke -- reads like a plus-group/max-age reporting convention, though
+      that mechanism isn't confirmed here, just noted as an observation. ICES's
+      getDatrasFieldList documents a field 'IndividualAge' for CA, paired with old-name
+      'AgeRings' -- but 'AgeRings' is not a real CA field (the real field is 'Age',
+      used here). Since that row's old-name half is already wrong, its proposed new
+      name isn't trusted either.
     todo: Confirm with a domain expert whether Age=99 (54 rows) is a genuine plus-group/max-age
       reporting convention, or should be treated as a placeholder like the -1/-5/-9/-95
       sentinels above.
@@ -2371,7 +2396,7 @@ tables:
     details: >-
       Distinct population from HL's own NumberAtLength (HLNoAtLngt): this
       counts aged individuals only, not the whole catch, hence the much smaller scale
-      -- not assumed identical (Working principles, rule 12).
+      -- not assumed identical.
     constraints:
     - required
   - name: IndWgt
@@ -2394,16 +2419,11 @@ tables:
     - '5'
     details: >-
       Field's own description ('Fish identification number - running sampling
-      number of the specimen') confirms a real per-specimen sequence, open-ended
-      and illustrative only, not an exhaustive domain. Originally verified 2026-07-29
-      against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as 'only ~18.7% of rows populated', which was really
-      the same sentinel misread: re-verified 2026-08-17 directly against .datras/CA.parquet
-      (5,865,076 rows), -9 is present and dominant (4,747,074 rows, 80.94%), not a
-      null; real per-specimen IDs make up the remaining ~19%. No icesVocab entry exists
-      for this field under any name (checked against all 580 registered keys) -- expected
-      for a plain sequential identifier, not a coded field.
+      number of the specimen') confirms a real per-specimen sequence, open-ended and
+      illustrative only, not an exhaustive domain. Of 5,865,076 rows, -9 is present
+      and dominant (4,747,074 rows, 80.94%), not a null; real per-specimen IDs make
+      up the remaining ~19%. No icesVocab entry exists for this field under any name
+      -- expected for a plain sequential identifier, not a coded field.
   - name: GenSamp
     type: enum
     description: >-
@@ -2414,18 +2434,10 @@ tables:
     - 'N'
     details: >-
       Field's own description ('Flag whether genetic sample was taken')
-      confirms boolean intent. Originally verified 2026-07-29 as a clean two-value
-      Y/N split with zero -9 -- but that check ran against obus's own icesDatras-fetched
-      archive, whose parseDatras(fix_types=TRUE) unconditionally scrubs literal -9
-      to NA for every numeric-looking column regardless of whether -9 is that field's
-      own documented sentinel (see this file's own header, and known-issues.yaml's
-      sentinel_replacement_data_loss for the analogous bug in opus's own now-fixed
-      pipeline). Re-verified 2026-08-16 directly against the independently-built .datras/CA.parquet
-      (5,865,076 rows): -9 is present and dominant (5,021,736 rows, 85.6%), not absent;
-      N: 829,547 (14.1%); Y: 13,793 (0.24%); zero other values. No icesVocab entry
-      exists for this field under either name (ICES_ISSUE_REPORT.md Issue 8's own
-      table already records this as 'no vocab exists') -- -9 reads as the standard
-      generic-missing sentinel, the only meaning a simple boolean flag has room for.
+      confirms boolean intent. Of 5,865,076 rows: -9 is present and dominant (5,021,736
+      rows, 85.6%); N: 829,547 (14.1%); Y: 13,793 (0.24%); zero other values. No icesVocab
+      entry exists for this field under either name -- -9 reads as the standard generic-missing
+      sentinel, the only meaning a simple boolean flag has room for.
   - name: StomSamp
     type: enum
     description: >-
@@ -2436,12 +2448,9 @@ tables:
     - 'N'
     details: >-
       Field's own description ('Flag whether stomach sampling was performed')
-      confirms boolean intent. Originally verified 2026-07-29 as a clean two-value
-      Y/N split with zero -9 -- same obus/icesDatras fix_types=TRUE scrubbing caveat
-      as GenSamp above. Re-verified 2026-08-16 directly against .datras/CA.parquet:
-      -9 is present and dominant (4,861,583 rows, 82.9%); N: 964,090 (16.4%); Y: 39,403
-      (0.67%); zero other values. Same 'no vocab exists' / generic-missing reasoning
-      as GenSamp above.
+      confirms boolean intent. Of the full CA archive: -9 is present and dominant
+      (4,861,583 rows, 82.9%); N: 964,090 (16.4%); Y: 39,403 (0.67%); zero other values.
+      Same 'no vocab exists' / generic-missing reasoning as GenSamp above.
   - name: AgeSource
     type: enum
     description: >-
@@ -2469,19 +2478,15 @@ tables:
       vertebra: Vertebra
       wing-bone: Wing bone (Metapterygoid)
     details: >-
-      Seeded from TS_AgeSource (name-match to the field, per ICES_ISSUE_REPORT.md
-      Issue 8's own table -- '-9, LB, OT, SC, VR'), but that key's OWN icesVocab
-      description is a redirect: 'see SampleType', not an authoritative code list
-      in its own right. Real CA archive data (verified 2026-08-16): only -9 (4,757,200
-      rows) and the literal word 'otolith' (1,107,876 rows, lowercase) appear --
-      zero overlap with TS_AgeSource's LB/OT/SC/VR codes, contradicting Issue 8's
-      'full match' verdict for this field (that check evidently name-matched TS_AgeSource
-      without testing per-code archive coverage). SampleType (bare prefix, the redirect
+      Seeded from TS_AgeSource (name-match to the field), but that key's
+      OWN icesVocab description is a redirect: 'see SampleType', not an authoritative
+      code list in its own right. Real CA archive data: only -9 (4,757,200 rows) and
+      the literal word 'otolith' (1,107,876 rows, lowercase) appear -- zero overlap
+      with TS_AgeSource's own LB/OT/SC/VR codes. SampleType (bare prefix, the redirect
       target) resolves the discrepancy exactly: its own code list includes 'otolith'
       verbatim, lowercase, as the code itself (not just the description) -- an exact
-      match, not a coincidence. Candidate for correcting Issue 8's table and inst/DATRAS-vocab-correction.csv;
-      not an ICES-reportable gap in the vocab's actual coverage, since icesVocab
-      does have the right codes once the redirect is followed.
+      match, not a coincidence. Not an ICES-reportable gap in the vocab's actual
+      coverage, since icesVocab does have the right codes once the redirect is followed.
     label: Age Determination Method
   - name: AgePrepMet
     type: enum
@@ -2537,13 +2542,11 @@ tables:
       WM: Whole mount method
     details: >-
       Same redirect pattern as AgeSource above: seeded from TS_AgePrepMet
-      (name-match, Issue 8's table -- '-9, BK, BR, CP, NO, WA, WO'), but that key's
-      own icesVocab description says 'see PreparationMethod', not an authoritative
-      list itself. Real CA archive data (verified 2026-08-16): -9, AL, ALEt, ALR,
-      BB, Br, SS, Se -- zero overlap with TS_AgePrepMet's codes, contradicting Issue
-      8's 'full match' verdict here too. PreparationMethod (bare prefix, the redirect
-      target, 48 codes) contains every one of these real values exactly. Same candidate-for-correction
-      note as AgeSource above -- an opus-side vocab-key resolution fix, not an ICES-reportable
+      (name-match), but that key's own icesVocab description says 'see PreparationMethod',
+      not an authoritative list itself. Real CA archive data: -9, AL, ALEt, ALR, BB,
+      Br, SS, Se -- zero overlap with TS_AgePrepMet's own codes. PreparationMethod
+      (bare prefix, the redirect target, 48 codes) contains every one of these real
+      values exactly -- an opus-side vocab-key resolution fix, not an ICES-reportable
       gap.
     label: Specimen Preparation for Aging
   - name: OtGrading
@@ -2551,11 +2554,17 @@ tables:
     description: >-
       Grading of the otolith reading
     values:
-    - '-9'
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '-9': NA
+      '1': Rings can be counted with certainty
+      '2': Rings can be counted, but with difficulty and some doubt
+      '3': Rings can not be counted, the calcified structure is considered unreadable
+        (no age assigned).
+      '4': Rings can not be counted, the calcified structure is considered unreadable,
+        age assigned for QA purposes only.
+    details: >-
+      icesVocab's TS_OtGrading resolves this as a controlled 5-code otolith-grading
+      list. Against the real CA archive: all 5 codes in use, a clean bidirectional
+      match.
   - name: ParSamp
     type: enum
     description: >-
@@ -2566,29 +2575,30 @@ tables:
     - 'N'
     details: >-
       Field's own description ('Flag whether parasites sampling was performed')
-      confirms boolean intent. Originally verified 2026-07-29 as a clean two-value
-      Y/N split with zero -9 -- same obus/icesDatras fix_types=TRUE scrubbing caveat
-      as GenSamp above. Re-verified 2026-08-16 directly against .datras/CA.parquet:
-      -9 is present and dominant (4,948,612 rows, 84.4%); N: 839,844 (14.3%); Y: 76,620
-      (1.31%); zero other values. Same 'no vocab exists' / generic-missing reasoning
-      as GenSamp above.
+      confirms boolean intent. Of the full CA archive: -9 is present and dominant
+      (4,948,612 rows, 84.4%); N: 839,844 (14.3%); Y: 76,620 (1.31%); zero other values.
+      Same 'no vocab exists' / generic-missing reasoning as GenSamp above.
   - name: MaturityScale
     type: enum
     description: >-
       Maturity scale type used in the Maturity field. From 2021 only M6
       and SMSF will be accepted for new submissions.
     values:
-    - '-9'
-    - M1
-    - M10
-    - M4
-    - M5
-    - M6
-    - MRF6
-    - R1
-    - R2
-    - S6
-    - SMSF
+      '-9': Not available
+      M1: Maturity codes out of scale
+      M10: National BITS maturity codes
+      M4: Four-stage international maturity scale (historical)
+      M5: Five-stage maturity scale (Spanish)
+      M6: Six-stage international maturity scale
+      MRF6: Six-stage redfish maturity scale
+      R1: RIVO 4-stage scale - OLD
+      R2: RIVO 4-stage scale - NEW
+      S6: Six-stage maturity scale (Spanish)
+      SMSF: WKASMSF 2018 scale
+    details: >-
+      icesVocab's TS_MaturityScale resolves this as a controlled 11-code
+      maturity-scale-identifier list. Against the real CA archive: 5 of 11 codes in
+      use, 0 real values outside the vocab.
     constraints:
     - required
   - name: DateofCalculation
@@ -2613,12 +2623,10 @@ tables:
       See known issue valid_aphia_type_mismatch (DATRAS-known-issues.yaml,
       not yet filed): ICES's WSDL declares this field character, but the live service
       always returns it numeric -- it's a WoRMS AphiaID (an identifier, hence number(id),
-      not a quantity). CA's own instance was missed when HL's Valid_Aphia was originally
-      filled (found 2026-07-29 via validate-spec's S07 check) -- same concept as
-      HL's Valid_Aphia (ICES Datacenter's validated AphiaID) but a different sampling
-      population (aged individuals only), so queried independently rather than assumed
-      identical (Working principles, rule 12). 667 distinct values, 0 unpopulated
-      (always present). Verified 2026-07-29 against the full CA archive.
+      not a quantity). Same concept as HL's Valid_Aphia (ICES Datacenter's validated
+      AphiaID) but a different sampling population (aged individuals only), so queried
+      independently rather than assumed identical to HL's own. 667 distinct values,
+      0 unpopulated (always present).
     examples:
     - 213
     - 105872
@@ -2635,15 +2643,14 @@ tables:
     haul. Population: individual organisms sampled and measured from hauls within
     covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the composite
     haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo
-    + HaulNumber). Critical note (corrected 2026-08-07; see DATRAS-known-issues.yaml
-    issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls --
-    288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates
-    the column's declared range ([0, 82483]; a D04_range violation, confirmed via
-    op_flag_violations()), not the required constraint (D01 never fires here). These
-    rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber
-    fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate,
-    much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails
-    to match HH.
+    + HaulNumber). Note (see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh):
+    HaulNumber/HaulNo contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead
+    carry a -9 sentinel, which violates the column's declared range ([0, 82483];
+    a D04_range violation, confirmed via op_flag_violations()), not the required constraint
+    (D01 never fires here). These rows match no HH haul on the full 8-field composite
+    key, or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely
+    orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with
+    a plausible HaulNumber also fails to match HH.
   origin: data-raw/spec_02_curate_dict.R
   todo: 'Diagnose the 700-row (0.01%) HaulNumber tail-mismatch residual (known-issues.yaml:
     ca_haulno_tail_mismatch) -- distinct from the -9 sentinel issue above, cause not
@@ -2666,13 +2673,12 @@ tables:
     - 'DYFS'
     - Can-Mar
     details: >-
-      29 distinct values in HH's archive (verified 2026-07-29); ICES DATRAS
-      survey acronym, an open list, not a fixed enum. icesVocab DOES resolve a 'Survey'
-      key by name (checked 2026-07-29, data-raw/datras_vocabulary.R) but it's a false
-      lead, not this field's source: its 133 codes are ICES's own cross-domain internal
-      survey IDs (e.g. 'A1012'), a completely different scheme from DATRAS's own
-      short acronyms -- confirmed by checking real codes against it directly, not
-      assumed. Not used.
+      29 distinct values in HH's archive; ICES DATRAS survey acronym, an
+      open list, not a fixed enum. icesVocab DOES resolve a 'Survey' key by name
+      but it's a false lead, not this field's source: its 133 codes are ICES's
+      own cross-domain internal survey IDs (e.g. 'A1012'), a completely different
+      scheme from DATRAS's own short acronyms -- confirmed by checking real codes
+      against it directly, not assumed. Not used.
     constraints:
     - required
     - foreign_key
@@ -2682,18 +2688,21 @@ tables:
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
     values:
-    - '1'
-    - '2'
-    - '3'
-    - '4'
+      '1': 1. quarter
+      '2': 2. quarter
+      '3': 3. quarter
+      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata, checked 2026-08-16) declares this
-      field int, not string. An accepted, permanent M01 divergence between the WSDL-driven
-      archive (which stays int, per archive_00_wsdl_types.R's own WSDL-only design)
-      and this curated enum spec (whose values must be quoted strings per the data-dict
-      spec's own S24 rule) -- the same class of divergence already accepted for Valid_Aphia
-      (number(id) vs WSDL's own 'character') and Tickler/CatIdentifier above (enum
-      vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
+      An accepted, permanent M01 divergence between the WSDL-driven archive (which
+      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
+      enum spec (whose values must be quoted strings per the data-dict spec's own
+      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
+      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
+      also resolves this field (a bare 'Quarter' key is separately registered too,
+      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
+      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
     constraints:
     - required
     - foreign_key
@@ -2716,8 +2725,8 @@ tables:
     - 64SS
     - 18NE
     details: >-
-      110 distinct values in HH's archive (verified 2026-07-29); SeaDataNet
-      ship/platform codes, an open list, not a fixed enum.
+      110 distinct values in HH's archive; SeaDataNet ship/platform codes,
+      an open list, not a fixed enum.
     description: >-
       SeaDataNet Ship and Platform Codes
     constraints:
@@ -2829,11 +2838,10 @@ tables:
       WP53: Pelagic trawl WP35/64x4
       Y36: 'Yankee #36'
     details: >-
-      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded,
-      2026-08-02). 55 confirmed used in DATRAS archive; 44 additional codes are valid
-      ICES definitions (may be used in future submissions or by other surveys). Each
-      code has a full description in icesVocab. Validation: enum restricts submissions
-      to these codes.
+      All 99 active icesVocab Gear Type codes (deprecated code OTG excluded).
+      55 confirmed used in DATRAS archive; 44 additional codes are valid ICES definitions
+      (may be used in future submissions or by other surveys). Each code has a full
+      description in icesVocab. Validation: enum restricts submissions to these codes.
     constraints:
     - required
     - foreign_key
@@ -2848,13 +2856,13 @@ tables:
     - 'DK'
     - GB-SCT
     details: >-
-      22 distinct values in HH's archive (verified 2026-07-29); 'GB-SCT'
-      illustrates that this is ISO 3166 codes PLUS ICES's own sub-national region
-      codes (per the field's own description), not plain ISO 3166 alone. icesVocab
-      DOES resolve a 'TS_Country' key by name (checked 2026-07-29) but it's a false
-      lead too, same as Survey above: its 25 codes are 3-letter (e.g. 'BEL', 'DEN',
-      'ENG'), a different scheme entirely from this field's own 2-letter-plus-region
-      codes -- confirmed by checking real codes against it directly. Not used.
+      22 distinct values in HH's archive; 'GB-SCT' illustrates that this
+      is ISO 3166 codes PLUS ICES's own sub-national region codes (per the field's
+      own description), not plain ISO 3166 alone. icesVocab DOES resolve a 'TS_Country'
+      key by name but it's a false lead too, same as Survey above: its 25 codes are
+      3-letter (e.g. 'BEL', 'DEN', 'ENG'), a different scheme entirely from
+      this field's own 2-letter-plus-region codes -- confirmed by checking real codes
+      against it directly. Not used.
     constraints:
     - required
     - foreign_key
@@ -2870,18 +2878,13 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (confirmed 2026-08-17 against all 580 registered keys). Originally verified
-      2026-07-29 against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '6,899 of 150,262 rows unpopulated', which was really
-      the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 20,319 distinct values), -9 accounts for exactly those 6,899
-      rows, not a null. ICES's own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms the ICES-wide '-9 = no information' convention applies here, same
-      as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an orphaning
-      problem: CA's own matching StNo=-9 rows for these same hauls (191,893 rows,
-      verified 2026-08-17) join HH successfully via the other 7 composite-key fields,
-      since both sides consistently carry -9 for the same haul rather than disagreeing.
+      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
+      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      spreadsheet confirms the ICES-wide '-9 = no information' convention applies
+      here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
+      orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
+      rows) join HH successfully via the other 7 composite-key fields, since both
+      sides consistently carry -9 for the same haul rather than disagreeing.
     description: >-
       Station number. National coding system, not defined by ICES.
     constraints:
@@ -2899,13 +2902,12 @@ tables:
       Sequential per-cruise numbering, but countries vary in whether it resets
       each cruise or runs continuously -- the archive-wide range spans many cruises'
       own counts pooled together, not one cruise's own haul tally. No icesVocab entry
-      exists under any name or prefix (confirmed 2026-08-17 against all 580 registered
-      keys) -- expected for a plain sequential identifier, not a coded field. ICES's
-      own field-description spreadsheet (data-raw/build_field_description_snapshot.R)
-      confirms Mandatory: Yes and documents an ICES-wide convention applicable to
-      any field with a header: submit -9 for 'no information' -- so the -9 sentinel
-      seen in CA (DATRAS-known-issues.yaml: ca_haulno_unlinkable_to_hh) is a sanctioned
-      value, not an undocumented one.
+      exists under any name or prefix (none of the 580 registered vocab keys match)
+      -- expected for a plain sequential identifier, not a coded field. ICES's own
+      field-description spreadsheet confirms Mandatory: Yes and documents an ICES-wide
+      convention applicable to any field with a header: submit -9 for 'no information'
+      -- so the -9 sentinel seen in CA (see known-issues.yaml: ca_haulno_unlinkable_to_hh)
+      is a sanctioned value, not an undocumented one.
     description: >-
       Sequential numbering of hauls during cruise.
   - name: ShootLat
@@ -2926,8 +2928,7 @@ tables:
       A genuine value of exactly -9.0000 degrees (9 deg W, an ordinary DATRAS
       longitude off Ireland/Iberia) would be indistinguishable from missing here:
       icesDatras's fetch pipeline scrubs literal -9 to NA for every numeric column,
-      not just where -9 is a documented sentinel -- see data-raw/tier1_field_stats.R's
-      header.
+      not just where -9 is a documented sentinel.
     description: >-
       Decimal longitude position on the shooting location
   - name: HaulLat
@@ -2963,10 +2964,7 @@ tables:
     details: >-
       OSPAR maritime area code (Roman-numeral regions); 4 distinct values observed,
       14,498 of 75,310 rows unpopulated. No description present to confirm whether
-      this is the complete official OSPAR region set. Verified 2026-07-29 against
-      the full LT archive; total corrected 2026-08-18 (cited 79,451 then, a stale
-      pre-correction row count -- the 14,498-unpopulated and 4-distinct-value figures
-      were already right, re-confirmed against today's .datras/LT_legacy.parquet).
+      this is the complete official OSPAR region set.
   - name: MSFDArea
     type: string
     examples:
@@ -2976,10 +2974,7 @@ tables:
       Marine Strategy Framework Directive region name; only 2 distinct values
       observed, 4,295 of 75,310 rows unpopulated. The EU MSFD framework has more than
       two regions overall -- DATRAS's own survey coverage may simply never reach the
-      others, so not treated as a closed/exhaustive set. Verified 2026-07-29 against
-      the full LT archive; total corrected 2026-08-18 (cited 79,451 then, a stale
-      pre-correction row count -- the 4,295-unpopulated and 2-distinct-value figures
-      were already right, re-confirmed against today's .datras/LT_legacy.parquet).
+      others, so not treated as a closed/exhaustive set.
   - name: BottomDepth
     type: number(quantity)
     units: m
@@ -2987,12 +2982,12 @@ tables:
     - 1.0
     - 3098.0
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: 139 of 75,310 rows (0.18%), 0 true nulls. Not a rename
-      -- BottomDepth is already the raw ICES field name in LT's archive. It sits
-      alongside this table's own separate Depth field, byte-for-byte identical to
-      it (see Depth's own details): a known ICES-side redundancy, not a rename relationship,
-      filed with ICES 2026-08-06 (data-raw/ICES_ISSUE_REPORT.md, Issue 6).
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      139 of 75,310 rows (0.18%), 0 true nulls. Not a rename -- BottomDepth is already
+      the raw ICES field name in LT's archive. It sits alongside this table's own
+      separate Depth field, byte-for-byte identical to it (see Depth's own details):
+      a known ICES-side redundancy, not a rename relationship (see Issue 6 in the
+      issues report).
     description: >-
       Sampling depth in metres, measured from the water surface.
   - name: Distance
@@ -3002,9 +2997,9 @@ tables:
     - 0
     - 59995
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%),
-      0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in
+      either table.
     description: >-
       Distance in metres between haul start and haul end point.
   - name: DoorSpread
@@ -3019,9 +3014,9 @@ tables:
       above everything else in the archive (next highest is 250m) and are treated
       as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
       likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
-      information' convention (data-raw/build_field_description_snapshot.R), confirmed
-      2026-08-17: HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%),
-      0 true nulls in either table -- already excluded by the range above.
+      information' convention (data-raw/build_field_description_snapshot.R): HH 83,779/145,958
+      rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table
+      -- already excluded by the range above.
     description: >-
       Mean value in metres of door spread measurements.
   - name: WingSpread
@@ -3035,9 +3030,9 @@ tables:
       with real support -- a well-populated cluster starts at 4m (1074 rows, likely
       a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
       value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
-      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows
-      (41.21%), 0 true nulls in either table -- already excluded by the range above.
+      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls
+      in either table -- already excluded by the range above.
     description: >-
       Mean value in metres of wing spread measurements. For more details
       see the manual.
@@ -3047,18 +3042,24 @@ tables:
       Reference code of the list used for categorizing litter. See LTREF
       in ICES vocabulary for options
     values:
-    - C-TS
-    - C-TS-REV
-    - C-TS-REV2
-    - H01
-    - JCODELIST
-    - LT-FM
-    - MEDITS
-    - OSPAR-LT
-    - RECO-LT
-    - TSG-ML
-    - UNEP
-    - UNEP-RLC
+      C-TS: Original CEFAS trawl litter categories (IBTS)
+      C-TS-REV: Revised CEFAS Trawl Litter Survey parameters (2013)
+      C-TS-REV2: Revised CEFAS Trawl Litter Survey parameters (2023)
+      H01: EMODnet microlitter types
+      JCODELIST: The maximum level of detail for the Joint List of Litter Categories
+        for macrolitter codes developed by the EU-TGML
+      LT-FM: Litter in fulmar stomachs monitoring
+      MEDITS: MEDITS reference list for seafloor litter
+      OSPAR-LT: OSPAR Beach litter categories
+      RECO-LT: ICES RECO litter list
+      TSG-ML: MSFD Technical Subgroup on Marine Litter (2013)
+      UNEP: UNEP Litter code
+      UNEP-RLC: UNEP Remote Litter Classes
+    details: >-
+      icesVocab's own 'LTREF' key (no TS_/AC_ prefix -- a DATRAS-local
+      scheme, not the general TS_ domain) resolves this as a controlled 12-code litter-reference
+      list. Against the real LT archive: only 3 of 12 codes in use, 0 real values
+      outside the vocab.
     constraints:
     - required
   - name: PARAM
@@ -3071,17 +3072,12 @@ tables:
     - 'A14'
     details: >-
       Litter parameter/category code, no description present. icesVocab resolves
-      a PARAM list (checked 2026-07-29, data-raw/datras_vocabulary.R) -- 'LT-TOT'='Litter
-      - total' confirmed there among 1,938 total codes -- but 'A2'/'A3'/'A5'/'A6'/'A7'/'A14'
-      do NOT appear in it under any description, despite being common real values
-      here (checked directly, not just absent from a sample). A real discrepancy between
-      this archive's own PARAM usage and icesVocab's published list. Not retyped
-      enum regardless: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT of 20.
-      49 distinct values, 2 of 75,310 rows unpopulated. Verified 2026-07-29 against
-      the full LT archive; corrected 2026-08-18 (cited 50 distinct values of a stale
-      79,451-row total then; the 2-row unpopulated count was already right, re-confirmed
-      against today's .datras/LT_legacy.parquet -- one distinct value present in
-      2026-07-29's archive snapshot no longer appears).
+      a PARAM list -- 'LT-TOT'='Litter - total' confirmed there among 1,938 total
+      codes -- but 'A2'/'A3'/'A5'/'A6'/'A7'/'A14' do NOT appear in it
+      under any description, despite being common real values here. A real discrepancy
+      between this archive's own PARAM usage and icesVocab's published list. Not
+      retyped enum regardless: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT
+      of 20. 49 distinct values, 2 of 75,310 rows unpopulated.
     todo: File A2/A3/A5/A6/A7/A14 (undocumented in icesVocab's 1,938-code PARAM list
       despite being common real values) as a DATRAS-known-issues.yaml entry and ICES_ISSUE_REPORT.md
       candidate.
@@ -3097,15 +3093,12 @@ tables:
     - '13'
     details: >-
       Litter size class code (mix of letter and numeric codes), no description
-      present. icesVocab's LTSZC list confirms all five (checked 2026-07-29): 'A'='squared
-      centimetre <5*5cm=25cm2' through 'D'='<50*50cm=2500cm2' (area-based classes),
-      '13'='centimetre 15-49.99cm' (a length-based class) -- two different measurement
-      bases coexisting under one code list. 23 of 41 official codes observed here;
-      not retyped enum since 41 exceeds the seed's VOCAB_CODE_LIMIT of 20. Originally
-      verified 2026-07-29 against obus's own pre-fix icesDatras archive (same sentinel-scrubbing
-      caveat as GenSamp below) -- framed then as '16,508 rows unpopulated'. Re-verified
-      2026-08-17 directly against .datras/LT.parquet (75,310 rows): -9 is present
-      (14,736 rows, 19.57%), not a null -- 0 true nulls in the current archive.
+      present. icesVocab's LTSZC list confirms all five: 'A'='squared centimetre
+      <5*5cm=25cm2' through 'D'='<50*50cm=2500cm2' (area-based classes), '13'='centimetre
+      15-49.99cm' (a length-based class) -- two different measurement bases coexisting
+      under one code list. 23 of 41 official codes observed here; not retyped enum
+      since 41 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 75,310 rows: -9 is present
+      (14,736 rows, 19.57%), not a null -- 0 true nulls.
   - name: UnitWgt
     type: string
     examples:
@@ -3114,11 +3107,8 @@ tables:
     details: >-
       Unit of the sibling LT_Weight field (see LT_Weight's own details below);
       exactly 2 real values observed (kg/haul, g/haul). No description present to
-      confirm this is the complete valid unit set. Originally verified 2026-07-29
-      against obus's own pre-fix icesDatras archive (same sentinel-scrubbing caveat
-      as GenSamp below) -- framed then as '4,256 rows unpopulated'. Re-verified
-      2026-08-17 directly against .datras/LT.parquet (75,310 rows): -9 is present
-      (4,144 rows, 5.50%), not a null -- 0 true nulls in the current archive.
+      confirm this is the complete valid unit set. Of 75,310 rows: -9 is present (4,144
+      rows, 5.50%), not a null -- 0 true nulls.
   - name: LT_Weight
     type: number(quantity)
     description: >-
@@ -3129,9 +3119,9 @@ tables:
     - 1600000.0
     details: >-
       Unit varies by the sibling UnitWgt field (kg/haul for 46,673 rows, g/haul
-      for 24,383, unspecified for 276), so no fixed units here. Two exclusions, 2026-07-29:
-      -99 (3 rows, kg/haul) as an isolated sentinel-like anomaly, and 46,318,000 (1
-      row, g/haul) as a lone outlier roughly 29x the next-highest real value (1,600,000)
+      for 24,383, unspecified for 276), so no fixed units here. Two exclusions: -99
+      (3 rows, kg/haul) as an isolated sentinel-like anomaly, and 46,318,000 (1 row,
+      g/haul) as a lone outlier roughly 29x the next-highest real value (1,600,000)
       -- an implausible ~46 tonnes of litter in one haul, almost certainly a data-entry
       error. The rest of the g/haul group's own large values (up to 1,600,000g =
       1.6 tonnes) are kept: rare, but large litter catches (e.g. old fishing gear,
@@ -3144,11 +3134,8 @@ tables:
     details: >-
       Unit of the sibling LT_Items field (see LT_Items's own details below);
       only one real value ever observed -- a single example, not five, because no
-      second real value exists in the archive to show. Originally verified 2026-07-29
-      against obus's own pre-fix icesDatras archive (same sentinel-scrubbing caveat
-      as GenSamp below) -- framed then as '36 rows unpopulated'. Re-verified 2026-08-17
-      directly against .datras/LT.parquet: -9 accounts for exactly those 36 rows,
-      not a null -- 0 true nulls in the current archive.
+      second real value exists in the archive to show. Of 75,310 rows, -9 accounts
+      for exactly 36 rows, not a null -- 0 true nulls.
   - name: LT_Items
     type: number(quantity)
     description: >-
@@ -3161,10 +3148,7 @@ tables:
       UnitItem is 'items/haul' for all but 36 of 75,310 populated rows (100%
       populated, 0 true nulls) -- effectively a fixed count, no exclusions needed:
       no isolated outlier or repeating marker pattern, just a smooth decline from
-      the max. Corrected 2026-08-18: this entry previously cited 76,882 populated
-      rows, exceeding LT's own real 75,310-row total outright -- an impossible figure,
-      not just a stale one; the 36-row exception count itself was already right, re-confirmed
-      against today's .datras/LT_legacy.parquet.
+      the max.
     label: Total Item Count
   - name: LTSRC
     type: enum
@@ -3172,28 +3156,32 @@ tables:
       If the source of litter origin is posible to identify, the appropriate
       option should be reported here.
     values:
-    - '-9'
-    - LB
-    - LBF
-    - LBI
-    - LBM
-    - LBS
-    - LBT
-    - OB
-    - RBI
-    - SBA
-    - SBF
-    - SBG
-    - SBMR
-    - SBR
-    - SBS
-    - SBT
-    - UNK
+      '-9': no information
+      LB: Land based
+      LBF: Land based - landfill
+      LBI: Land based - industry
+      LBM: Land based - medical
+      LBS: Land based - sewage related waste
+      LBT: Land based - tourism
+      OB: Ocean based
+      RBI: River based - riverine input
+      SBA: Sea based - aquaculture
+      SBF: Sea based - fisheries
+      SBG: Sea based - offshore gas and oil
+      SBMR: Sea based - military/research
+      SBR: Sea based - recreational
+      SBS: Sea based - shipping
+      SBT: Sea based - transport
+      UNK: Unknown
     details: >-
       75,310 rows: -9 (35,946), UNK (26,981), SBF (11,320), and 12 other codes
       populate the rest. 1 row carries lowercase 'sba' instead of the declared 'SBA'
-      code -- a real submitter case slip, not a separate value; confirmed 2026-08-18
-      against the full LT archive. Not added to `values:` given the tiny count.
+      code -- a real submitter case slip, not a separate value. icesVocab's own 'LTSRC'
+      key (no TS_/AC_ prefix, same local-scheme pattern as LTREF) resolves this as
+      a controlled 17-code litter-source list. Against the real LT archive: 16 of
+      17 codes have an exact match; the 17th (SBA, aquaculture) is exactly the case-slip
+      already noted above (1 row, lowercase 'sba') -- functionally represented,
+      just not exact-case.
   - name: TYPPL
     type: string
     examples:
@@ -3204,17 +3192,11 @@ tables:
     - UPL
     details: >-
       Litter (plastic) type code, no description present. icesVocab's TYPPL
-      list confirms all five (checked 2026-07-29): PE=Polyethylene, PET=Polyethylene
-      terephthalate, PP=Polypropylene, PS=Polystyrene, UPL=Undefined plastic. 6 of
-      30 official codes observed here; not retyped enum since 30 exceeds the seed's
-      VOCAB_CODE_LIMIT of 20. Originally verified 2026-07-29 against obus's own pre-fix
-      icesDatras archive (same sentinel-scrubbing caveat as GenSamp below) -- framed
-      then as 'very sparse: only 162 of 79,451 rows populated', which badly understated
-      the true picture: the other 79,289 rows weren't absent, they were the -9 sentinel,
-      scrubbed to NA before that check ever saw them. Re-verified 2026-08-17 directly
-      against .datras/LT.parquet (75,310 rows): -9 is present and overwhelmingly dominant
-      (75,148 rows, 99.79%), 0 true nulls -- the 162 real plastic-type codes are the
-      rare case, not the norm.
+      list confirms all five: PE=Polyethylene, PET=Polyethylene terephthalate, PP=Polypropylene,
+      PS=Polystyrene, UPL=Undefined plastic. 6 of 30 official codes observed here;
+      not retyped enum since 30 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 75,310
+      rows: -9 is present and overwhelmingly dominant (75,148 rows, 99.79%), 0 true
+      nulls -- the 162 real plastic-type codes are the rare case, not the norm.
   - name: LTPRP
     type: string
     description: >-
@@ -3228,19 +3210,15 @@ tables:
     - CL4
     details: >-
       Litter property code, no description present. icesVocab's LTPRP list
-      confirms all five as BASE codes (checked 2026-07-29): AO=Attached organisms,
-      CL1=Colour-None(clear), CL2=Colour-Black, CL4=Colour-Blue, CL5=Colour-White
-      -- only 22 official base codes, but composite codes like 'CL1~AO' also appear
-      in real data (a colour code plus an attached-organisms flag, tilde-joined),
-      which is why 79 distinct values are observed here despite only 22 base codes
-      existing -- a combinable/multi-value scheme, not a flat single-select list,
-      confirming the earlier guess. Not retyped enum: even the 22-code base list is
-      past the seed's VOCAB_CODE_LIMIT of 20, and the combinable form isn't a plain
-      enum shape regardless. Originally verified 2026-07-29 against obus's own pre-fix
-      icesDatras archive (same sentinel-scrubbing caveat as GenSamp below) -- framed
-      then as '58,349 rows unpopulated'. Re-verified 2026-08-17 directly against
-      .datras/LT.parquet (75,310 rows): -9 is present and dominant (54,208 rows, 71.97%),
-      not a null -- 0 true nulls in the current archive.
+      confirms all five as BASE codes: AO=Attached organisms, CL1=Colour-None(clear),
+      CL2=Colour-Black, CL4=Colour-Blue, CL5=Colour-White -- only 22 official base
+      codes, but composite codes like 'CL1~AO' also appear in real data (a colour
+      code plus an attached-organisms flag, tilde-joined), which is why 79 distinct
+      values are observed here despite only 22 base codes existing -- a combinable/multi-value
+      scheme, not a flat single-select list. Not retyped enum: even the 22-code base
+      list is past the seed's VOCAB_CODE_LIMIT of 20, and the combinable form isn't
+      a plain enum shape regardless. Of 75,310 rows: -9 is present and dominant (54,208
+      rows, 71.97%), not a null -- 0 true nulls.
   - name: SweepLngt
     type: number(quantity)
     units: m
@@ -3253,55 +3231,72 @@ tables:
   - name: GearEx
     type: enum
     values:
-    - '-9'
-    - B
-    - D
-    - DB
-    - I2
-    - MN
-    - MY
-    - R
-    - S
-    - S1
-    - S2
-    - SB
-    - ST
+      '-9': Not know
+      B: Bobbins
+      D: Double sweeps
+      DB: Double beam, catch from two beam trawls put together
+      I2: Groundgear D with 16" bobbins
+      MN: Without multisampler
+      MY: With multisampler
+      R: Rockhopper
+      S: Standard
+      S1: Groundgear with 21" hoppers
+      S2: Groundgear with 16" hoppers
+      SB: Single beam, catch from one beam trawl
+      ST: Strapping
+    details: >-
+      icesVocab's TS_GearEx resolves this as a controlled 13-code gear-exception
+      list (AC_GearExceptions also registered, a 1-code subset -- never the right
+      prefix for a DATRAS field, Issue 8). Against the real archive: CA uses 11 of
+      13 codes, HH and HL 9 of 13 each, LT 8 of 13; 0 real values fall outside the
+      vocab in any table.
+    description: >-
+      Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
   - name: DoorType
     type: enum
     values:
-    - '-9'
-    - F
-    - K
-    - P
-    - PE
-    - PI
-    - R
-    - T
-    - T4
-    - T6
-    - V
-    - WR
+      '-9': Not known
+      F: Flat
+      K: Karm waco
+      P: Polyvalent
+      PE: Portuguese Euronete round nose
+      PI: Poly Ice Oval
+      R: Rectangle
+      T: Thyboroen Trawl Doors Type 2
+      T4: Thyboroen Trawl Doors Type 4
+      T6: Thyboroen Type 16 straight oval doors
+      V: Vee
+      WR: Wooden rectangular doors
+    details: >-
+      icesVocab's TS_DoorType resolves this as a controlled 12-code gear-door-type
+      list (AC_DoorType also registered, never the right prefix for a DATRAS field
+      -- Issue 8). Against the real archive: CA and HH each use 11 of 12 codes, HL
+      11 of 12, LT 6 of 12; 0 real values fall outside the vocab in any table.
     description: >-
       Type of door used
   - name: Month
     type: enum
     values:
-    - '1'
-    - '10'
-    - '11'
-    - '12'
-    - '2'
-    - '3'
-    - '4'
-    - '5'
-    - '6'
-    - '7'
-    - '8'
-    - '9'
+      '1': January
+      '10': October
+      '11': November
+      '12': December
+      '2': February
+      '3': March
+      '4': April
+      '5': May
+      '6': June
+      '7': July
+      '8': August
+      '9': September
     details: >-
-      Live WSDL (getHHdata, checked 2026-08-16) declares this field int, not
-      string -- the same accepted, permanent M01 divergence as Quarter above (curated
-      enum vs WSDL's own 'int'), not a bug to fix by changing either side.
+      Live WSDL (getHHdata) declares this field int, not string -- the same
+      accepted, permanent M01 divergence as Quarter above (curated enum vs WSDL's
+      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Month
+      also resolves this field (a bare 'Month' key is separately registered too,
+      redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT
+      11 of 12; 0 real values fall outside the vocab in either table.
     description: >-
       Sampling month, as part of the calendar date.
   - name: Day
@@ -3324,15 +3319,9 @@ tables:
     details: >-
       1,440 distinct values, always populated (145,958/145,958). Field's
       own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'); real values
-      ARE zero-padded to 4 digits (e.g. '0730', not '730') -- corrected 2026-08-18,
-      found via the user's own spot-check: this entry previously claimed the opposite
-      ('NOT zero-padded', with 3-digit examples like '730'), traced back to a
-      2026-07-29 citation whose basis (a different archive snapshot, or a plain mistake)
-      isn't recoverable from here; the row-count denominator (150,262) was stale
-      too, from the same uncorrected citation. Re-verified 2026-08-18 directly against
-      .datras/HH_legacy.parquet and .datras/LT_legacy.parquet (both 100% 4-char, 0
-      true nulls). Only present in HH and LT (confirmed 2026-07-29), same as {StatisticalRectangle
-      or StatRec} below.
+      are zero-padded to 4 digits (e.g. '0730', not '730'), confirmed against
+      the full archive: 100% 4-char, 0 true nulls in either table. Only present in
+      HH and LT, same as {StatisticalRectangle or StatRec} below.
     description: >-
       Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
   - name: HaulDur
@@ -3347,7 +3336,7 @@ tables:
       rather than a genuine instantaneous haul. Upper bound set at 2 hours: DATRAS
       carries no passive/soak gear, so a longer tow is highly suspect -- observed
       values run as high as 1470 min with no repeating marker pattern (i.e. not a
-      clean sentinel, just unreliable). Verified 2026-07-29 against the full archive.
+      clean sentinel, just unreliable).
     description: >-
       Haul duration in minutes. Start time is the moment when the gear
       settles at the bottom at the stated towing speed. Stop is defined as the start
@@ -3362,17 +3351,12 @@ tables:
     - '36F6'
     details: >-
       Real ICES statistical rectangle codes (0.5 deg lat x 1 deg lon grid),
-      not a fixed enum given the size of the grid -- independently corroborated 2026-08-17
-      by ICES's own field-description spreadsheet, which describes this field via
-      the same geometric grid rule rather than a code list (data-raw/build_field_description_snapshot.R).
-      Only present in HH and LT (confirmed 2026-07-29) -- consistent with LT's assessment
-      output joining in a set of HH-style columns. Originally verified 2026-07-29
-      against obus's own icesDatras-fetched archive, whose parseDatras(fix_types=TRUE)
-      scrubs literal -9 to NA before opus ever sees it (same caveat as GenSamp/StomSamp/ParSamp/AgeSource
-      below) -- framed then as '12,235 of 150,262 HH rows unpopulated', which was
-      really the same sentinel misread: re-verified 2026-08-17 directly against .datras/HH.parquet
-      (145,958 rows, 685 distinct values), -9 accounts for exactly those 12,235 rows,
-      not a null.
+      not a fixed enum given the size of the grid -- independently corroborated by
+      ICES's own field-description spreadsheet, which describes this field via the
+      same geometric grid rule rather than a code list. Only present in HH and LT
+      -- consistent with LT's assessment output joining in a set of HH-style columns.
+      Of 145,958 HH rows (685 distinct values), -9 accounts for exactly 12,235, not
+      a null.
     description: >-
       Intended ICES statistical area rectangle (0.5 degrees latitude, 1
       degree longitude)
@@ -3383,45 +3367,43 @@ tables:
     - 1
     - 3098
     details: >-
-      Re-verified 2026-08-06 (originally 2026-07-29, against an older LT archive
-      snapshot whose row count differs from the current one -- re-checked here to
-      avoid repeating a stale figure): byte-for-byte identical to this table's own
-      BottomDepth across all 75,310 rows (100% populated in both, 0 differences, 0
-      one-sided nulls) -- a known ICES-side redundancy (also documented in obus's
-      own download-stage comments), not an opus/obus naming quirk. Filed with ICES
-      2026-08-06 (see data-raw/ICES_ISSUE_REPORT.md, Issue 6). Given the same type/units/range
-      as BottomDepth here rather than re-derived independently, since it is BottomDepth.
+      Byte-for-byte identical to this table's own BottomDepth across all 75,310
+      rows (100% populated in both, 0 differences, 0 one-sided nulls) -- a known ICES-side
+      redundancy, not an opus/obus naming quirk (see Issue 6 in the issues report).
+      Given the same type/units/range as BottomDepth here rather than re-derived independently,
+      since it is BottomDepth.
   - name: HaulVal
     type: enum
     values:
-    - A
-    - C
-    - I
-    - M
-    - 'N'
-    - S
-    - V
+      A: Additional valid stations not used for index calculations
+      C: Calibrated (BITS only)
+      I: Invalid haul
+      M: Pelagic Midwater Trawl (BITS only)
+      'N': No oxygen (BITS only)
+      S: Standard haul
+      V: Valid haul
     details: >-
       Near-total copy of HH's own HaulVal for the same haul: only 21 of 72,483
-      matched non-null rows differ (0.03%, checked 2026-08-16, denominator corrected
-      2026-08-18 -- the 73,263 figure was already stale), a small A<->I swap, negligible.
+      matched non-null rows differ (0.03%), a small A<->I swap, negligible. icesVocab's
+      TS_HaulVal resolves this as a controlled 7-code haul-validity list. Against
+      the real archive: HH uses 6 of 7 codes, LT 4 of 7; 0 real values fall outside
+      the vocab in either table.
     description: >-
       Haul validity code
   - name: DataType
     type: enum
     values:
-    - '-9'
-    - C
-    - P
-    - R
-    - S
+      '-9': Invalid hauls
+      C: Data calculated as CPUE (number per hour)
+      P: Pseudocategory sampling
+      R: Data by haul
+      S: Sub sampled data
     details: >-
       icesVocab's TS_DataType gives -9 its own specific meaning: 'Invalid
       hauls' -- not a generic missing-value placeholder like most of this field's
-      sibling enums (checked 2026-08-16, part of a full sweep of every enum field
-      with -9 as a declared code; see vignettes/articles/technical-notes.md). Low
-      prevalence in both tables that carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310,
-      0.03%).
+      sibling enums (part of a full sweep of every enum field with -9 as a declared
+      code; see articles/technical-notes.qmd). Low prevalence in both tables that
+      carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%).
     description: >-
       Specification of the data aggregation in the HL record. C: CPUE
       (per hour) data; TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw),
@@ -3434,38 +3416,39 @@ tables:
     - 0.0
     - 76.0
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows
-      (32.82%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
     description: >-
       Mean value in metres of vertical net opening measurements. For details
       see the survey manual.
   - name: Rigging
     type: enum
     values:
-    - '-9'
-    - BC
-    - BM
-    - BN
-    - D
-    - F
-    - FB
-    - FM
-    - FT
-    - FW
-    - M
-    - S
-    - T
-    - TS
-    - TT
+      '-9': Not provided
+      BC: Bobbin, tickler, chain groundrope
+      BM: Bobbin, mixed metal-nylon groundrope
+      BN: Bobbin, nylon groundrope
+      D: Tooth tickler
+      F: Flip-up rope
+      FB: Flip-up rope and chain mat, poly prop net with blinder
+      FM: Flip-up rope and chain mat, standard net with blinder
+      FT: Flip-up rope and tickler chains
+      FW: Flip-up rope and chain mat, poly prop net without blinder
+      M: Chain mat
+      S: Sumwing
+      T: Tickler chains
+      TS: Tickler and sumwing
+      TT: Tickler
     details: >-
       Mostly a copy of HH's own Rigging for the same haul, but 3,419 of 72,483
-      matched non-null rows (4.72%, checked 2026-08-16, denominator corrected 2026-08-18
-      -- the 73,284 figure was already stale) diverge -- almost entirely a near-symmetric
-      swap between just two codes (FB<->FW: 1,978 and 1,441 rows respectively), consistent
+      matched non-null rows (4.72%) diverge -- almost entirely a near-symmetric swap
+      between just two codes (FB<->FW: 1,978 and 1,441 rows respectively), consistent
       with independent recording variance between HH's haul-time entry and LT's
-      own litter-assessment-time entry, not a one-directional error.
+      own litter-assessment-time entry, not a one-directional error. icesVocab's
+      TS_Rigging resolves this as a controlled 15-code list. Against the real archive:
+      HH uses 13 of 15 codes, LT 9 of 15; 0 real values fall outside the vocab in
+      either table.
     description: >-
       The way the gear is rigged. Rigging depends on survey, see survey
       manuals for further details.
@@ -3507,18 +3490,14 @@ tables:
     details: >-
       icesVocab's TS_Tickler resolves this as a controlled tickler-chain
       count code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed'
-      sentinel) -- not an open numeric quantity, found via the full-field vocab sweep
-      (data-raw/build_vocab_field_audit.R, Issue 9). Checked 2026-08-10 directly against
-      the real archive -- but against data an archive-pipeline bug (known-issues.yaml's
-      sentinel_replacement_data_loss) had already silently scrubbed -9 out of: at
-      the time HH showed 9 distinct values and LT 3, neither including -9. Re-verified
-      2026-08-16 after that bug's fix: HH now shows 10 distinct values (-9, 0, 1,
-      4, 5, 8, 10, 20, 21, 27) and LT 4 (-9, 0, 5, 8, a subset of HH's own); -9 turns
-      out to be the DOMINANT value in both (78% of HH, 41% of LT), not absent -- still
-      zero gaps against the vocab's 32 codes, either direction. Live WSDL (getHHdata)
-      declares this field int, not string -- an accepted, permanent M01 divergence
-      between the WSDL-driven archive and this curated enum spec (see Valid_Aphia's
-      own note for the general pattern), not a bug to fix by changing either side.
+      sentinel) -- not an open numeric quantity. Against the real archive: HH shows
+      10 distinct values (-9, 0, 1, 4, 5, 8, 10, 20, 21, 27) and LT 4 (-9, 0, 5, 8,
+      a subset of HH's own); -9 is the dominant value in both (78% of HH, 41% of
+      LT), not absent -- zero gaps against the vocab's 32 codes, either direction.
+      Live WSDL (getHHdata) declares this field int, not string -- an accepted, permanent
+      M01 divergence between the WSDL-driven archive and this curated enum spec (see
+      Valid_Aphia's own note for the general pattern), not a bug to fix by changing
+      either side.
     description: >-
       Amount of ticklers connected to the gear.
   - name: Warplngt
@@ -3528,9 +3507,9 @@ tables:
     - 0
     - 4065
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%),
-      0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in
+      either table.
     description: >-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio
       is depends on survey, for further details see survey manuals.
@@ -3544,10 +3523,10 @@ tables:
       A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
       from it with no comparable support and are treated as data-entry errors, excluded
-      here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows
-      (38.18%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception (already excluded by the range above, [16,30]).
+      here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception (already
+      excluded by the range above, [16,30]).
     description: >-
       Warp diametre in millimetres.
   - name: WarpDen
@@ -3557,10 +3536,9 @@ tables:
     - 0
     - 26
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows
-      (60.34%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
     description: >-
       Warp weight in kg per linear meter of warp. See survey manuals for
       more information.
@@ -3571,9 +3549,9 @@ tables:
     - 0.0
     - 20.2
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows
-      (35.88%), 0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls
+      in either table.
     description: >-
       Door surface area in square metres.
   - name: DoorWgt
@@ -3583,9 +3561,9 @@ tables:
     - 0
     - 1720
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows
-      (35.72%), 0 true nulls in either table.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls
+      in either table.
     description: >-
       Door weight in kilograms.
   - name: TowDir
@@ -3600,9 +3578,9 @@ tables:
       deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by
       10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg).
       Both groups are outside the documented 0-360 domain and excluded here. -9 is
-      the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows
-      (3.17%), 0 true nulls in either table -- already excluded by the range above.
+      the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls
+      in either table -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -3618,9 +3596,9 @@ tables:
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
       gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
-      (data-raw/build_field_description_snapshot.R), confirmed 2026-08-17: HH 56,805/145,958
-      rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in either table
-      -- already excluded by the range above.
+      (data-raw/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%),
+      LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded
+      by the range above.
     description: >-
       Ground speed of towing in knots. Recommended speed depends on survey,
       see survey manuals for more details
@@ -3631,10 +3609,9 @@ tables:
     - 0.0
     - 22.0
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows
-      (55.11%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
     description: >-
       Trawl speed on water in knots.
   - name: WindDir
@@ -3647,10 +3624,10 @@ tables:
       -1 is documented ('varying direction'). 999 (57 rows) reads as an
       undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
-      present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows
-      (6.79%), 0 true nulls in either table -- already excluded by the range above
-      (unlike -1, which the range explicitly keeps).
+      present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls
+      in either table -- already excluded by the range above (unlike -1, which the
+      range explicitly keeps).
     description: >-
       Direction of wind in degrees. Calm = 0,  direction from north to
       south = 360, varying direction = -1
@@ -3665,13 +3642,7 @@ tables:
       -- no vessel would be actively trawling above this. Excluding the -9 sentinel:
       HH 1,407 of 106,109 real measurements (1.33%) exceed it, up to a max of 342
       m/s; LT 1,149 of 64,985 (1.77%), up to 77 m/s. Both tail off smoothly, consistent
-      with a real distribution below and noise above. Corrected 2026-08-18: this entry
-      previously cited one shared, undated '1,641 of 109,012' figure with no per-table
-      breakdown, which matches neither table's current real (non-sentinel) count
-      -- likely predates -9 being preserved as a raw value rather than scrubbed to
-      NA, same root cause as SubFactor/Turbidity above; a further undated claim of
-      '357 rows right at exactly 28' isn't reconcilable against either table's
-      real data (HH: 300, LT: 203) and has been dropped rather than guessed at.
+      with a real distribution below and noise above.
     description: >-
       Speed of wind in metres/sec.
   - name: SwellDir
@@ -3681,10 +3652,9 @@ tables:
     - 0
     - 360
     details: >-
-      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows
-      (37.79%), 0 true nulls in either table -- the modal value in both tables, not
-      the exception.
+      -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls
+      in either table -- the modal value in both tables, not the exception.
     description: >-
       Direction of swell in degrees. No movement=0, direction from south
       to north = 360, varying direction = -1
@@ -3700,13 +3670,11 @@ tables:
       a single unprefixed 'SwellHeight' key, an enum of H/L/M/N/NR/VH height classes
       -- the seed stage applies it here too since the key resolves the same way for
       LT). This field is not independently observed by LT: it is HH's own SwellHeight,
-      recorded again on the LT record for the same haul (confirmed 2026-08-16, denominator
-      corrected 2026-08-18, by joining LT to HH on the full 8-field composite key
-      -- 55,113 of 55,113 rows where both are non-null carry an identical value, zero
-      exceptions; the 2026-08-16 citation's row count (55,914) was already stale
-      by the time this was re-checked). Range, exclusion boundary, and evidence (including
-      the WindSpeed co-parameter check) are therefore HH's, not independently re-derived
-      here -- see HH's own SwellHeight entry above for the full reasoning.
+      recorded again on the LT record for the same haul -- joining LT to HH on the
+      full 8-field composite key, 55,113 of 55,113 rows where both are non-null carry
+      an identical value, zero exceptions. Range, exclusion boundary, and evidence
+      (including the WindSpeed co-parameter check) are therefore HH's, not independently
+      re-derived here -- see HH's own SwellHeight entry above for the full reasoning.
     description: >-
       Height of (swell) waves, in metres
   - name: CodendMesh
@@ -3719,10 +3687,10 @@ tables:
       0mm (202 rows) excluded as a placeholder -- a codend by definition has
       some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
       644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide
-      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R),
-      confirmed 2026-08-17: HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows
-      (30.11%), 0 true nulls in either table -- the modal value in both tables, already
-      excluded by the range above.
+      sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
+      HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls
+      in either table -- the modal value in both tables, already excluded by the range
+      above.
     description: >-
       Codend mesh size in mm
   - name: EEZ
@@ -3736,11 +3704,7 @@ tables:
     details: >-
       Exclusive Economic Zone name, no description present. 19 distinct values,
       162 of 75,310 rows unpopulated. Not treated as a closed set -- EEZ coverage
-      in a wider archive could plausibly include zones absent from this one. Verified
-      2026-07-29 against the full LT archive; corrected 2026-08-18 (cited 20 distinct
-      values of a stale 79,451-row total then; the 162-row unpopulated count was already
-      right, re-confirmed against today's .datras/LT_legacy.parquet -- one distinct
-      value present in 2026-07-29's archive snapshot no longer appears).
+      in a wider archive could plausibly include zones absent from this one.
   - name: NMArea
     type: string
     examples:
@@ -3752,28 +3716,20 @@ tables:
     details: >-
       National 12-nautical-mile zone name (sibling concept to EEZ above), no
       description present. 17 distinct values, 49,581 of 75,310 rows unpopulated.
-      Not treated as a closed set, same reasoning as EEZ. Found 2026-07-29 only after
-      fixing the Y/N-enum crash above -- validate-spec had never actually reached
-      this field before, since it's the table's last column and everything upstream
-      of it kept dying first (ThermoCline, then the flag enums). Verified 2026-07-29
-      against the full LT archive; corrected 2026-08-18 -- unlike EEZ/OSPARArea/MSFDArea's
-      own corrections (total only), this one's row-count AND distinct-value claims
-      were both off (cited 18 distinct / 53,303 unpopulated of a stale 79,451-row
-      total; today's real .datras/LT_legacy.parquet gives 17 distinct / 49,581 unpopulated
-      of 75,310), not just the denominator.
+      Not treated as a closed set, same reasoning as EEZ.
   - name: DateofCalculation
     type: number(ordinal)
     details: >-
       See known issue dateofcalculation_type_mismatch (DATRAS-known-issues.yaml,
       not yet filed): ICES's WSDL declares this field character for LT's own retrieval
       operation (getLitterAssessmentOutput), while HH/HL/CA's own operations all
-      declare it int/decimal -- but real LT data (verified 2026-07-29) is the identical
-      8-digit YYYYMMDD stamp (e.g. "20260625"), just returned as a string by that
-      one operation. Digit order (month before day) confirmed consistent with HH/HL/CA.
-      Same open-upper-bound, ICES-Datacenter-inserted basis as HH/HL/CA's DateofCalculation,
-      but this table's OWN verified minimum (2015-11-27) is genuinely years later
-      than theirs (2012-04-19) -- consistent with LT/litter reporting being a newer
-      addition to DATRAS than the main haul/length/age exchange.
+      declare it int/decimal -- but real LT data is the identical 8-digit YYYYMMDD
+      stamp (e.g. "20260625"), just returned as a string by that one operation. Digit
+      order (month before day) is consistent with HH/HL/CA. Same open-upper-bound,
+      ICES-Datacenter-inserted basis as HH/HL/CA's DateofCalculation, but this table's
+      OWN verified minimum (2015-11-27) is genuinely years later than theirs (2012-04-19)
+      -- consistent with LT/litter reporting being a newer addition to DATRAS than
+      the main haul/length/age exchange.
     range:
     - 20151127
     - .inf
@@ -3789,12 +3745,12 @@ tables:
     protocol and scope. Linked to HH via the composite haul identifier (Survey + Year
     + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note:
     CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table
-    details); LT's own HaulNumber has no equivalent gap -- checked 2026-08-16, zero
-    nulls and zero -9 values. The full 8-field composite key is required for correct
-    joins regardless: 2,026 of 75,310 LT rows (2.7%) don't match any HH haul on it,
-    but for an unrelated, diagnosed reason (known-issues.yaml: lt_bts_2025_q1_orphaned)
-    -- HH's own submission is genuinely missing for that survey/year/quarter, not
-    an LT-side data-quality problem.
+    details); LT's own HaulNumber has no equivalent gap -- zero nulls and zero -9
+    values. The full 8-field composite key is required for correct joins regardless:
+    2,026 of 75,310 LT rows (2.7%) don't match any HH haul on it, but for an unrelated,
+    diagnosed reason (known-issues.yaml: lt_bts_2025_q1_orphaned) -- HH's own submission
+    is genuinely missing for that survey/year/quarter, not an LT-side data-quality
+    problem.
   origin: data-raw/spec_02_curate_dict.R
 relationships:
 - join: HL.Survey = HH.Survey AND HL.Year = HH.Year AND HL.Quarter = HH.Quarter AND

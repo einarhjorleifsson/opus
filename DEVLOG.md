@@ -1509,3 +1509,63 @@ script wrongly flagged `Year`/`DepthStratum`/`StatisticalRectangle`/
 
 `devtools::check()`: 0 errors, 0 warnings, 0 notes. Vocab-annotation
 validator: 0 structural errors.
+
+## 2026-08-27 -- data-dict pull check: R package shipped, tidyverse/Posit
+now, opus's CLI integration verified still compatible
+
+User pulled a fresh `~/garbage/data-dict` (53 commits since the last
+check-in around 2026-08-05/06) and asked for a check against opus. The
+project has re-homed under tidyverse/Posit (authored by Gabor Csardi and
+Hadley Wickham), moved to `github.com/tidyverse/data-dict` and
+data-dict.tidyverse.org, and is on a CRAN submission track -- no longer
+an independent side tool.
+
+The headline item, a new `r/` R package (`datadict`, v0.1.0), turned out
+to be thin and consumer-facing: `dd_install()` downloads a released
+binary (no Rust toolchain needed), `dd_run()` is generic, and
+`dd_validate_data()` is the only validation-specific function -- it runs
+`validate-data` and writes+opens an HTML report. It doesn't expose
+validate-spec/meta, export-spec/data, render, describe, or draft
+separately, and it can't inject a `source: parquet:` path the way opus's
+own `validate_against_dict()` (`data-raw/validate_against_datadict.R`)
+already has to, since the shipped yaml deliberately omits
+machine-specific paths. So it doesn't replace or reduce opus's own
+22-function `R/validation.R` -- it's a pointer worth giving to *consumers*
+of `DATRAS-data-dict.yaml` (WP3, ICES submitters) who want a
+zero-setup self-check, not something opus itself depends on. Checked the
+PyPI side too (`data-dict-yaml`): confirmed from `tools/pypi/
+make_wheels.py`'s own docstring that it repacks the compiled binary into
+wheels with "no Python code involved" -- CLI distribution parity, not a
+Python API analogous to the R package.
+
+opus's local CLI binary (`~/garbage/data-dict/target/release/data-dict`,
+what `validate_against_dict()` and `R/validation.R`'s wrappers all shell
+out to) was stale -- last built 2026-08-16, 11 days behind a source tree
+that had since grown the entire assertions feature and the R package
+itself. Rebuilt it (`cargo build --release -p data-dict-cli`, now tool
+v0.0.3) and diffed every flag opus's own code passes (`--json`,
+`--table`, `--html`, `-o`/`--output`, `--pretty`, every subcommand name)
+against live `--help` output for each wrapped subcommand. All unchanged.
+Spec format version is still `$version: 0.1.0`, matching opus's yaml.
+No compatibility breaks, no code changes needed.
+
+The one substantive new feature is Assertions: a full `assert`-expression
+language (SQL-like, three-valued logic, row-level or aggregate),
+`language: r`/`python` passthrough read into the same semantics rather
+than executed as-is, a `translate` CLI command, and three new data-check
+codes (D07 violated, D08 not evaluable, D09 integer-overflowed). Spec
+checks grew from S01-S27 to S01-S36 plus a reorganized S60-S69
+"structural checks" block; D01-D06 grew to D01-D09. None of this is
+hardcoded anywhere in opus's wrappers, which pass the CLI's JSON through
+generically. AGENTS.md's existing line -- "not yet assertions, for which
+no evidence-backed candidate has been identified" -- is still accurate;
+no candidate rule surfaced in this pass either, and none was invented to
+match the newly-available feature (Working Principle 4).
+
+Updated AGENTS.md's three passages that talked about the R-package in
+future tense ("R-package (when available)", "if/when R-package
+matures", "when their R-package ships") to reflect that it has shipped,
+and to state its actual (narrower-than-implied) scope, so a future
+session doesn't re-discover the same gap. Updated the corresponding
+memory entries (`data_dict_current_status`, `data_dict_trajectory`,
+`data_dict_spec_tidyverse`) to match.

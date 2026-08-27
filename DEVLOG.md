@@ -1510,6 +1510,125 @@ script wrongly flagged `Year`/`DepthStratum`/`StatisticalRectangle`/
 `devtools::check()`: 0 errors, 0 warnings, 0 notes. Vocab-annotation
 validator: 0 structural errors.
 
+## 2026-08-20 (continued) -- ICES distribution pitch: parquet +
+catalog.duckdb as a SOAP alternative
+
+Explored, verified hands-on, and implemented a possible pitch to ICES:
+publish Tier 1 tables as parquet plus a small companion `.duckdb`
+"catalog" file at a plain https URL, as an alternative to DATRAS's
+SOAP/WSDL access. `obus::dr_con()` already does the remote-parquet half
+in production (pointed at `https://heima.hafro.is/~einarhj/datras`, the
+user's own institutional server, run as a demo -- not the eventual
+host); this adds a metadata/semantic layer DuckDB supports natively:
+`COMMENT ON TABLE/COLUMN` (durable, queryable via `duckdb_columns()`/
+`duckdb_views()`) and lookup tables for enum labels and range
+constraints (DuckDB's native `CREATE TYPE ... AS ENUM` doesn't carry
+labels, and view `CHECK` constraints aren't implemented). A catalog-only
+`.duckdb` file (views over external parquet plus comments, zero data
+rows) is ~275KB regardless of data volume, and `ATTACH
+'https://.../catalog.duckdb' AS cat (READ_ONLY)` works directly with no
+local download step -- confirmed against a real loopback HTTP server.
+
+Built `data-raw/spec_04_build_catalog.R`: reads both shipped yaml
+dictionaries, mirrors `op_flag_violations()`'s (`R/validation.R`) exact
+field-walking logic for `values`/`range`/`constraints` -- including its
+`.inf`-maps-to-Inf-on-either-side quirk, kept verbatim rather than
+silently "fixed" -- and emits `CREATE VIEW`/`COMMENT ON TABLE`/`COMMENT
+ON COLUMN` plus three lookup tables (`enum_labels`,
+`range_constraints`, `field_constraints`) into
+`.datras/to_https/catalog.duckdb`. Retargeted
+`archive_06_split_legacy_new.R`'s output there too (`{TABLE}_legacy.
+parquet` / `{TABLE}_new.parquet`), so the parquet and its catalog stage
+side by side for manual upload.
+
+Real discovery during implementation: DuckDB's `COMMENT ON COLUMN`
+eagerly resolves the view's *actual current remote schema*, so it
+errored against a stale trial file already sitting at the demo URL from
+before this session's yaml curation -- and `CREATE OR REPLACE VIEW`
+(tried as a workaround) wipes all existing column comments, so that
+doesn't work either. Net effect is a real ordering constraint for any
+future run: parquet must already be live at the target URL *before* the
+catalog is built, not after or alongside. Verified the full pipeline by
+temporarily pointing `BASE_URL` at the local `.datras/to_https` path --
+all 8 views (4 tables x curated/legacy) built cleanly, and
+`range_constraints` came out to exactly 192 rows (96 yaml `range:`
+fields x 2 name variants), an independent cross-check.
+
+Open question, not resolved this session: where the *connector* half
+(ATTACH + return a lazy tbl, `dr_con()`-equivalent) should live long
+term -- it's data access, not spec curation, so by opus's own scope
+rule it belongs with obus, not here. obus itself is expected to be
+restructured rather than scrapped, so this is a live design question,
+not a blocker.
+
+## 2026-08-26/27 -- XML download pipeline: fixed duplicate-file bug,
+full restart, LT tag + EVHOE fixes
+
+`.datras/xml/` could end up with two files for the same (record_type,
+survey, year, quarter) cell: `archive_02_download.R` generated a
+timestamp-suffixed filename on every fetch instead of a stable one, so
+any re-fetch -- deliberate, or from the manifest simply not yet knowing
+about an already-downloaded cell -- wrote a second file instead of
+overwriting the first. A comment in the code already described a
+`Quarter={quarter}/` partition level that the path-building code right
+below it never actually implemented. Found 5 cells (HL/CA, NS-IBTS,
+2025-2026) where this had corrupted the manifest -- recorded
+`status="empty"`/`n_rows=0` despite the real XML holding tens of
+thousands of records; a sorted-line diff confirmed the duplicate pairs
+were byte-identical, just reordered by ICES's server, so no real data
+was ever at risk. A broader catalog-vs-manifest check also found 72% of
+(cell x record_type) combinations ICES actually has had no manifest row
+at all, root cause undiagnosed -- moot given the restart below.
+
+Rather than surgically dedupe an already-corrupted ~20GB/4790-file
+cache, wiped `.datras/xml/` and `.datras/manifest.tsv` entirely and
+relaunched a fresh 1965-2026, all-surveys, all-record-types download
+(`.datras/catalog.tsv` and all downstream derived output left
+untouched). Fixed in code first: stable path
+`.../Survey=X/Year=Y/Quarter=Q/{rt}_{survey}_{year}_Q{quarter}.xml`, a
+stable-path check before hitting the network at all, a new
+`OPUS_FORCE_REFRESH_YEARS` config for a deliberate re-fetch, and a log
+warning when a response is classified "empty" but is implausibly large
+(a real empty DATRAS response is ~200 bytes).
+
+The ~5.5 hour restart surfaced two more real bugs, both fixed and fully
+repaired -- final manifest is 0 errors, 0 corrupted rows, full
+973x4=3892-cell coverage (HH 972/1, HL 971/2, CA 906/67, LT 215/758,
+`ok`/`empty`):
+
+- **LT tag-pattern bug**: every LT fetch counted zero rows regardless of
+  content -- the row-counting logic assumed `Cls_DatrasExchange_{rt}`
+  universally, but LT's real element name is
+  `Cls_DatrasExchange_LitterAssessmentOutput` (matches its distinct
+  `getLitterAssessmentOutput` endpoint, unlike HH/HL/CA's
+  `get{RT}data`). All 973 LT cells came back "empty"; 204 actually had
+  content, caught by the implausibly-large-empty-response warning added
+  earlier in the same session (fired exactly 204 times). Fixed the
+  tag-pattern computation in `archive_02_download.R`, then repaired the
+  204 rows locally (re-read the already-downloaded XML, recompute with
+  the right tag) rather than re-fetching.
+- **EVHOE padding (Issue 17)**: confirmed live against ICES's own
+  `getSurveyList` that `EVHOE` -- and only `EVHOE`, of 30 surveys --
+  comes back as `"EVHOE     "`, 5 trailing spaces baked into ICES's XML.
+  Filed as Issue 17 in `articles/issues.qmd`. Fixed at the source
+  (`trimws()` in `archive_03_catalog.R`'s `datras_get_surveys()`) plus
+  `URLencode()` on the survey param as defense in depth. All 116
+  previously-`error` EVHOE cells (29 cells x 4 record types) were
+  retried in a small standalone script bypassing the shared
+  `catalog.tsv` cache -- 100% succeeded, confirming padding was the sole
+  cause.
+- Also cleaned up manifest corruption from a since-fixed bug: multi-line
+  curl error messages, written with `quote = FALSE`, had split single
+  logical rows across physical lines. Stripped the resulting phantom
+  rows and collapsed remaining multi-line `error_msg` values to one
+  line.
+
+`.datras/xml/` and `.datras/manifest.tsv` are now a complete, clean,
+ready-to-use raw archive. `.datras/` itself is gitignored, so none of
+this shows in git history directly -- only the code fix does
+(`archive_01_download_config.R`, `archive_02_download.R`,
+`archive_03_catalog.R`, `archive_05_backfill_lt_partitions.R`).
+
 ## 2026-08-27 -- data-dict pull check: R package shipped, tidyverse/Posit
 now, opus's CLI integration verified still compatible
 

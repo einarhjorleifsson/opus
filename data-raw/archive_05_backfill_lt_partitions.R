@@ -135,23 +135,17 @@ for (rt in tables_to_run) {
     rel <- sub(paste0("^", rt_xml_dir, "/"), "", xml_file)
     parts <- strsplit(rel, "/")[[1]]
 
-    if (length(parts) != 3 ||
-        !grepl("^Survey=", parts[1]) || !grepl("^Year=", parts[2])) {
+    if (length(parts) != 4 ||
+        !grepl("^Survey=", parts[1]) || !grepl("^Year=", parts[2]) || !grepl("^Quarter=", parts[3])) {
       log_msg("SKIP | unexpected path shape: %s", rel)
       n_error <- n_error + 1
       next
     }
 
+    # Survey=/Year=/Quarter=/{rt}_{survey}_{year}_Q{quarter}.xml
     s <- sub("^Survey=", "", parts[1])
     y <- as.integer(sub("^Year=", "", parts[2]))
-    qm <- regmatches(parts[3], regexec("_Q(\\d)_", parts[3]))[[1]]
-
-    if (length(qm) != 2) {
-      log_msg("SKIP | can't find quarter in filename: %s", parts[3])
-      n_error <- n_error + 1
-      next
-    }
-    q <- as.integer(qm[2])
+    q <- as.integer(sub("^Quarter=", "", parts[3]))
 
     t0 <- Sys.time()
     df <- parse_xml_to_dataframe(xml_file, rt, s, y, q)

@@ -40,6 +40,7 @@ log_msg("OPUS DATRAS raw XML download starting")
 log_msg("Years: %s", paste(OPUS_YEARS, collapse = ", "))
 log_msg("Record types: %s", paste(RECORD_TYPES, collapse = ", "))
 if (!is.null(OPUS_SURVEYS)) log_msg("Surveys (filtered): %s", paste(OPUS_SURVEYS, collapse = ", "))
+if (!is.null(OPUS_FORCE_REFRESH_YEARS)) log_msg("Force refresh (ignoring existing data): %s", paste(OPUS_FORCE_REFRESH_YEARS, collapse = ", "))
 
 # Ensure workspace directories exist
 dir.create(DATRAS_XML_DIR, showWarnings = FALSE, recursive = TRUE)
@@ -179,85 +180,127 @@ for (rt in RECORD_TYPES) {
     y <- cells$year[i]
     q <- cells$quarter[i]
 
+    force_refresh <- y %in% OPUS_FORCE_REFRESH_YEARS
+
     # Check manifest: have we already fetched this cell?
     prev <- man %>%
       filter(record_type == rt & survey == s & year == as.character(y) & quarter == as.character(q))
 
-    if (nrow(prev) > 0 && prev$status[1] %in% c("ok", "empty", "none")) {
+    if (!force_refresh && nrow(prev) > 0 && prev$status[1] %in% c("ok", "empty", "none")) {
       # Already successfully fetched (or confirmed empty); skip
       next
     }
 
+    # Stable, one-file-per-cell location -- Quarter is its own partition level
+    # and the filename carries no download timestamp, so a re-fetch of this
+    # cell always overwrites the same path. There is never more than one XML
+    # file on disk per (record_type, survey, year, quarter).
+    # Path: .datras/xml/{RT}/Survey={survey}/Year={year}/Quarter={quarter}/{RT}_{survey}_{year}_Q{quarter}.xml
+    xml_dir <- file.path(DATRAS_XML_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y), sprintf("Quarter=%d", q))
+    xml_filename <- sprintf("%s_%s_%d_Q%d.xml", rt, s, y, q)
+    xml_path <- file.path(xml_dir, xml_filename)
+    xml_file <- file.path(rt, sprintf("Survey=%s", s), sprintf("Year=%d", y), sprintf("Quarter=%d", q), xml_filename)
+
     n_attempted <- n_attempted + 1
+    # LT's real element name is Cls_DatrasExchange_LitterAssessmentOutput,
+    # not Cls_DatrasExchange_LT -- it doesn't follow the pattern the other
+    # three record types do (matches its distinct getLitterAssessmentOutput
+    # endpoint). Assuming the pattern held universally meant every LT fetch
+    # counted zero rows regardless of actual content.
+    tag_pattern <- sprintf("<Cls_DatrasExchange_%s>", if (rt == "LT") "LitterAssessmentOutput" else rt)
 
-    # Construct URL for raw XML (special case for LT which uses getLitterAssessmentOutput)
-    if (rt == "LT") {
-      url <- sprintf(
-        "https://datras.ices.dk/WebServices/DATRASWebService.asmx/getLitterAssessmentOutput?survey=%s&year=%i&quarter=%i",
-        s, y, q
-      )
-    } else {
-      url <- sprintf(
-        "https://datras.ices.dk/WebServices/DATRASWebService.asmx/get%sdata?survey=%s&year=%i&quarter=%i",
-        rt, s, y, q
-      )
-    }
+    # A file for this exact cell may already be on disk even when the
+    # manifest doesn't (yet) have a row for it -- re-derive status from it
+    # instead of re-fetching, so a stale/missing manifest can never cause a
+    # duplicate download.
+    existing_lines <- if (!force_refresh && file.exists(xml_path)) {
+      tryCatch(readLines(xml_path, warn = FALSE), error = function(e) NULL)
+    } else NULL
 
-    t0 <- Sys.time()
-    result <- fetch_datras_raw_xml(url)
-    secs <- round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1)
-
-    if (!result$ok) {
-      # Network error or empty response
-      status <- "error"
-      n_rows <- 0L
-      err_msg <- result$err
-      xml_sha <- NA_character_
-      xml_file <- NA_character_
-
-      n_error <- n_error + 1
-      log_msg("[%-4s %-12s %d Q%d] %-5s | %s | %ss",
-              rt, s, y, q, status, "ERROR", secs)
-    } else {
-      # Successfully fetched XML
-      xml_lines <- result$xml
-
-      # Detect record count from XML (count Cls_DatrasExchange_* opening tags)
-      # Format: <Cls_DatrasExchange_HH>, <Cls_DatrasExchange_HL>, etc.
-      tag_pattern <- sprintf("<Cls_DatrasExchange_%s>", rt)
+    if (!is.null(existing_lines)) {
+      xml_lines <- existing_lines
       n_rows <- length(grep(tag_pattern, xml_lines, fixed = TRUE))
+      status <- if (n_rows == 0) "empty" else "ok"
+      xml_sha <- digest::digest(paste(xml_lines, collapse = "\n"), algo = "sha256")
+      err_msg <- NA_character_
+      secs <- 0
 
-      if (n_rows == 0) {
-        # Clean zero-row response: ICES has no data for this cell
-        status <- "empty"
-        n_empty <- n_empty + 1
+      if (status == "empty") n_empty <- n_empty + 1 else n_ok <- n_ok + 1
+      log_msg("[%-4s %-12s %d Q%d] %-5s | %10d rows | (already on disk)",
+              rt, s, y, q, status, n_rows)
+    } else {
+      # Construct URL for raw XML (special case for LT which uses getLitterAssessmentOutput)
+      # URLencode as defense in depth -- matches archive_03_catalog.R's calls,
+      # in case any survey name ever needs escaping (e.g. embedded spaces).
+      if (rt == "LT") {
+        url <- sprintf(
+          "https://datras.ices.dk/WebServices/DATRASWebService.asmx/getLitterAssessmentOutput?survey=%s&year=%i&quarter=%i",
+          URLencode(s), y, q
+        )
       } else {
-        status <- "ok"
-        n_ok <- n_ok + 1
+        url <- sprintf(
+          "https://datras.ices.dk/WebServices/DATRASWebService.asmx/get%sdata?survey=%s&year=%i&quarter=%i",
+          rt, URLencode(s), y, q
+        )
       }
 
-      # Compute SHA256 of raw XML
-      xml_text <- paste(xml_lines, collapse = "\n")
-      xml_sha <- digest::digest(xml_text, algo = "sha256")
+      t0 <- Sys.time()
+      result <- fetch_datras_raw_xml(url)
+      secs <- round(as.numeric(difftime(Sys.time(), t0, units = "secs")), 1)
 
-      # Write XML to disk
-      # Path: .datras/xml/{RT}/Survey={survey}/Year={year}/Quarter={quarter}/{RT}_{survey}_{year}_Q{quarter}_{timestamp}.xml
-      xml_dir <- file.path(DATRAS_XML_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y))
-      dir.create(xml_dir, showWarnings = FALSE, recursive = TRUE)
+      if (!result$ok) {
+        # Network error or empty response
+        status <- "error"
+        n_rows <- 0L
+        # Collapse to one line -- some curl errors are multi-line, and an
+        # embedded newline written raw (manifest.tsv is written with
+        # quote = FALSE) splits a single logical row across physical lines,
+        # corrupting the TSV for every line-based reader including R's own.
+        err_msg <- gsub("[\r\n\t]+", " ", result$err)
+        xml_sha <- NA_character_
+        xml_file <- NA_character_
 
-      xml_filename <- sprintf("%s_%s_%d_Q%d_%s.xml",
-                              rt, s, y, q,
-                              format(Sys.time(), "%Y%m%d_%H%M%S"))
-      xml_path <- file.path(xml_dir, xml_filename)
+        n_error <- n_error + 1
+        log_msg("[%-4s %-12s %d Q%d] %-5s | %s | %ss",
+                rt, s, y, q, status, "ERROR", secs)
+      } else {
+        # Successfully fetched XML
+        xml_lines <- result$xml
 
-      writeLines(xml_lines, xml_path)
-      err_msg <- NA_character_
+        # Detect record count from XML (count Cls_DatrasExchange_* opening tags)
+        # Format: <Cls_DatrasExchange_HH>, <Cls_DatrasExchange_HL>, etc.
+        n_rows <- length(grep(tag_pattern, xml_lines, fixed = TRUE))
 
-      # Relative path for manifest
-      xml_file <- file.path(rt, sprintf("Survey=%s", s), sprintf("Year=%d", y), xml_filename)
+        if (n_rows == 0) {
+          # Clean zero-row response: ICES has no data for this cell
+          status <- "empty"
+          n_empty <- n_empty + 1
 
-      log_msg("[%-4s %-12s %d Q%d] %-5s | %10d rows | %ss",
-              rt, s, y, q, status, n_rows, secs)
+          # A genuinely empty DATRAS response is ~200 bytes (just the wrapper
+          # tags). A much bigger "empty" response means the tag count above
+          # didn't match real content -- surface it loudly rather than
+          # silently mis-filing a cell that actually has data.
+          resp_bytes <- sum(nchar(xml_lines, type = "bytes")) + length(xml_lines)
+          if (resp_bytes > 5000) {
+            log_msg("  WARNING: [%s %s %d Q%d] classified 'empty' (no <%s> tags) but response is %d bytes -- worth a manual look",
+                    rt, s, y, q, rt, resp_bytes)
+          }
+        } else {
+          status <- "ok"
+          n_ok <- n_ok + 1
+        }
+
+        # Compute SHA256 of raw XML
+        xml_text <- paste(xml_lines, collapse = "\n")
+        xml_sha <- digest::digest(xml_text, algo = "sha256")
+
+        dir.create(xml_dir, showWarnings = FALSE, recursive = TRUE)
+        writeLines(xml_lines, xml_path)
+        err_msg <- NA_character_
+
+        log_msg("[%-4s %-12s %d Q%d] %-5s | %10d rows | %ss",
+                rt, s, y, q, status, n_rows, secs)
+      }
     }
 
     # Update manifest

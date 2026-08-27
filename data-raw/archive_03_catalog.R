@@ -28,7 +28,10 @@
 datras_get_surveys <- function() {
   url <- "https://datras.ices.dk/WebServices/DATRASWebService.asmx/getSurveyList"
   xml_lines <- .fetch_ices_xml(url)
-  surveys <- .parse_ices_xml_values(xml_lines, "Survey")
+  # trimws: at least one survey ("EVHOE") comes back fixed-width padded
+  # (e.g. "EVHOE     "); untrimmed, it propagates into URLs downstream as
+  # literal unencoded spaces, which curl rejects as a malformed URL.
+  surveys <- trimws(.parse_ices_xml_values(xml_lines, "Survey"))
   # Filter out test surveys
   surveys[!grepl("^Test", surveys, ignore.case = TRUE)]
 }

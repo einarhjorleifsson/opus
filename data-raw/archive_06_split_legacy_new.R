@@ -1,15 +1,29 @@
-#' Consolidate the partitioned archive into legacy- and new-named parquet
+#' Consolidate the partitioned archive into legacy- and new-named parquet,
+#' staged for manual publish to the https catalog server
 #'
-#' Two linked outputs:
-#' 1. .datras/{HH,HL,CA,LT}_legacy.parquet -- the full consolidated archive
-#'    exactly as ICES names it today, built directly from the partitioned
-#'    .datras/parquet/{table}/Survey=*/Year=*/ output (regenerated fresh
-#'    every run, not migrated-once from an old file -- see Step 1's own
-#'    comment for why that changed 2026-08-09).
-#' 2. .datras/{HH,HL,CA,LT}.parquet -- the same full archive under opus's
-#'    curated ("final") names, built by renaming columns in (1). Column
-#'    names are the only difference from (1); no type casting or value
-#'    changes.
+#' Two linked outputs, written directly to .datras/to_https/ (the staging
+#' directory manually copied to the https server -- see
+#' data-raw/spec_04_build_catalog.R for the companion catalog.duckdb built
+#' alongside these):
+#' 1. .datras/to_https/{HH,HL,CA,LT}_legacy.parquet -- the full consolidated
+#'    archive exactly as ICES names it today, built directly from the
+#'    partitioned .datras/parquet/{table}/Survey=*/Year=*/ output
+#'    (regenerated fresh every run, not migrated-once from an old file --
+#'    see Step 1's own comment for why that changed 2026-08-09).
+#' 2. .datras/to_https/{HH,HL,CA,LT}_new.parquet -- the same full archive
+#'    under opus's curated ("final") names, built by renaming columns in
+#'    (1). Column names are the only difference from (1); no type casting
+#'    or other value changes.
+#'
+#' Deliberately just a rename, nothing else (reaffirmed 2026-08-27, after a
+#' same-day detour that added a blanket "-9 -> NA" sentinel scrub and a
+#' derived `.id` column here, then rolled both back out): opus's own scope
+#' is the metadata construct (the yaml dictionaries) and validating data
+#' against it, not domain QC or data transformation -- see DESCRIPTION
+#' ("no domain QC or data transformation ... belongs downstream in
+#' obus/imbus"). Sentinel handling, `.id`, and further derived products
+#' (e.g. HL_length.parquet, HL_summary.parquet) belong in the new obus,
+#' not here.
 #'
 #' (No longer produces a legacy-named YAML here -- restructured 2026-08-09:
 #' inst/DATRAS-data-dict-legacy.yaml is now a real, primary package file,
@@ -41,6 +55,7 @@ suppressPackageStartupMessages({
 })
 
 TABLES <- c("HH", "HL", "CA", "LT")
+dir.create(".datras/to_https", showWarnings = FALSE, recursive = TRUE)
 
 ## ---- Step 1: consolidate the partitioned legacy parquet directly ----
 #
@@ -55,7 +70,7 @@ TABLES <- c("HH", "HL", "CA", "LT")
 
 for (t in TABLES) {
   part_dir <- file.path(".datras/parquet", t)
-  legacy_path <- file.path(".datras", paste0(t, "_legacy.parquet"))
+  legacy_path <- file.path(".datras/to_https", paste0(t, "_legacy.parquet"))
 
   if (!dir.exists(part_dir)) {
     stop("No partitioned directory ", part_dir, " for table ", t,
@@ -73,7 +88,7 @@ for (t in TABLES) {
 crosswalk <- op_datras_rename_crosswalk(TABLES)
 
 for (t in TABLES) {
-  real_cols <- names(arrow::read_parquet(file.path(".datras", paste0(t, "_legacy.parquet"))))
+  real_cols <- names(arrow::read_parquet(file.path(".datras/to_https", paste0(t, "_legacy.parquet"))))
   expected <- crosswalk$old_name[crosswalk$RecordHeader == t]
 
   only_in_crosswalk <- setdiff(expected, real_cols)
@@ -91,8 +106,8 @@ for (t in TABLES) {
 ## ---- Step 3: build full-scale new-named parquet from the legacy parquet ----
 
 for (t in TABLES) {
-  legacy_path <- file.path(".datras", paste0(t, "_legacy.parquet"))
-  new_path <- file.path(".datras", paste0(t, ".parquet"))
+  legacy_path <- file.path(".datras/to_https", paste0(t, "_legacy.parquet"))
+  new_path <- file.path(".datras/to_https", paste0(t, "_new.parquet"))
 
   xw <- crosswalk[crosswalk$RecordHeader == t, ]
   rename_map <- setNames(xw$new_name, xw$old_name)  # old -> new, already ground-truthed 1:1 above
@@ -105,4 +120,4 @@ for (t in TABLES) {
 }
 
 message("")
-message("Done. Legacy and final parquet now live side by side under .datras/")
+message("Done. Legacy and new-named parquet now live side by side under .datras/to_https/")

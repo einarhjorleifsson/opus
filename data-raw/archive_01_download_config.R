@@ -12,6 +12,15 @@ OPUS_SURVEYS <- NULL                  # NULL = all surveys; or e.g. c("NS-IBTS",
 RECORD_TYPES <- c("HH", "HL", "CA", "LT")  # Exchange data (HH/HL/CA) + Litter assessment (LT)
 WORKSPACE <- ".datras"                # Relative to package root
 
+# Force a re-fetch for these years even when the cell is already on disk /
+# marked done in the manifest -- e.g. to pick up an ICES correction or a
+# newly published quarter for a recent year. Re-fetching always overwrites
+# the existing file in place (stable filename, one file per cell), so this
+# is a safe, explicit "get me the latest" -- distinct from the normal
+# incremental behavior, which skips anything already fetched.
+# NULL = normal incremental behavior. Example: OPUS_FORCE_REFRESH_YEARS <- 2024:2026
+OPUS_FORCE_REFRESH_YEARS <- NULL
+
 ## ---- Paths (relative to opus package root) ----
 DATRAS_XML_DIR <- file.path(WORKSPACE, "xml")
 DATRAS_MANIFEST <- file.path(WORKSPACE, "manifest.tsv")

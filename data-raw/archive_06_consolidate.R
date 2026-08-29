@@ -55,7 +55,10 @@ source("data-raw/archive_06_metadata.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 TABLES <- if (length(args) > 0) args else c("HH", "HL", "CA", "LT")
-OUT_DIR <- ".datras/to_https/raw"
+# Both roots are overridable so the CSV-derived tree (archive_02b) can be
+# consolidated alongside the XML one rather than replacing it.
+PART_ROOT <- Sys.getenv("OPUS_PARQUET_ROOT", ".datras/parquet")
+OUT_DIR   <- Sys.getenv("OPUS_STAGE_DIR", ".datras/to_https/raw")
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
 
 # Resolved once for the whole run, not per table: export-spec runs validate-spec
@@ -66,7 +69,7 @@ SPEC <- dm_export_spec()
 CROSSWALK <- op_datras_rename_crosswalk()
 
 for (t in TABLES) {
-  part_dir <- file.path(".datras/parquet", t)
+  part_dir <- file.path(PART_ROOT, t)
   out_path <- file.path(OUT_DIR, paste0(t, ".parquet"))
 
   if (!dir.exists(part_dir)) {

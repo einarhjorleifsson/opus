@@ -34,33 +34,45 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       logical type, which nanoparquet preserves — so this needs either a fix for
       that or a deliberate trade. Worth revisiting on its own merits.
 
-## Open decision: which type system is the public contract?
+## Type contract — settled; residual is obus-side
 
-- [ ] opus answers "what type is this field" two ways, and consumers hit both.
-      The archive is built from **WSDL physical types**
-      (`data-raw/archive_00_wsdl_types.R`, which deliberately never loads the
-      curated spec); `op_field_spec()` reports the **curated semantic types**.
-      obus types its live-XML path from the second and reads an archive built
-      from the first, so the same column arrives as a different R class
-      depending on source.
+- [ ] **Tell obus that `type` is not a casting instruction.** This was recorded
+      here as an open decision for opus ("which type system is authoritative?").
+      It is not one: data-dict already answers it, and opus already behaves
+      correctly. Checked 2026-08-29, three independent ways:
 
-      **The divergence is now a single uniform shape** (measured 2026-08-29
-      against the published archive, via the embedded `type` vs `r_type`):
-      **`number(quantity)` in the YAML, `integer` in the archive — 30 columns**,
-      among them `SweepLength`, `LengthClass`, `NumberAtLength`, `Age`,
-      `SubsampledNumber`, `SubsampleWeight`, `SpeciesCategoryWeight`,
-      `BottomDepth`, `HaulDuration`, `Distance`. Nothing else disagrees.
+      1. **The format says so.** `site/spec.md`: *"Types capture data types at a
+         level that makes sense for analysis, which is typically coarser than
+         the logical types of the underlying data"*, and `type` "should match
+         (**approximately**) the underlying data type". The implementation
+         enforces exactly that — `parquet_element_type()` collapses INT32,
+         INT64, FLOAT and DOUBLE all to `number`, the measure qualifier
+         (`(quantity)`/`(ordinal)`/`(id)`) is never read from a file because it
+         is a semantic claim, and `validate_meta.rs` asserts
+         `types_compatible("number(quantity)", "number")`. Which is why
+         `op_validate_meta()` is clean on all four tables: the archive has been
+         conformant throughout.
+      2. **ICES sends integers.** All 31 fields where the YAML says
+         `number(quantity)` and the archive stores integer are declared `int` by
+         the WSDL, and a full scan of `.datras/xml/` — every one of the 29
+         distinct tags, all 3,892 files, 19.8 GB — found **0 decimal values in
+         100,280,647**. The archive's INT32 storage loses nothing.
+      3. **opus never casts from the curated type.** `op_cast_wsdl_types()`
+         casts from WSDL physical types; `op_cast_to_spec()` filters to
+         `type %in% c("date","datetime")` and touches nothing else — the one
+         semantic type the wire cannot express. There is no second type system
+         in this package's conversion path.
 
-      The two earlier cases are gone: `Year` is INT32 now, not INT64, and
-      `DateofCalculation` is typed `date` in the YAML and stored as a real
-      parquet DATE. So this is one question, not a scattered set.
+      The one place a curated type is used as a casting rule is obus's
+      `dr_settypes()` (`key_dbl <- ...type == "number(quantity)"` →
+      `as.numeric()`), which turns a deliberately-coarse analysis label into a
+      precise storage instruction. That is the whole of the divergence obus
+      reported, and the fix belongs there: cast from the `r_type` /
+      `parquet_type` now carried in each parquet footer, or from the WSDL, not
+      from `type`.
 
-      The split is defensible in principle — physical and semantic types answer
-      different questions — and the embedded dictionary now makes it *visible*
-      rather than silent, since every column carries `type`, `parquet_type` and
-      `r_type` side by side. What is still missing is a statement of which one
-      downstream should treat as authoritative. A documented answer may be
-      enough; neither pipeline necessarily changes.
+      **opus's action is coordination only** — pass this on rather than change
+      anything here. Recorded in `AGENTS.md` under Key Facts.
 
 ## ICES-side reporting and the known-issues registry
 

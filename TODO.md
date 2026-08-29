@@ -76,11 +76,19 @@ below and `DEVLOG.md`.
       files, and `enum_labels` carries Tickler's 32 and SpeciesCategory's 56
       codes — including the five `-9` labels that make the kept sentinels
       interpretable.
-- [ ] **Publish `catalog.duckdb`** — built at
-      `.datras/to_https/raw/catalog.duckdb`, not yet uploaded. It sits *with*
-      the exchange tables it describes: it is built from the Tier 1
-      dictionary only, and downstream products may get their own catalog
-      rather than sharing this one.
+- [x] ~~**Delete `catalog.duckdb` from the server**~~ — done 2026-08-29.
+      `…/datras/raw/catalog.duckdb` now 404s. Superseded by the dictionary
+      embedded in each parquet footer; `op_catalog()` rebuilds everything it
+      served, in memory, from those footers in ~1.2s (verified row-for-row
+      against it before removal). The builder `spec_04_build_catalog.R` is
+      deleted.
+- [x] ~~**Publish the metadata-carrying archive**~~ — done 2026-08-29. All four
+      `…/datras/raw/{HH,HL,CA,LT}.parquet` are live and byte-identical to the
+      staged files, each carrying its five `datras:` keys and no
+      `ARROW:schema`. Read over https in ~0.14s per footer. The rendered
+      dictionary is beside them at `…/datras/raw/datras-data-dict.html`.
+      Confirmed `dict_sha256` agrees across source YAML, installed opus and
+      the published files (`0a70ca61…`) — the skew guard works.
 - [ ] **The old archive is still live at the server root and obus still
       reads it.** `…/datras/{T}.parquet` remains a different artifact from
       `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against 14,423,771,
@@ -89,53 +97,49 @@ below and `DEVLOG.md`.
       Switching obus over is therefore not just a URL change — it needs a
       decision on those Tier-3 names and on `.id`. Until then the two
       archives coexist and obus consumes the older one.
-- [ ] **Write parquet with DuckDB rather than `arrow`, and embed the
-      dictionary while doing it.** One change, two payoffs, sized for a
-      fresh session:
+- [x] ~~**Embed the dictionary in the parquet footer**~~ — done 2026-08-29.
+      `data-raw/archive_06_metadata.R` builds five `datras:` keys per table
+      (`dict`, `provenance`, `sentinels`, `coverage`, `known_issues`) from
+      `data-dict export-spec`, and `archive_06_consolidate.R` writes them in
+      the same call as the data, so no staged file exists without its
+      dictionary. Read side is `R/archive.R` (16 exported `op_*` functions).
 
-      *Why.* `archive_06_consolidate.R:53` does
-      `arrow::open_dataset(part_dir) |> collect()` — materialising 14.4M HL
-      rows in memory purely to write them out again. DuckDB streams it:
-      `COPY (SELECT * FROM read_parquet('.datras/parquet/HL/**/*.parquet'))
-      TO '…/raw/HL.parquet' (FORMAT PARQUET, COMPRESSION zstd, KV_METADATA
-      {…})`. No collect, no 14M-row R object.
+      *Writer: `nanoparquet`, not DuckDB and not `arrow`.* Measured on LT
+      with a 120 KB payload: `arrow` serializes the payload a second time
+      inside `ARROW:schema` (284 KB of footer for 120 KB of content);
+      `nanoparquet` with `write_arrow_metadata = FALSE` writes 120 KB and
+      drops `ARROW:schema` entirely, which parquet does not require and
+      DuckDB never reads. DuckDB's `COPY … KV_METADATA` also works and would
+      additionally solve the `collect()` materialisation, but it loses
+      `DateofCalculation`'s DATE logical type, so it was not taken. The
+      14.4M-row `collect()` in `archive_06_consolidate.R:53` is therefore
+      still there — worth revisiting separately, on its own merits.
 
-      *And it closes a regression.* The rebuild silently dropped something
-      the previous archive had: embedded footer metadata. The old root files
-      carry `obus:file` (1.2 KB) and `obus:fields` (140 KB) of per-field
-      descriptions; the new `raw/` files carry only `ARROW:schema`. So a
-      detached parquet is no longer self-describing, and
-      `duckdbfs::open_dataset()` alone can no longer surface any of it —
-      the metadata now lives only in the sidecar catalog. Verified 2026-08-29:
-      `KV_METADATA` writes and `decode(value)` reads back byte-identically,
-      including a 29 KB blob, so there is no capacity or correctness
-      obstacle. Embedding is one clause of the same `COPY`.
+      *Payload sizes:* HH 86.8 KB, LT 71.0 KB, CA 65.4 KB, HL 59.4 KB.
+      Uncompressed and JSON on purpose: DuckDB has no gunzip scalar and
+      cannot parse YAML, and the point is that
+      `SELECT decode(value) FROM parquet_kv_metadata(url)` works with
+      nothing but a DuckDB client.
 
-      *Dependency shape is backwards today.* `arrow` is a hard `Imports`
-      while `duckdb` is not declared at all, despite the catalog, the
-      validation wrappers and every consumer already being DuckDB.
+      *The open design question resolved itself.* Per-table duplication of
+      shared fields is a non-issue as noted; the collection-level content
+      (3 `relationships`, 14-term glossary) is embedded in every file rather
+      than omitted — it is small, and a detached file needs its join keys.
 
-      *Two caveats.* `arrow` also backs `op_sentinel_audit()` (`R/sentinels.R`)
-      and `op_validate_full()` (`R/validation.R`) — switch those too or
-      `arrow` stays an `Imports` and the win shrinks to the streaming write.
-      And DuckDB will produce a byte-different file (different row-group
-      layout, no `ARROW:schema`), so it needs the same verification pass:
-      `op_validate_meta()` clean on all four, the sentinel guard
-      all-or-nothing per column, and row counts unchanged.
+      *One thing to know:* `nanoparquet::infer_parquet_schema()` is not a
+      faithful predictor of `write_parquet()` — it reports DOUBLE for a Date
+      column that is actually written as INT32/DATE. The first build shipped
+      a wrong `parquet_type` for `DateofCalculation` because of it.
+      `dm_written_schema()` now learns the schema from a real one-row write
+      and `dm_assert_schema()` re-checks every finished file against its own
+      footer, failing the build on disagreement.
 
-      *Open design question, not settled:* how much to embed. The dictionary
-      duplicates shared fields per table already and they were checked
-      consistent — `type` and `units` are byte-identical across all 50 shared
-      fields, and the 23 that differ do so only in `constraints` (19),
-      `range` (4), `label` (2) and `values` (1), all legitimately per-table.
-      So embedding four copies adds no drift risk. What a footer cannot hold
-      is the collection-level content: 3 `relationships` and a 14-term
-      glossary describe the set, not any one table.
-
-- [ ] **`spec_04_build_catalog.R` still mirrors `op_flag_violations()`
-      verbatim** — the third and last `data-raw`/`R` duplication, and the
-      most dangerous kind (a behavioural copy carrying a known `.inf` quirk).
-      Extract the shared yaml field-walk into `R/` and have both call it.
+- [x] ~~**`spec_04_build_catalog.R` still mirrors `op_flag_violations()`
+      verbatim**~~ — resolved by deleting the script (2026-08-29). The
+      catalog is now derived by `op_catalog()` from the embedded dictionary,
+      which `data-dict export-spec` resolves, so there is no second yaml
+      field-walk to keep in step. The `.inf` quirk went with it: export-spec
+      resolves an open bound to null rather than to `Inf`.
 - [ ] **File the `-9` overloading with ICES** — a new `systemic`
       `known_violations` entry plus an `articles/issues.qmd` section for the
       `IMBUS_FISHMAP#29` batch. Worked example: `Tickler` (a real code)

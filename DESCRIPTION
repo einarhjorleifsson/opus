@@ -31,13 +31,16 @@ Depends:
     R (>= 4.5)
 Imports:
     arrow,
+    DBI,
+    dplyr,
+    duckdb,
     jsonlite,
     utils,
     yaml
 Suggests:
     testthat (>= 3.0.0),
+    nanoparquet,
     curl,
-    dplyr,
     digest,
     httr2,
     purrr,

@@ -1,13 +1,29 @@
 #' Consolidate the partitioned archive into one parquet per table
 #'
 #' Output: .datras/to_https/raw/{HH,HL,CA,LT}.parquet -- the full Tier 1
-#' archive, in opus's current field names, with sentinels already resolved.
+#' archive, in opus's current field names, with sentinels already resolved,
+#' and each file carrying its own dictionary in its parquet footer.
 #' Staged for manual publish to the https server.
 #'
-#' The raw/ subdirectory keeps the four raw exchange tables separate from
-#' everything else that gets published alongside them -- the companion
-#' catalog.duckdb (data-raw/spec_04_build_catalog.R), and any derived
-#' products added later.
+#' The raw/ subdirectory keeps the four raw exchange tables separate from any
+#' derived products added later.
+#'
+#' Each file embeds five `datras:` metadata keys (data-raw/archive_06_metadata.R)
+#' in the same write that lays down the data, so no published file ever exists
+#' without its own dictionary. That replaces the former companion
+#' catalog.duckdb, which was a separate file describing other files: nothing
+#' forced it to be rebuilt when the parquet was, and a consumer who downloaded
+#' one table alone got no dictionary at all. Embedded metadata cannot drift
+#' from the data it describes, and travels with the file.
+#'
+#' The writer is nanoparquet, not arrow. arrow serializes custom metadata a
+#' second time inside its own ARROW:schema key (base64, ~1.37x), so a 124 KB
+#' payload costs 290 KB in the footer; and ARROW:schema is arrow's own sidecar
+#' that parquet does not require and DuckDB never reads. nanoparquet with
+#' write_arrow_metadata = FALSE writes the payload once and nothing else.
+#' Round-trip verified identical to arrow's across all four tables (names,
+#' dimensions, column classes and data, 20.6M rows) on 2026-08-29, including
+#' DateofCalculation's DATE logical type. See PLAN-embedded-metadata.md.
 #'
 #' This script used to be archive_06_split_legacy_new.R and emitted two files
 #' per table ({T}_legacy.parquet and {T}_new.parquet), renaming at this stage.
@@ -35,10 +51,19 @@ suppressPackageStartupMessages({
   library(opus)
 })
 
+source("data-raw/archive_06_metadata.R")
+
 args <- commandArgs(trailingOnly = TRUE)
 TABLES <- if (length(args) > 0) args else c("HH", "HL", "CA", "LT")
 OUT_DIR <- ".datras/to_https/raw"
 dir.create(OUT_DIR, showWarnings = FALSE, recursive = TRUE)
+
+# Resolved once for the whole run, not per table: export-spec runs validate-spec
+# internally, so a dictionary that would not validate stops the build here
+# rather than after some files have already been rewritten.
+message("Resolving ", DM_DICT, " via data-dict export-spec ...")
+SPEC <- dm_export_spec()
+CROSSWALK <- op_datras_rename_crosswalk()
 
 for (t in TABLES) {
   part_dir <- file.path(".datras/parquet", t)
@@ -56,8 +81,7 @@ for (t in TABLES) {
   # skipped, or silently degraded (see .rename_crosswalk()'s note on why the
   # crosswalk must be resolved over all four tables at once), this is where
   # it shows up.
-  crosswalk <- op_datras_rename_crosswalk()
-  xw <- crosswalk[crosswalk$RecordHeader == t, ]
+  xw <- CROSSWALK[CROSSWALK$RecordHeader == t, ]
   renamed <- xw$old_name[xw$old_name != xw$new_name]
   leftover <- intersect(renamed, names(df))
   if (length(leftover) > 0) {
@@ -85,13 +109,34 @@ for (t in TABLES) {
   kept <- policy$field[policy$action == "keep"]
   kept_present <- intersect(kept, names(df))
 
-  arrow::write_parquet(df, out_path, compression = "snappy")
+  # Build the footer payload before writing: dm_dict() asserts the crosswalk is
+  # total and bijective and that the dictionary's columns match the file's, in
+  # order, so a mismatch stops the build rather than shipping a file whose
+  # dictionary disagrees with it.
+  md <- dm_build(t, df, SPEC, CROSSWALK)
+
+  nanoparquet::write_parquet(
+    df, out_path, compression = "snappy", metadata = md,
+    options = nanoparquet::parquet_options(write_arrow_metadata = FALSE))
+
+  # And check the finished article against its own footer: every column's
+  # declared parquet_type and logical_type must be what the file actually holds.
+  dm_assert_schema(out_path, t)
+
   message(sprintf("%-3s -> %s (%s rows, %d cols; sentinels kept in %s)",
                   t, out_path, format(nrow(df), big.mark = ","), ncol(df),
                   if (length(kept_present)) paste(kept_present, collapse = ", ") else "none"))
+  message(sprintf("    footer: %s (%s)",
+                  paste(sprintf("%s %s", sub("^datras:", "", names(md)),
+                                format(nchar(md, "bytes"), big.mark = ",")),
+                        collapse = " | "),
+                  format(structure(file.info(out_path)$size, class = "object_size"),
+                         units = "auto")))
 }
 
 message("")
-message("Done. Current-named parquet staged under ", OUT_DIR, "/")
-message("Next: data-raw/spec_04_build_catalog.R, then publish both.")
+message("Done. Current-named parquet staged under ", OUT_DIR, "/,")
+message("each carrying its own dictionary in its footer.")
 message("Verify with: opus::op_validate_meta('", OUT_DIR, "/HH.parquet', 'HH')")
+message("         or: SELECT decode(value) FROM parquet_kv_metadata('",
+        OUT_DIR, "/HH.parquet') WHERE key = 'datras:dict';")

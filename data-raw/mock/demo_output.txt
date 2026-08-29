@@ -1,0 +1,183 @@
+
+[1m1. op_archive() -- the archive is a directory named `raw`, nothing else[0m
+--------------------------------------------------------------------------
+resolved: mock/raw 
+web twin: same last section -> https://heima.hafro.is/~einarhj/datras/raw 
+rejects a non-raw path:
+  An opus archive is a directory named `raw` (the four exchange tables as staged by archive_06_consolidate.R). Got: /tmp/somewhere/else 
+
+[1m2. op_keys() -- what the file carries in its footer[0m
+--------------------------------------------------------------------------
+                  key bytes
+1     datras:coverage 55193
+2         datras:dict 56719
+3 datras:known_issues  5723
+4   datras:provenance   390
+5    datras:sentinels  6015
+
+[1m3. op_dict('HH') -- the dictionary, straight out of the file[0m
+--------------------------------------------------------------------------
+dim: 69 13 
+
+              name       legacy_name             type parquet_type    r_type
+           Quarter           Quarter  number(ordinal)        INT32   integer
+          Platform              Ship           string   BYTE_ARRAY character
+       SweepLength         SweepLngt number(quantity)        INT32   integer
+       BottomDepth             Depth number(quantity)        INT32   integer
+ DateofCalculation DateofCalculation             date        INT32      Date
+ units
+  <NA>
+  <NA>
+     m
+     m
+  <NA>
+
+[1m4. Three type views side by side -- the parquet/xml divergence, visible[0m
+--------------------------------------------------------------------------
+              name             type parquet_type logical_type  r_type
+           Quarter  number(ordinal)        INT32         <NA> integer
+       SweepLength number(quantity)        INT32         <NA> integer
+              Year  number(ordinal)        INT32         <NA> integer
+ DateofCalculation             date        INT32         DATE    Date
+
+[1m5. op_crosswalk() -- legacy <-> current, NO outside list[0m
+--------------------------------------------------------------------------
+rows: 69  renamed: 39 
+
+   old_name       new_name
+ RecordType   RecordHeader
+       Ship       Platform
+  SweepLngt    SweepLength
+     GearEx GearExceptions
+       StNo    StationName
+     HaulNo     HaulNumber
+
+[1m6. op_rename() -- round-trip a real query through both naming schemes[0m
+--------------------------------------------------------------------------
+current names:
+  Survey Year Quarter Platform StationName HaulNumber SweepLength BottomDepth
+ NS-IBTS 2022       1     26D4           2          1          60          88
+ NS-IBTS 2022       1     26D4           3          2          60          25
+ NS-IBTS 2022       1     26D4           5          3          60          53
+
+legacy names (from the file's own metadata):
+  Survey Year Quarter Ship StNo HaulNo SweepLngt Depth
+ NS-IBTS 2022       1 26D4    2      1        60    88
+ NS-IBTS 2022       1 26D4    3      2        60    25
+ NS-IBTS 2022       1 26D4    5      3        60    53
+
+round-trip back to current is lossless: TRUE 
+
+[1m7. op_enums() -- code -> label[0m
+--------------------------------------------------------------------------
+enum columns: 13  codes: 205 
+
+   column code                                     label
+ DataType   -9                             Invalid hauls
+ DataType    C Data calculated as CPUE (number per hour)
+ DataType    P                   Pseudocategory sampling
+ DataType    R                              Data by haul
+ DataType    S                          Sub sampled data
+
+[1m8. op_surveys() -- the survey list WITHOUT a live ICES call[0m
+--------------------------------------------------------------------------
+29 surveys: BITS, BTS, BTS-GSA17, BTS-VIII, CODS-Q4, Can-Mar, DWS, DYFS, EVHOE, FR-CGFS, FR-WCGFS, IE-IAMS ...
+
+[1m9. op_coverage() -- what is actually in the archive[0m
+--------------------------------------------------------------------------
+survey/year/quarter groups: 972 
+
+  Survey Year Quarter n_rows
+ NS-IBTS 1987       1    559
+    DYFS 2014       3    557
+ NS-IBTS 1986       1    550
+ NS-IBTS 1985       1    536
+    DYFS 2013       3    519
+
+[1m10. op_relationships('CA') -- the 8-column composite key, already authored[0m
+--------------------------------------------------------------------------
+CA -> HH (many-to-one)
+by: Survey, Year, Quarter, Country, Platform, Gear, StationName, HaulNumber 
+conflicts: RecordHeader 
+
+[1m11. op_definitions('CA') -- a rule, carried as executable code[0m
+--------------------------------------------------------------------------
+           name   kind       expression                 r                sql
+ linkable_to_hh filter HaulNumber != -9 HaulNumber != -9L "HaulNumber" <> -9
+
+[1m12. op_define() -- apply it, using the R code the FILE supplied[0m
+--------------------------------------------------------------------------
+rows before:               11314 
+rows after op_define():    10801 
+HaulNumber IS NA:          513 
+HaulNumber == -9:          0 
+
+[1m13. The cross-check that only works because BOTH keys are in one footer[0m
+--------------------------------------------------------------------------
+The dictionary says CA rows are unlinkable when HaulNumber == -9:
+   expression: HaulNumber != -9 
+The sentinel policy in the SAME footer says that field was stripped:
+      field action                                  why
+ HaulNumber  strip no documented code for this sentinel
+
+So on the PUBLISHED archive there is no -9 left to match:
+Warning message:
+Missing values are always removed in SQL aggregation functions.
+Use `na.rm = TRUE` to silence this warning
+This warning is displayed once every 8 hours. 
+   rows 5,968,027 | HaulNumber NA 305,276 (5.12%) | HaulNumber == -9  0
+
+=> The definition is written against the SUBMITTED data, not against what
+   opus publishes. It still filters correctly here only by accident (NA
+   propagates and dplyr/SQL drop it), and would break the moment the
+   policy changed to 'keep'. It should read !is.na(HaulNumber).
+   Neither key alone shows this. Co-locating them is what surfaces it.
+
+[1m14. op_sentinel_meta() -- what was stripped, what was kept[0m
+--------------------------------------------------------------------------
+sentinel: -9 
+  Var1 Freq
+ strip   29
+
+kept (sentinels still present in the data):
+[1] field  action why   
+<0 rows> (or 0-length row.names)
+
+[1m15. op_provenance() -- who built this, from what[0m
+--------------------------------------------------------------------------
+  table            HL
+  n_rows           14423771
+  n_cols           29
+  source           ICES DATRAS ASMX web service
+  built_utc        2026-08-29T10:43:11Z
+  opus_version     0.2.0
+  opus_git_sha     9b8b5a8
+  dict_sha256      22fff43c33a7c780b031ce7ea136f2f53f8b43085e4d321e99a4e5fddec3fdc9
+  data_dict_cli    data-dict 0.0.3
+  arrow_version    25.0.1
+  pipeline         archive_02_download -> 04_parse_phase2 -> 05_backfill -> 06_consolidate
+
+[1m16. op_known_issues('CA')[0m
+--------------------------------------------------------------------------
+                                id      severity
+    sentinel_replacement_data_loss opus-internal
+        ca_haulno_unlinkable_to_hh             D
+           ca_haulno_tail_mismatch             D
+   icesvocab_key_resolution_hazard             C
+ datras_field_list_type_divergence             C
+                                                                                                     field
+                                                                                       all numeric columns
+                                                                                                    HaulNo
+                                                                                                    HaulNo
+ HaulValidity, SpeciesValidity, GearExceptions, LengthCode, AgeSource, AgePreparationMethod, Ship, Country
+                                                                                            Year, SpecCode
+
+[1m17. Same code against the WEB archive -- only the path changes[0m
+--------------------------------------------------------------------------
+op_con('HH', path = 'https://heima.hafro.is/~einarhj/datras/raw')
+op_dict('HH', path = ...)  # one 0.12s footer read, no file download
+           key bytes
+1 ARROW:schema  5144
+
+elapsed: 0.06 s
+

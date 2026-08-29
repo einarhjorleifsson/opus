@@ -25,3 +25,4 @@
 ^opus.Rcheck$
 ^logs$
 ^scripts$
+^PLAN-.*$

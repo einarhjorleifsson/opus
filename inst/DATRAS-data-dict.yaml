@@ -279,8 +279,7 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
-      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      (none of the 580 registered vocab keys match). Of 150,217 HH rows (24,484 distinct values), -9 accounts for exactly 6,899, stripped to null in the published archive. ICES's own field-description
       spreadsheet confirms the ICES-wide '-9 = no information' convention applies
       here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
       orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
@@ -354,10 +353,10 @@ tables:
     - '1759'
     - '2359'
     details: >-
-      1,440 distinct values, always populated (145,958/145,958). Field's
+      1,440 distinct values, always populated (HH 150,217/150,217, LT 79,451/79,451). Field's
       own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'); real values
       are zero-padded to 4 digits (e.g. '0730', not '730'), confirmed against
-      the full archive: 100% 4-char, 0 true nulls in either table. Only present in
+      the full archive: 100% 4-char, 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive. Only present in
       HH and LT, same as {StatisticalRectangle or StatRec} below.
     constraints:
     - required
@@ -375,9 +374,7 @@ tables:
     details: >-
       Field's own description says depth strata are survey-specific, not
       an ICES-wide vocabulary -- examples illustrate the shape seen in practice (mix
-      of letter-prefixed and bare-number codes), not an exhaustive domain. Of 145,958
-      rows: -9 is present and dominant (74,509 rows, 51.05%), not a null -- 0 true
-      nulls in the current archive.
+      of letter-prefixed and bare-number codes), not an exhaustive domain. Of 150,217 rows: the -9 sentinel is dominant (74,465 rows, 49.57%) -- 0 true nulls as submitted, so this count is the -9s, stripped to null in the published archive.
     label: Depth Stratum
   - name: HaulDuration
     type: number(quantity)
@@ -481,8 +478,7 @@ tables:
       ICES's own field-description spreadsheet, which describes this field via the
       same geometric grid rule rather than a code list. Only present in HH and LT
       -- consistent with LT's assessment output joining in a set of HH-style columns.
-      Of 145,958 HH rows (685 distinct values), -9 accounts for exactly 12,235, not
-      a null.
+      Of 150,217 HH rows (700 distinct values), -9 accounts for exactly 12,235, stripped to null in the published archive.
   - name: BottomDepth
     type: number(quantity)
     description: >-
@@ -528,9 +524,7 @@ tables:
       an undocumented all-8s placeholder/sentinel (the same kind of pattern seen elsewhere
       in HH, e.g. HaulDuration's zeros) rather than a real station ID, but is kept
       in `examples` (unlike a `range` exclusion, `examples` isn't a validity gate)
-      since a reader should know it's a real recurring value. Of 145,958 rows: 0
-      true nulls -- 69,762 (47.79%) carry either -9 or the 88888888 placeholder, the
-      rest a real station ID.
+      since a reader should know it's a real recurring value. Of 150,217 rows: 0 true nulls as submitted -- 72,526 (48.28%) carry either the -9 sentinel (70,891, stripped to null in the published archive) or the 88888888 placeholder (1,635, retained as a real code), the rest a real station ID.
   - name: StandardSpeciesCode
     type: enum
     description: >-
@@ -584,7 +578,7 @@ tables:
       hauls' -- not a generic missing-value placeholder like most of this field's
       sibling enums (part of a full sweep of every enum field with -9 as a declared
       code; see articles/technical-notes.qmd). Low prevalence in both tables that
-      carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%).
+      carry it (HH: 40/150,217 rows, 0.03%; LT: 21/79,451, 0.03%) -- DataType is sentinel policy 'keep', so these remain literal -9s.
     constraints:
     - required
   - name: NetOpening
@@ -598,8 +592,7 @@ tables:
     - 76.0
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 76,448/150,217 rows (50.89%), LT 32,465/79,451 rows (40.86%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
   - name: Rigging
     type: enum
     description: >-
@@ -683,8 +676,7 @@ tables:
     - 59995
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in
-      either table.
+      HH 25,874/150,217 rows (17.22%), LT 2,707/79,451 rows (3.41%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
     constraints:
     - required
   - name: WarpLength
@@ -698,8 +690,7 @@ tables:
     - 4065
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in
-      either table.
+      HH 54,969/150,217 rows (36.59%), LT 4,149/79,451 rows (5.22%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
   - name: WarpDiameter
     type: number(quantity)
     description: >-
@@ -713,8 +704,7 @@ tables:
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
       from it with no comparable support and are treated as data-entry errors, excluded
       here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception (already
+      HH 85,694/150,217 rows (57.05%), LT 42,328/79,451 rows (53.28%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception (already
       excluded by the range above, [16,30]).
   - name: WarpDensity
     type: number(quantity)
@@ -727,8 +717,7 @@ tables:
     - 26
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 144,217/150,217 rows (96.01%), LT 73,539/79,451 rows (92.56%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
   - name: DoorSurface
     type: number(quantity)
     description: >-
@@ -739,8 +728,7 @@ tables:
     - 20.2
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls
-      in either table.
+      HH 80,860/150,217 rows (53.83%), LT 37,944/79,451 rows (47.76%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
   - name: DoorWeight
     type: number(quantity)
     description: >-
@@ -751,8 +739,7 @@ tables:
     - 1720
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls
-      in either table.
+      HH 78,068/150,217 rows (51.97%), LT 37,471/79,451 rows (47.16%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
   - name: DoorSpread
     type: number(quantity)
     description: >-
@@ -767,8 +754,7 @@ tables:
       above everything else in the archive (next highest is 250m) and are treated
       as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
       likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
-      information' convention (data-raw/build_field_description_snapshot.R): HH 83,779/145,958
-      rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table
+      information' convention (data-raw/build_field_description_snapshot.R): HH 85,063/150,217 rows (56.63%), LT 34,982/79,451 rows (44.03%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive
       -- already excluded by the range above.
   - name: WingSpread
     type: number(quantity)
@@ -785,8 +771,7 @@ tables:
       a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
       value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
       sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls
-      in either table -- already excluded by the range above.
+      HH 104,295/150,217 rows (69.43%), LT 46,821/79,451 rows (58.93%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above.
   - name: Buoyancy
     type: number(quantity)
     description: >-
@@ -831,8 +816,7 @@ tables:
       10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg).
       Both groups are outside the documented 0-360 domain and excluded here. -9 is
       the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls
-      in either table -- already excluded by the range above.
+      HH 51,855/150,217 rows (34.52%), LT 6,851/79,451 rows (8.62%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -849,8 +833,8 @@ tables:
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
       gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
-      (data-raw/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%),
-      LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded
+      (data-raw/build_field_description_snapshot.R): HH 58,306/150,217 rows (38.81%),
+      LT 14,867/79,451 rows (18.71%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded
       by the range above.
   - name: SpeedWater
     type: number(quantity)
@@ -862,8 +846,7 @@ tables:
     - 22.0
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 134,829/150,217 rows (89.76%), LT 67,354/79,451 rows (84.77%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
   - name: SurfaceCurrentDirection
     type: number(quantity)
     description: >-
@@ -924,8 +907,7 @@ tables:
       undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
       present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls
-      in either table -- already excluded by the range above (unlike -1, which the
+      HH 41,830/150,217 rows (27.85%), LT 12,326/79,451 rows (15.51%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above (unlike -1, which the
       range explicitly keeps).
   - name: WindSpeed
     type: number(quantity)
@@ -952,8 +934,7 @@ tables:
     - 360
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 123,921/150,217 rows (82.49%), LT 52,150/79,451 rows (65.64%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
   - name: SwellHeight
     type: number(quantity)
     description: >-
@@ -966,8 +947,7 @@ tables:
       See known issue swell_height_type_mismatch (DATRAS-known-issues.yaml,
       not yet filed): icesVocab declares this an enum (codes H/L/M/N/NR/VH for height
       classes), but real HH archive data shows this is a measured quantity, not a
-      categorized class. Of all 145,958 rows: 0 true nulls; 108,698 (74.47%) carry
-      the standard DATRAS -9 'not recorded' sentinel; the remaining 37,260 are real,
+      categorized class. Of all 150,217 rows: 0 true nulls as submitted; 112,815 (75.10%) carry the standard DATRAS -9 'not recorded' sentinel, stripped to null in the published archive; the remaining 37,402 are real,
       continuous numeric measurements (0-60m). Range set to 0-13m using WindSpeed
       as an independent co-parameter check: median WindSpeed rises smoothly with SwellHeight
       through 13m (8m/24, 9m/26, 10m/22, 12m/28, 13m/24 m/s), consistent with genuine
@@ -1018,8 +998,7 @@ tables:
       'N': 'No'
       'Y': 'Yes'
     details: >-
-      145,958 rows: 144,726 carry the -9 sentinel, 1,062 are 'Y', 167 are
-      'N'. 3 rows carry a lowercase 'y' instead of 'Y' -- a real submitter case
+      150,217 rows: 148,985 carry the -9 sentinel (null in the published archive), 1,062 are 'Y', 167 are 'N', and 3 a lower-case 'y'. 3 rows carry a lowercase 'y' instead of 'Y' -- a real submitter case
       slip, not a separate value. icesVocab's TS_ThermoCline resolves this as a controlled
       3-code list (-9/N/Y) -- fully consistent with the case-slip already noted above:
       the archive's only values are exactly these three codes plus the lowercase
@@ -1046,8 +1025,7 @@ tables:
       some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
       644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide
       sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls
-      in either table -- the modal value in both tables, already excluded by the range
+      HH 107,827/150,217 rows (71.78%), LT 55,200/79,451 rows (69.48%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, already excluded by the range
       above.
   - name: SecchiDepth
     type: number(quantity)
@@ -1066,7 +1044,7 @@ tables:
     - 0
     - 0
     details: >-
-      145,756 of 145,958 rows carry the -9 sentinel; 0 true nulls. The remaining
+      149,675 of 150,217 rows carry the -9 sentinel (null in the published archive); 0 true nulls as submitted. The remaining
       202 rows all carry exactly 0 -- too sparse to characterize a real range beyond
       that single value; this reflects what was actually observed, not a claim that
       Turbidity never varies.
@@ -1158,10 +1136,14 @@ tables:
     era: newer submissions use Platform/StationName/HaulNumber (new style); older
     submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a
     valid join key and must be paired with all seven other fields -- but even the
-    full composite key doesn't recover everything: 288,581 CA rows (4.92%) carry
-    a -9 sentinel (not a null) in HaulNumber/HaulNo and match no HH haul on any subset
-    of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh) and
-    obus::dr_add_id for the composite ID construction logic.
+    full composite key doesn't recover everything: 305,276 CA rows (5.12% of
+    5,968,027) carry no haul number and match no HH haul on any subset of the 8
+    fields. As submitted these are a -9 sentinel; in the published archive
+    HaulNumber is sentinel policy 'strip', so they arrive as null. They are real
+    observations attributed to an area rather than a haul -- 305,146 carry an Age
+    and together they hold 599,407 aged fish -- and must be accounted for at area
+    grain, not dropped to make a join succeed. See DATRAS-known-issues.yaml
+    (ca_haulno_unlinkable_to_hh) and CA's own `linkable_to_hh` definition.
   origin: data-raw/spec_02_curate_dict.R
 - name: HL
   columns:
@@ -1435,8 +1417,7 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
-      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      (none of the 580 registered vocab keys match). Of 150,217 HH rows (24,484 distinct values), -9 accounts for exactly 6,899, stripped to null in the published archive. ICES's own field-description
       spreadsheet confirms the ICES-wide '-9 = no information' convention applies
       here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
       orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
@@ -1674,9 +1655,7 @@ tables:
     - 1.0
     - 10997.1834
     details: >-
-      144,395 of 13,754,042 rows (1.05%) show values below 1 at face value,
-      but 144,041 of those are the -9 sentinel, not a genuine sub-1 measurement --
-      leaving 354 real anomalies (0.0026%), contradicting the field's own description
+      144,663 of 14,423,771 rows (1.00%) carry the -9 sentinel, which reads as a sub-1 value at face value; it is stripped to null in the published archive, leaving 372 genuine sub-1 anomalies (0.0026%), contradicting the field's own description
       (documented as always >=1, for every DataType) -- excluded. The high end is
       genuine, not an error: top values cluster at power-of-2-like numbers (4096 recurs
       133 times; 8192, 5120, 6144 also recur with real support), consistent with repeatedly
@@ -1855,10 +1834,48 @@ tables:
     species caught in surveyed hauls, aggregated by length class. Linked to HH via
     the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship
     + Gear + StationName/StNo + HaulNumber). Note: CA (not HL) has a verified HaulNumber/HaulNo
-    linkage gap -- 4.92% of CA rows carry a -9 sentinel and match no HH haul even
-    via the full composite key (see HH table details). The full 8-field composite
+    linkage gap -- 5.12% of CA rows carry no haul number (a -9 sentinel as
+    submitted, null in the published archive) and match no HH haul even via the
+    full composite key (see HH table details). The full 8-field composite
     key is required for correct joins regardless.
   origin: data-raw/spec_02_curate_dict.R
+  definitions:
+  - name: count_at_length
+    description: >-
+      Number of fish this row represents in the whole catch: the recorded count
+      scaled back up by the row's own subsampling factor.
+    details: >-
+      This is the row-level product that any catch total must be built from, and it
+      is applied per row and only then summed -- never sum(NumberAtLength) times some
+      haul-level factor. SubsamplingFactor varies *within* a haul when a catch was
+      size-stratified (predominantly GB-SCT vessels on DataType P and DK vessels on
+      DataType R), so a haul-level factor is simply wrong for those hauls, and wrong
+      silently.
+
+      Both inputs are sentinel policy 'strip' (op_sentinel_policy("HL")), so a
+      not-recorded value arrives as null, not as -9: of 14,423,771 rows,
+      NumberAtLength is null in 377,784 (2.62%) and SubsamplingFactor in 144,663
+      (1.00%), and neither holds a literal -9. The product is therefore null for
+      those rows rather than a bogus negative -- but note the R translation of any
+      aggregate over it carries na.rm = TRUE, which drops them silently. Filter
+      explicitly if their exclusion needs to be visible.
+    expr: NumberAtLength * SubsamplingFactor
+  - name: total_number
+    description: >-
+      Total number of fish caught, over whatever rows it is evaluated against.
+    details: >-
+      An aggregate, so the grouping is the caller's to supply (dplyr's `.by =`,
+      SQL's GROUP BY); grouped by the 8-field composite haul key it gives catch per
+      haul, ungrouped it gives the total over the rows given.
+
+      Correct as a raw count only where HH.DataType is 'R' or 'S'. On DataType 'C'
+      the submitted numbers are already CPUE (number per hour) rather than counts,
+      so summing them yields neither a count nor a valid CPUE; on 'P'
+      (pseudocategory sampling) interpretation depends on the category structure.
+      DataType lives in HH, not here, so this definition cannot test it -- join HH
+      and check before treating the result as a count. 97,321 of 150,217 hauls are
+      'R', 49,717 are 'C', 2,170 'P', 969 'S', 40 the kept -9 (invalid haul).
+    expr: SUM(count_at_length)
 - name: CA
   columns:
   - name: RecordHeader
@@ -2137,8 +2154,7 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
-      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      (none of the 580 registered vocab keys match). Of 150,217 HH rows (24,484 distinct values), -9 accounts for exactly 6,899, stripped to null in the published archive. ICES's own field-description
       spreadsheet confirms the ICES-wide '-9 = no information' convention applies
       here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
       orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
@@ -2226,8 +2242,7 @@ tables:
       enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT
       (20, data-raw/spec_01_seed_dict.R) for a usable `values` map -- and the true
       domain genuinely is wider than what's observed here (17 of 27 codes appear
-      in this archive). Of 5,865,076 rows, -9 is present and substantial (1,968,019
-      rows, 33.55%), 0 true nulls.
+      in this archive). Of 5,968,027 rows, the -9 sentinel is substantial (1,978,894 rows, 33.16%), 0 true nulls as submitted; null in the published archive.
     constraints:
     - required
   - name: AreaCode
@@ -2243,8 +2258,7 @@ tables:
     details: >-
       Field's own description says coding is 'according to AreaType' (its sibling
       field) -- meaning depends on that field's own value, same pattern as LngtClass/LngtCode.
-      Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). Of 5,865,076
-      rows, -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No icesVocab
+      Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). Of 5,968,027 rows, the -9 sentinel is dominant (1,894,960 rows, 31.75%); null in the published archive. No icesVocab
       entry exists for this field under any name.
     constraints:
     - required
@@ -2325,8 +2339,7 @@ tables:
       Field's own description says the scheme depends on the sibling MaturityScale
       field ('MaturityScale should be filled in when...') -- explains the observed
       mix of numeric (61, 62, 1, 2) and letter (B, A) codes, different maturity scales
-      using different code sets, not an inconsistency. Of 5,865,076 rows: -9 is present
-      and dominant (3,100,723 rows, 52.87%), not a null -- 0 true nulls.
+      using different code sets, not an inconsistency. Of 5,968,027 rows: the -9 sentinel is dominant (3,174,127 rows, 53.19%) -- 0 true nulls as submitted; null in the published archive.
   - name: AgePlusGroup
     type: enum
     description: >-
@@ -2349,7 +2362,7 @@ tables:
     - 0
     - 99
     details: >-
-      -9 (1,995,814 rows, 34.03% of all 5,865,076 CA rows) reads as the standard
+      -9 (2,049,182 rows, 34.34% of all 5,968,027 CA rows) reads as the standard
       DATRAS 'not recorded' convention and is excluded on the same basis as the
       -1/-5/-95 cluster below, just far larger. -1 (1757 rows) reads as a systematic,
       undocumented 'not determined' sentinel; -5 and -95 (1 row each) are isolated
@@ -2398,8 +2411,7 @@ tables:
     details: >-
       Field's own description ('Fish identification number - running sampling
       number of the specimen') confirms a real per-specimen sequence, open-ended and
-      illustrative only, not an exhaustive domain. Of 5,865,076 rows, -9 is present
-      and dominant (4,747,074 rows, 80.94%), not a null; real per-specimen IDs make
+      illustrative only, not an exhaustive domain. Of 5,968,027 rows, the -9 sentinel is dominant (4,849,351 rows, 81.26%), null in the published archive; real per-specimen IDs make
       up the remaining ~19%. No icesVocab entry exists for this field under any name
       -- expected for a plain sequential identifier, not a coded field.
   - name: GeneticSamplingFlag
@@ -2412,8 +2424,7 @@ tables:
     - 'N'
     details: >-
       Field's own description ('Flag whether genetic sample was taken')
-      confirms boolean intent. Of 5,865,076 rows: -9 is present and dominant (5,021,736
-      rows, 85.6%); N: 829,547 (14.1%); Y: 13,793 (0.24%); zero other values. No icesVocab
+      confirms boolean intent. Of 5,968,027 rows: the -9 sentinel is dominant (5,124,687 rows, 85.87%, null in the published archive); N: 829,547 (13.90%); Y: 13,793 (0.23%); zero other values. No icesVocab
       entry exists for this field under either name -- -9 reads as the standard generic-missing
       sentinel, the only meaning a simple boolean flag has room for.
   - name: StomachSamplingFlag
@@ -2427,7 +2438,7 @@ tables:
     details: >-
       Field's own description ('Flag whether stomach sampling was performed')
       confirms boolean intent. Of the full CA archive: -9 is present and dominant
-      (4,861,583 rows, 82.9%); N: 964,090 (16.4%); Y: 39,403 (0.67%); zero other values.
+      (4,910,588 rows, 82.28%); N: 964,090 (16.4%); Y: 39,403 (0.67%); zero other values.
       Same 'no vocab exists' / generic-missing reasoning as GenSamp above.
   - name: AgeSource
     type: enum
@@ -2554,7 +2565,7 @@ tables:
     details: >-
       Field's own description ('Flag whether parasites sampling was performed')
       confirms boolean intent. Of the full CA archive: -9 is present and dominant
-      (4,948,612 rows, 84.4%); N: 839,844 (14.3%); Y: 76,620 (1.31%); zero other values.
+      (4,997,617 rows, 83.74%); N: 839,844 (14.3%); Y: 76,620 (1.31%); zero other values.
       Same 'no vocab exists' / generic-missing reasoning as GenSamp above.
   - name: MaturityScale
     type: enum
@@ -2622,8 +2633,9 @@ tables:
     covered surveys, not the full catch <U+2014> a subsample. Linked to HH via the
     composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship +
     Gear + StationName/StNo + HaulNumber). Note (see DATRAS-known-issues.yaml issue
-    ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls -- 288,581
-    rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates the column's
+    ca_haulno_unlinkable_to_hh): as submitted, HaulNumber/HaulNo contains 0 true
+    nulls -- 305,276 rows (5.12% of 5,968,027) instead carry a -9 sentinel, which
+    violates the column's
     declared range ([0, 82483]; a D04_range violation, confirmed via op_flag_violations()),
     not the required constraint (D01 never fires here). These rows match no HH haul
     on the full 8-field composite key, or on the 7 non-HaulNumber fields alone --
@@ -2636,10 +2648,30 @@ tables:
   definitions:
   - name: linkable_to_hh
     description: >-
-      Rows whose HaulNo is a real value, not the -9 'unlinkable' sentinel
-      (known-issues.yaml: ca_haulno_unlinkable_to_hh) -- i.e. rows that can actually
-      be joined back to HH via the composite key.
-    expr: HaulNumber != -9
+      Rows carrying a haul number, and so joinable to a single HH haul via the
+      8-field composite key. Names which rows a haul-level join reaches; it is
+      NOT a data-quality filter, and the rows it excludes must not be discarded.
+    details: >-
+      What the excluded rows actually are: 305,276 of 5,968,027 CA rows (5.12%)
+      have no HaulNumber, and they are real observations, not damaged records.
+      305,146 of them carry an Age, all 305,276 carry a NumberAtLength, and
+      together they hold 599,407 aged fish across 6 surveys and the years
+      1965-2021. Every one of them has a non-null AreaType -- they are attributed
+      to an area rather than to a haul, which is a coarser grain, not a defect.
+      Filtering them away to make a join work silently deletes those fish from any
+      total computed afterwards. Account for them at area grain; do not drop them.
+
+      Tests IS NOT NULL, not != -9, because this describes the *published archive*
+      rather than the submitted exchange file. HaulNumber is sentinel policy
+      'strip' (op_sentinel_policy("CA")), so the -9s are already null by the time
+      anything reads this, and zero rows hold a literal -9. The former
+      `HaulNumber != -9` matched nothing it was written to match; it still
+      filtered correctly only by accident, because null propagates through != and
+      both dplyr and SQL then drop the row -- and it would have started silently
+      keeping those rows the moment the policy changed to 'keep'. Corrected
+      2026-08-29, found by cross-checking this definition against the sentinel
+      policy now embedded in the same parquet footer.
+    expr: HaulNumber IS NOT NULL
 - name: LT
   columns:
   - name: Survey
@@ -2852,8 +2884,7 @@ tables:
       Field's own description says this is a national coding system, not
       defined by ICES -- examples show the common shape (short numeric-looking strings),
       not an exhaustive domain; not a coded field, so no icesVocab entry is expected
-      (none of the 580 registered vocab keys match). Of 145,958 HH rows (20,319 distinct
-      values), -9 accounts for exactly 6,899, not a null. ICES's own field-description
+      (none of the 580 registered vocab keys match). Of 150,217 HH rows (24,484 distinct values), -9 accounts for exactly 6,899, stripped to null in the published archive. ICES's own field-description
       spreadsheet confirms the ICES-wide '-9 = no information' convention applies
       here, same as HaulNo above. Unlike HaulNo's own -9 sentinel, this isn't an
       orphaning problem: CA's own matching StNo=-9 rows for these same hauls (191,893
@@ -2937,7 +2968,7 @@ tables:
     - V
     details: >-
       OSPAR maritime area code (Roman-numeral regions); 4 distinct values observed,
-      14,498 of 75,310 rows unpopulated. No description present to confirm whether
+      14,498 of 79,451 rows unpopulated. No description present to confirm whether
       this is the complete official OSPAR region set.
   - name: MSFDArea
     type: string
@@ -2946,7 +2977,7 @@ tables:
     - Baltic Sea
     details: >-
       Marine Strategy Framework Directive region name; only 2 distinct values
-      observed, 4,295 of 75,310 rows unpopulated. The EU MSFD framework has more than
+      observed, 4,295 of 79,451 rows unpopulated. The EU MSFD framework has more than
       two regions overall -- DATRAS's own survey coverage may simply never reach the
       others, so not treated as a closed/exhaustive set.
   - name: BottomDepth
@@ -2957,7 +2988,7 @@ tables:
     - 3098.0
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      139 of 75,310 rows (0.18%), 0 true nulls. Not a rename -- BottomDepth is already
+      163 of 79,451 rows (0.21%), 0 true nulls as submitted; null in the published archive. Not a rename -- BottomDepth is already
       the raw ICES field name in LT's archive. It sits alongside this table's own
       separate Depth field, byte-for-byte identical to it (see Depth's own details):
       a known ICES-side redundancy, not a rename relationship (see Issue 6 in the
@@ -2972,8 +3003,7 @@ tables:
     - 59995
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in
-      either table.
+      HH 25,874/150,217 rows (17.22%), LT 2,707/79,451 rows (3.41%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
     description: >-
       Distance in metres between haul start and haul end point.
   - name: DoorSpread
@@ -2988,8 +3018,7 @@ tables:
       above everything else in the archive (next highest is 250m) and are treated
       as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows,
       likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no
-      information' convention (data-raw/build_field_description_snapshot.R): HH 83,779/145,958
-      rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table
+      information' convention (data-raw/build_field_description_snapshot.R): HH 85,063/150,217 rows (56.63%), LT 34,982/79,451 rows (44.03%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive
       -- already excluded by the range above.
     description: >-
       Mean value in metres of door spread measurements.
@@ -3005,8 +3034,7 @@ tables:
       a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real
       value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide
       sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls
-      in either table -- already excluded by the range above.
+      HH 104,295/150,217 rows (69.43%), LT 46,821/79,451 rows (58.93%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above.
     description: >-
       Mean value in metres of wing spread measurements. For more details
       see the manual.
@@ -3051,7 +3079,7 @@ tables:
       under any description, despite being common real values here. A real discrepancy
       between this archive's own PARAM usage and icesVocab's published list. Not
       retyped enum regardless: 1,938 codes is far past the seed's VOCAB_CODE_LIMIT
-      of 20. 49 distinct values, 2 of 75,310 rows unpopulated.
+      of 20. 49 distinct values, 2 of 79,451 rows unpopulated.
     todo: File A2/A3/A5/A6/A7/A14 (undocumented in icesVocab's 1,938-code PARAM list
       despite being common real values) as a DATRAS-known-issues.yaml entry and ICES_ISSUE_REPORT.md
       candidate.
@@ -3071,8 +3099,7 @@ tables:
       <5*5cm=25cm2' through 'D'='<50*50cm=2500cm2' (area-based classes), '13'='centimetre
       15-49.99cm' (a length-based class) -- two different measurement bases coexisting
       under one code list. 23 of 41 official codes observed here; not retyped enum
-      since 41 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 75,310 rows: -9 is present
-      (14,736 rows, 19.57%), not a null -- 0 true nulls.
+      since 41 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 79,451 rows: the -9 sentinel accounts for 16,508 rows (20.78%) -- 0 true nulls as submitted; null in the published archive.
   - name: UnitWeight
     type: string
     examples:
@@ -3081,8 +3108,7 @@ tables:
     details: >-
       Unit of the sibling LT_Weight field (see LT_Weight's own details below);
       exactly 2 real values observed (kg/haul, g/haul). No description present to
-      confirm this is the complete valid unit set. Of 75,310 rows: -9 is present (4,144
-      rows, 5.50%), not a null -- 0 true nulls.
+      confirm this is the complete valid unit set. Of 79,451 rows: the -9 sentinel accounts for 4,256 rows (5.36%) -- 0 true nulls as submitted; null in the published archive.
   - name: LT_Weight
     type: number(quantity)
     description: >-
@@ -3108,8 +3134,7 @@ tables:
     details: >-
       Unit of the sibling LT_Items field (see LT_Items's own details below);
       only one real value ever observed -- a single example, not five, because no
-      second real value exists in the archive to show. Of 75,310 rows, -9 accounts
-      for exactly 36 rows, not a null -- 0 true nulls.
+      second real value exists in the archive to show. Of 79,451 rows, -9 accounts for exactly 36 rows -- 0 true nulls as submitted; null in the published archive.
   - name: LT_Items
     type: number(quantity)
     description: >-
@@ -3119,8 +3144,7 @@ tables:
     - 0
     - 2323
     details: >-
-      UnitItem is 'items/haul' for all but 36 of 75,310 populated rows (100%
-      populated, 0 true nulls) -- effectively a fixed count, no exclusions needed:
+      UnitItem is 'items/haul' for all but 36 of 79,451 rows (those 36 its own -9s, now null); LT_Items itself is populated in 76,882 of 79,451 rows, 2,569 null -- effectively a fixed count, no exclusions needed:
       no isolated outlier or repeating marker pattern, just a smooth decline from
       the max.
     label: Total Item Count
@@ -3148,7 +3172,7 @@ tables:
       SBT: Sea based - transport
       UNK: Unknown
     details: >-
-      75,310 rows: -9 (35,946), UNK (26,981), SBF (11,320), and 12 other codes
+      79,451 rows: -9 (35,946, null in the published archive), UNK (31,122), SBF (11,320), and 12 other codes
       populate the rest. 1 row carries lowercase 'sba' instead of the declared 'SBA'
       code -- a real submitter case slip, not a separate value. icesVocab's own 'LTSRC'
       key (no TS_/AC_ prefix, same local-scheme pattern as LTREF) resolves this as
@@ -3168,9 +3192,7 @@ tables:
       Litter (plastic) type code, no description present. icesVocab's TYPPL
       list confirms all five: PE=Polyethylene, PET=Polyethylene terephthalate, PP=Polypropylene,
       PS=Polystyrene, UPL=Undefined plastic. 6 of 30 official codes observed here;
-      not retyped enum since 30 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 75,310
-      rows: -9 is present and overwhelmingly dominant (75,148 rows, 99.79%), 0 true
-      nulls -- the 162 real plastic-type codes are the rare case, not the norm.
+      not retyped enum since 30 exceeds the seed's VOCAB_CODE_LIMIT of 20. Of 79,451 rows: the -9 sentinel is overwhelmingly dominant (79,289 rows, 99.80%), 0 true nulls as submitted -- the 162 real plastic-type codes are the rare case, not the norm.
   - name: LTPRP
     type: string
     description: >-
@@ -3191,8 +3213,7 @@ tables:
       values are observed here despite only 22 base codes existing -- a combinable/multi-value
       scheme, not a flat single-select list. Not retyped enum: even the 22-code base
       list is past the seed's VOCAB_CODE_LIMIT of 20, and the combinable form isn't
-      a plain enum shape regardless. Of 75,310 rows: -9 is present and dominant (54,208
-      rows, 71.97%), not a null -- 0 true nulls.
+      a plain enum shape regardless. Of 79,451 rows: the -9 sentinel is dominant (58,349 rows, 73.44%) -- 0 true nulls as submitted; null in the published archive.
   - name: SweepLength
     type: number(quantity)
     units: m
@@ -3281,10 +3302,10 @@ tables:
     - '1759'
     - '2359'
     details: >-
-      1,440 distinct values, always populated (145,958/145,958). Field's
+      1,440 distinct values, always populated (HH 150,217/150,217, LT 79,451/79,451). Field's
       own description implies a fixed 4-digit HHMM ('E.g. 10:15=1015'); real values
       are zero-padded to 4 digits (e.g. '0730', not '730'), confirmed against
-      the full archive: 100% 4-char, 0 true nulls in either table. Only present in
+      the full archive: 100% 4-char, 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive. Only present in
       HH and LT, same as {StatisticalRectangle or StatRec} below.
     description: >-
       Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
@@ -3319,8 +3340,7 @@ tables:
       ICES's own field-description spreadsheet, which describes this field via the
       same geometric grid rule rather than a code list. Only present in HH and LT
       -- consistent with LT's assessment output joining in a set of HH-style columns.
-      Of 145,958 HH rows (685 distinct values), -9 accounts for exactly 12,235, not
-      a null.
+      Of 150,217 HH rows (700 distinct values), -9 accounts for exactly 12,235, stripped to null in the published archive.
     description: >-
       Intended ICES statistical area rectangle (0.5 degrees latitude, 1
       degree longitude)
@@ -3331,8 +3351,7 @@ tables:
     - 1
     - 3098
     details: >-
-      Byte-for-byte identical to this table's own BottomDepth across all 75,310
-      rows (100% populated in both, 0 differences, 0 one-sided nulls) -- a known ICES-side
+      Byte-for-byte identical to this table's own BottomDepth across all 79,451 rows (100% populated in both, 0 differences, 0 one-sided nulls) -- a known ICES-side
       redundancy, not an opus/obus naming quirk (see Issue 6 in the issues report).
       Given the same type/units/range as BottomDepth here rather than re-derived independently,
       since it is BottomDepth.
@@ -3367,7 +3386,7 @@ tables:
       hauls' -- not a generic missing-value placeholder like most of this field's
       sibling enums (part of a full sweep of every enum field with -9 as a declared
       code; see articles/technical-notes.qmd). Low prevalence in both tables that
-      carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%).
+      carry it (HH: 40/150,217 rows, 0.03%; LT: 21/79,451, 0.03%) -- DataType is sentinel policy 'keep', so these remain literal -9s.
     description: >-
       Specification of the data aggregation in the HL record. C: CPUE
       (per hour) data; TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw),
@@ -3381,8 +3400,7 @@ tables:
     - 76.0
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 76,448/150,217 rows (50.89%), LT 32,465/79,451 rows (40.86%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
     description: >-
       Mean value in metres of vertical net opening measurements. For details
       see the survey manual.
@@ -3472,8 +3490,7 @@ tables:
     - 4065
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in
-      either table.
+      HH 54,969/150,217 rows (36.59%), LT 4,149/79,451 rows (5.22%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
     description: >-
       Length of warp in metres. Defined by fishing depth. Warp/depth ratio
       is depends on survey, for further details see survey manuals.
@@ -3488,8 +3505,7 @@ tables:
       values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart
       from it with no comparable support and are treated as data-entry errors, excluded
       here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception (already
+      HH 85,694/150,217 rows (57.05%), LT 42,328/79,451 rows (53.28%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception (already
       excluded by the range above, [16,30]).
     description: >-
       Warp diametre in millimetres.
@@ -3501,8 +3517,7 @@ tables:
     - 26
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 144,217/150,217 rows (96.01%), LT 73,539/79,451 rows (92.56%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
     description: >-
       Warp weight in kg per linear meter of warp. See survey manuals for
       more information.
@@ -3514,8 +3529,7 @@ tables:
     - 20.2
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls
-      in either table.
+      HH 80,860/150,217 rows (53.83%), LT 37,944/79,451 rows (47.76%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
     description: >-
       Door surface area in square metres.
   - name: DoorWeight
@@ -3526,8 +3540,7 @@ tables:
     - 1720
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls
-      in either table.
+      HH 78,068/150,217 rows (51.97%), LT 37,471/79,451 rows (47.16%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive.
     description: >-
       Door weight in kilograms.
   - name: TowDirection
@@ -3543,8 +3556,7 @@ tables:
       10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg).
       Both groups are outside the documented 0-360 domain and excluded here. -9 is
       the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls
-      in either table -- already excluded by the range above.
+      HH 51,855/150,217 rows (34.52%), LT 6,851/79,451 rows (8.62%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above.
     todo: Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine
       data-entry pattern by correlating with Country/Survey -- same class of check
       already confirmed for SwellHeight via its WindSpeed co-parameter.
@@ -3560,8 +3572,8 @@ tables:
       Ceiling is a domain judgment (real trawling ground speed), not an observed
       cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean
       gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention
-      (data-raw/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%),
-      LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded
+      (data-raw/build_field_description_snapshot.R): HH 58,306/150,217 rows (38.81%),
+      LT 14,867/79,451 rows (18.71%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded
       by the range above.
     description: >-
       Ground speed of towing in knots. Recommended speed depends on survey,
@@ -3574,8 +3586,7 @@ tables:
     - 22.0
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 134,829/150,217 rows (89.76%), LT 67,354/79,451 rows (84.77%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
     description: >-
       Trawl speed on water in knots.
   - name: WindDirection
@@ -3589,8 +3600,7 @@ tables:
       undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence
       values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO
       present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls
-      in either table -- already excluded by the range above (unlike -1, which the
+      HH 41,830/150,217 rows (27.85%), LT 12,326/79,451 rows (15.51%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- already excluded by the range above (unlike -1, which the
       range explicitly keeps).
     description: >-
       Direction of wind in degrees. Calm = 0,  direction from north to
@@ -3617,8 +3627,7 @@ tables:
     - 360
     details: >-
       -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls
-      in either table -- the modal value in both tables, not the exception.
+      HH 123,921/150,217 rows (82.49%), LT 52,150/79,451 rows (65.64%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, not the exception.
     description: >-
       Direction of swell in degrees. No movement=0, direction from south
       to north = 360, varying direction = -1
@@ -3635,7 +3644,7 @@ tables:
       -- the seed stage applies it here too since the key resolves the same way for
       LT). This field is not independently observed by LT: it is HH's own SwellHeight,
       recorded again on the LT record for the same haul -- joining LT to HH on the
-      full 8-field composite key, 55,113 of 55,113 rows where both are non-null carry
+      full 8-field composite key, 38,100 of 38,100 rows where both are non-null carry
       an identical value, zero exceptions. Range, exclusion boundary, and evidence
       (including the WindSpeed co-parameter check) are therefore HH's, not independently
       re-derived here -- see HH's own SwellHeight entry above for the full reasoning.
@@ -3652,8 +3661,7 @@ tables:
       some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm,
       644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide
       sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R):
-      HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls
-      in either table -- the modal value in both tables, already excluded by the range
+      HH 107,827/150,217 rows (71.78%), LT 55,200/79,451 rows (69.48%), 0 true nulls as submitted, so these counts are the -9s, stripped to null in the published archive -- the modal value in both tables, already excluded by the range
       above.
     description: >-
       Codend mesh size in mm
@@ -3667,7 +3675,7 @@ tables:
     - Swedish Exclusive Economic Zone
     details: >-
       Exclusive Economic Zone name, no description present. 19 distinct values,
-      162 of 75,310 rows unpopulated. Not treated as a closed set -- EEZ coverage
+      162 of 79,451 rows unpopulated. Not treated as a closed set -- EEZ coverage
       in a wider archive could plausibly include zones absent from this one.
   - name: NMArea
     type: string
@@ -3679,7 +3687,7 @@ tables:
     - 'Danish 12 NM'
     details: >-
       National 12-nautical-mile zone name (sibling concept to EEZ above), no
-      description present. 17 distinct values, 49,581 of 75,310 rows unpopulated.
+      description present. 17 distinct values, 53,303 of 79,451 rows unpopulated.
       Not treated as a closed set, same reasoning as EEZ.
   - name: DateofCalculation
     type: date
@@ -3711,7 +3719,7 @@ tables:
     CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table
     details); LT's own HaulNumber has no equivalent gap -- zero nulls and zero -9
     values. The full 8-field composite key is required for correct joins regardless:
-    2,026 of 75,310 LT rows (2.7%) don't match any HH haul on it, but for an unrelated,
+    852 of 79,451 LT rows (1.07%) don't match any HH haul on it (down from 2,026 of 75,310 when first measured -- ICES has since supplied part of the missing HH submission), but for an unrelated,
     diagnosed reason (known-issues.yaml: lt_bts_2025_q1_orphaned) -- HH's own submission
     is genuinely missing for that survey/year/quarter, not an LT-side data-quality
     problem.
@@ -3731,9 +3739,11 @@ relationships:
   - RecordHeader
   description: >-
     Known gap (see CA table's own details and DATRAS-known-issues.yaml's
-    ca_haulno_unlinkable_to_hh): 4.92% of CA rows (288,581 of 5,865,076) carry a -9
-    sentinel in HaulNo and match no HH row on this key -- genuinely orphaned CA records,
-    not a join-key problem.
+    ca_haulno_unlinkable_to_hh): 5.12% of CA rows (305,276 of 5,968,027) carry no
+    haul number and match no HH row on this key -- a -9 sentinel as submitted, null
+    in the published archive. Orphaned with respect to HH, not damaged: they carry
+    real ages and counts at area grain and must not be dropped to make the join
+    succeed. See CA's `linkable_to_hh` definition.
 - join: LT.Survey = HH.Survey AND LT.Year = HH.Year AND LT.Quarter = HH.Quarter AND
     LT.Country = HH.Country AND LT.Platform = HH.Platform AND LT.Gear = HH.Gear AND
     LT.StationName = HH.StationName AND LT.HaulNumber = HH.HaulNumber

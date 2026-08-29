@@ -137,7 +137,7 @@ log_msg("Catalog: %d (survey x year x quarter) cells in %d-%d",
 
 log_msg("Fetching ICES field list metadata...")
 ices_fieldlist <- tryCatch({
-  datras_get_field_list()
+  op_datras_field_metadata()
 }, error = function(e) {
   log_msg("WARNING: Failed to fetch ICES field list: %s", e$message)
   return(NULL)

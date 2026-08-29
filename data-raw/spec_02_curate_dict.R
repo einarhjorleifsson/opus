@@ -22,6 +22,14 @@
 # with the illustrative examples already used in AGENTS.md, so they resolve
 # cleanly once the registry exists instead of needing renaming.
 
+
+# RETIRED (2026-08-29). The yaml dictionaries are maintained by hand from
+# here on; this seeding/curation pipeline is history, not a rebuild path.
+# It is kept for provenance and will not run as-is: it reads
+# .datras/{TABLE}_legacy.parquet, which no longer exists (opus publishes
+# current names only, staged at .datras/to_https/raw/{TABLE}.parquet; the
+# old legacy-named copies were moved to .datras/retired/ the same day).
+
 library(yaml)
 library(purrr)
 library(opus)  # op_vocab_get_codes(), via get_vocab_enum_values()

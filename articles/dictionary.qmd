@@ -18,18 +18,19 @@ land, and isn't part of this repository. Treat the date below as the
 "as of," not a promise of continuous freshness.
 :::
 
-**Snapshot as of 2026-08-20** (HH/HL/CA/LT coverage complete):
+**Snapshot as of 2026-08-29** (HH/HL/CA/LT coverage complete):
 
 ```{=html}
-<iframe src="dictionary-snapshot-2026-08-20.html"
+<iframe src="dictionary-snapshot-2026-08-29.html"
         style="width:100%; height:85vh; border:1px solid #dee2e6; border-radius:4px;"
         title="opus data dictionary, rendered by data-dict"></iframe>
 ```
 
 Feels cramped? Open it on its own:
-[dictionary-snapshot-2026-08-20.html](dictionary-snapshot-2026-08-20.html).
+[dictionary-snapshot-2026-08-29.html](dictionary-snapshot-2026-08-29.html).
 
-To regenerate at a later milestone: `opus::op_render_spec(data_dir = ".datras")`,
+To regenerate at a later milestone:
+`opus::op_render_spec(data_dir = ".datras/to_https/raw")`,
 saved under a new dated filename here rather than overwriting this one —
 so which snapshot is current stays visible, not hidden.
 

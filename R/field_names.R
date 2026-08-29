@@ -7,55 +7,13 @@
   paste(readLines(con, warn = FALSE), collapse = "\n")
 }
 
-#' Fetch ICES's live getDatrasFieldList metadata directly
-#'
-#' Fetches and parses the same live endpoint `icesDatras::getDatrasFieldList()`
-#' wraps (RecordHeader/FieldName/FieldNameOld triples), without depending on
-#' the icesDatras package -- this raw data is passed to
-#' [op_datras_field_list()], which cross-verifies it against each
-#' operation's own live response before trusting any claimed rename.
-#'
-#' @return Data frame: RecordHeader, FieldName, FieldNameOld, DataFormat,
-#'   Description -- one row per field ICES's field-list service documents.
-#'   A `FieldNameOld` of `"-"` (ICES's own placeholder for "never renamed")
-#'   is left as-is; callers should treat it as equal to `FieldName`.
-#' @keywords internal
-.fetch_live_datras_field_list <- function() {
-  xml <- .fetch_text("https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList")
-  blocks <- regmatches(xml, gregexpr("(?s)<Cls_Datras_FieldList>.*?</Cls_Datras_FieldList>", xml, perl = TRUE))[[1]]
-  # Sanity check, not a soft fallback: a transient/truncated response (seen
-  # once, 2026-08-06, cause unconfirmed -- 174 records is the count observed
-  # consistently otherwise) must fail loudly here rather than silently
-  # produce a partial table that looks like genuine ICES gaps downstream.
-  if (length(blocks) < 150) {
-    stop("getDatrasFieldList returned only ", length(blocks), " records ",
-         "(expected ~174) -- likely a truncated/transient response, not a ",
-         "real change in ICES's data. Retry rather than trust this result.",
-         call. = FALSE)
-  }
-  get_tag <- function(block, tag) {
-    m <- regmatches(block, regexec(paste0("(?s)<", tag, ">(.*?)</", tag, ">"), block, perl = TRUE))[[1]]
-    if (length(m) > 1) trimws(m[2]) else NA_character_
-  }
-  data.frame(
-    RecordHeader = vapply(blocks, get_tag, character(1), tag = "RecordHeader"),
-    FieldName    = vapply(blocks, get_tag, character(1), tag = "FieldName"),
-    FieldNameOld = vapply(blocks, get_tag, character(1), tag = "FieldNameOld"),
-    DataFormat   = vapply(blocks, get_tag, character(1), tag = "DataFormat"),
-    Description  = vapply(blocks, get_tag, character(1), tag = "Description"),
-    stringsAsFactors = FALSE, row.names = NULL
-  )
-}
-
 #' Fetch the real field names an ICES DATRAS operation actually returns
 #'
-#' Reads the operation's own ASMX description page, which embeds a sample
-#' SOAP response showing the field names and types the server's own code
-#' actually generates for that operation -- independent of (and, per
-#' [op_datras_field_list()]'s tracing, sometimes more accurate than) the
-#' separately-maintained getDatrasFieldList metadata service. Ported from
-#' `data-raw/spec_00_operation_types.R`'s crawler so this capability doesn't
-#' require sourcing a data-raw file at package runtime.
+#' Thin wrapper over [op_datras_operation_types()] -- the field-name half of
+#' the same crawl. Kept as a named internal because
+#' [op_datras_field_list()]'s algorithm reads as intended with it, but it
+#' holds no parsing logic of its own: there is exactly one implementation of
+#' the ASMX crawl, in `R/datras_service.R`.
 #'
 #' @param operation Character scalar: an ICES DATRAS web service operation
 #'   name, e.g. `"getCAdata"`.
@@ -63,19 +21,7 @@
 #'   returns them.
 #' @keywords internal
 .fetch_datras_operation_fields <- function(operation) {
-  base_url <- "https://datras.ices.dk/WebServices/DATRASWebService.asmx"
-  page <- .fetch_text(paste0(base_url, "?op=", operation))
-  result_pattern <- sprintf("&lt;%sResult&gt;([\\s\\S]*?)&lt;/%sResult&gt;", operation, operation)
-  blocks <- regmatches(page, gregexpr(result_pattern, page, perl = TRUE))[[1]]
-  if (length(blocks) == 0) {
-    stop("No <", operation, "Result> block found for operation '", operation, "'", call. = FALSE)
-  }
-  field_pattern <- "&lt;([A-Za-z_][A-Za-z0-9_]*)&gt;<font class=value>[a-zA-Z0-9]+</font>&lt;/\\1&gt;"
-  fields <- unique(unlist(lapply(blocks, function(b) {
-    m <- regmatches(b, gregexpr(field_pattern, b, perl = TRUE))[[1]]
-    sub(field_pattern, "\\1", m, perl = TRUE)
-  })))
-  fields
+  op_datras_operation_types(operation)$field
 }
 
 #' Derive verified Tier 1 legacy field-name mappings, without icesDatras
@@ -126,16 +72,27 @@
 #'   5. HH: DateofCalculation is a real field, undocumented under any name.
 #'   6. HL: DateofCalculation and Valid_Aphia, same as #5.
 #'
-#' @param tables Character vector: which RecordHeaders to resolve (default
-#'   opus's Tier 1 scope).
+#' @param tables Character vector: which RecordHeaders to *return* (default
+#'   opus's Tier 1 scope). Resolution always runs over the full Tier 1 set
+#'   regardless, because tier 2 borrows evidence across tables; narrowing
+#'   this only narrows the output.
 #' @return Data frame: RecordHeader, old_name, new_name, source_tier, note.
 #' @export
 op_datras_field_list <- function(tables = c("HH", "HL", "CA", "LT")) {
   operation_for <- c(HH = "getHHdata", HL = "getHLdata", CA = "getCAdata",
                      LT = "getLitterAssessmentOutput")
-  tables <- intersect(tables, names(operation_for))
+  requested <- intersect(tables, names(operation_for))
 
-  fl <- .fetch_live_datras_field_list()
+  # Tier 2 resolves a rename by borrowing another table's `confirmed`
+  # mapping, so the evidence pool must always be the full Tier 1 set even
+  # when the caller wants one table. Resolving only the requested tables
+  # silently degrades the result rather than erroring: asked for "LT" alone,
+  # 37 of its 58 fields lose their rename and keep legacy names, because
+  # ICES's metadata documents Ship/StNo/HaulNo (and 34 more) as renamed for
+  # HH/HL/CA but not for LT. Subset at the end, never at the start.
+  tables <- names(operation_for)
+
+  fl <- op_datras_field_metadata()
   fl <- fl[fl$RecordHeader %in% tables, ]
   fl$FieldNameOld[fl$FieldNameOld == "-"] <- fl$FieldName[fl$FieldNameOld == "-"]
 
@@ -187,7 +144,8 @@ op_datras_field_list <- function(tables = c("HH", "HL", "CA", "LT")) {
     out
   }
 
-  do.call(rbind, lapply(tables, resolve_table))
+  out <- do.call(rbind, lapply(tables, resolve_table))
+  out[out$RecordHeader %in% requested, , drop = FALSE]
 }
 
 #' Build a rename-ready legacy -> new name crosswalk for one or more tables
@@ -355,4 +313,78 @@ op_field_name_map <- function(dict, table_name = NULL) {
   } else {
     do.call(rbind, rows)
   }
+}
+
+#' Build a combined old-name / new-name / type spec from opus's own shipped YAMLs
+#'
+#' Pairs `inst/DATRAS-data-dict-legacy.yaml` (ICES's real, on-the-wire field
+#' names) against `inst/DATRAS-data-dict.yaml` (opus's own curated current
+#' names) POSITIONALLY, per table -- safe because
+#' `data-raw/spec_03_translate_new_names.R` builds the latter from the
+#' former as a pure, order-preserving rename (only `name` ever changes;
+#' column count and order are guaranteed identical). Unlike
+#' [op_datras_rename_crosswalk()], this reads only the two YAML files opus
+#' already ships -- no live ICES web-service calls -- so it's cheap enough
+#' to call on every use, not just at opus's own build time.
+#'
+#' @param table_name Character scalar: restrict to one RecordHeader (`"HH"`,
+#'   `"HL"`, `"CA"`, `"LT"`). `NULL` (default) returns all four.
+#'
+#' @return Data frame: `RecordHeader`, `old_name` (ICES's legacy,
+#'   on-the-wire name), `new_name` (opus's current curated name), `type`
+#'   (the raw data-dict spec vocabulary string -- `"string"`, `"enum"`,
+#'   `"number(id)"`, `"number(ordinal)"`, `"number(quantity)"`, ... --
+#'   unmodified; mapping this to an R storage type is left to the caller,
+#'   consistent with opus shipping metadata rather than performing data
+#'   transformation itself).
+#'
+#' @examples
+#' \dontrun{
+#'   opus::op_field_spec("CA")
+#' }
+#'
+#' @export
+op_field_spec <- function(table_name = NULL) {
+  legacy <- yaml::read_yaml(system.file("DATRAS-data-dict-legacy.yaml", package = "opus"))
+  current <- yaml::read_yaml(system.file("DATRAS-data-dict.yaml", package = "opus"))
+
+  legacy_names <- vapply(legacy$tables, function(t) t$name, character(1))
+  current_names <- vapply(current$tables, function(t) t$name, character(1))
+
+  rows <- list()
+  row_count <- 0
+
+  for (tname in legacy_names) {
+    if (!is.null(table_name) && tname != table_name) next
+
+    old_tbl <- legacy$tables[[which(legacy_names == tname)]]
+    new_tbl <- current$tables[[which(current_names == tname)]]
+
+    if (length(old_tbl$columns) != length(new_tbl$columns)) {
+      stop(sprintf(
+        "op_field_spec(): table '%s' has %d columns in DATRAS-data-dict-legacy.yaml but %d in DATRAS-data-dict.yaml -- the two are no longer a pure positional rename of each other.",
+        tname, length(old_tbl$columns), length(new_tbl$columns)
+      ), call. = FALSE)
+    }
+
+    for (i in seq_along(old_tbl$columns)) {
+      row_count <- row_count + 1
+      rows[[row_count]] <- data.frame(
+        RecordHeader = tname,
+        old_name = old_tbl$columns[[i]]$name,
+        new_name = new_tbl$columns[[i]]$name,
+        type = new_tbl$columns[[i]]$type,
+        stringsAsFactors = FALSE
+      )
+    }
+  }
+
+  if (length(rows) == 0) {
+    return(data.frame(
+      RecordHeader = character(), old_name = character(),
+      new_name = character(), type = character(),
+      stringsAsFactors = FALSE
+    ))
+  }
+  do.call(rbind, rows)
 }

@@ -42,76 +42,6 @@
     "text": "How to Contribute Technical Notes\nWhen you discover something worth documenting that doesn’t fit other docs:\n\nAdd a new section to this file with:\n\nClear title\nDate discovered\nStatus (Discovery, Under implementation, Implemented)\nProblem statement\nSolution/approach\nImplementation details (if applicable)\nReferences to related code/docs\n\nKeep it technical — this is for developers, not users\nInclude code examples when they illustrate the point\nCross-reference AGENTS.md principles when a decision relates to them\nUpdate this TOC when adding new sections"
   },
   {
-    "objectID": "articles/dictionary.html",
-    "href": "articles/dictionary.html",
-    "title": "The data dictionary, browsable",
-    "section": "",
-    "text": "opus’s yaml dictionaries describe every field across HH, HL, CA, and LT — type, unit, valid range or code list, and (where the data profile below shows it’s worth a second look) an evidence-linked todo. Embedded below: a relationship diagram, a searchable field index, and a live profile of each column’s real values, generated directly from the shipped dictionary and the full local DATRAS archive via data-dict’s own render command.\n\n\n\n\n\n\nImportantThis is a dated snapshot, not a live page\n\n\n\nUnlike the yaml itself, this render isn’t rebuilt automatically — the underlying archive it profiles against keeps growing as new DATRAS years land, and isn’t part of this repository. Treat the date below as the “as of,” not a promise of continuous freshness.\n\n\nSnapshot as of 2026-08-20 (HH/HL/CA/LT coverage complete):\n\nFeels cramped? Open it on its own: dictionary-snapshot-2026-08-20.html.\nTo regenerate at a later milestone: opus::op_render_spec(data_dir = \".datras\"), saved under a new dated filename here rather than overwriting this one — so which snapshot is current stays visible, not hidden.\nRaw yaml, if you want the machine-readable version directly: DATRAS-data-dict.yaml"
-  },
-  {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "opus",
-    "section": "",
-    "text": "opus consolidates ICES DATRAS’s own field-level metadata — types, units, valid ranges and codes, plus a growing registry of “ICES documents X, but the service actually does Y” findings — into two machine-readable YAML specifications, covering four exchange tables:\nThe R package around these files is thin tooling only (validation, curation, no domain QC) — the yaml is the deliverable, independent of R or any other language. It feeds imbus WP2 (reference specification)."
-  },
-  {
-    "objectID": "index.html#where-to-go-next",
-    "href": "index.html#where-to-go-next",
-    "title": "opus",
-    "section": "Where to go next",
-    "text": "Where to go next\n\nApproach — how the dictionaries were built: the sources consolidated, why some were rejected, how the reconciliation actually works\nData dictionary — the yaml itself, rendered as a browsable, dated snapshot\nIssues found — confirmed gaps and inconsistencies in ICES’s own DATRAS metadata services, reported upstream\nTechnical notes — implementation-level decisions and discoveries, for anyone who wants more depth than Approach covers\n\nRaw yaml, for anyone who wants the machine-readable version directly: DATRAS-data-dict.yaml · DATRAS-known-issues.yaml"
-  },
-  {
-    "objectID": "articles/approach.html",
-    "href": "articles/approach.html",
-    "title": "How opus’s data dictionaries were built",
-    "section": "",
-    "text": "NoteOutline, not yet drafted\n\n\n\nThis page currently sketches what each section will cover. When the prose gets written, favor describing method over today’s snapshot numbers (row counts, percentages) — this page is expected to go untouched for long stretches, so it should age well unattended rather than rely on someone circling back to refresh it."
-  },
-  {
-    "objectID": "articles/approach.html#why-a-structured-dictionary-at-all",
-    "href": "articles/approach.html#why-a-structured-dictionary-at-all",
-    "title": "How opus’s data dictionaries were built",
-    "section": "Why a structured dictionary at all",
-    "text": "Why a structured dictionary at all\n\nScattered institutional knowledge (WSDL, icesVocab, Technical Reference, real submissions) consolidated into one authoritative, machine-readable place\nPortable and language-independent — not an R-specific artifact; usable even if opus’s own R tooling is never touched again"
-  },
-  {
-    "objectID": "articles/approach.html#four-sources-reconciled",
-    "href": "articles/approach.html#four-sources-reconciled",
-    "title": "How opus’s data dictionaries were built",
-    "section": "Four sources, reconciled",
-    "text": "Four sources, reconciled\n\nWSDL — primary authority for field types; DATRAS-specific\ngetDatrasFieldList — secondary, and confirmed unreliable (6 filed errors: LT coverage gap, wrong LT renames, a phantom field, an unverifiable CA rename, missing entries, a duplication miss)\nicesVocab — code semantics only, not structural types; keyed by each field’s legacy name, not its current one — a dependency that isn’t obvious until it bites\nDATRAS field-description spreadsheet — closest thing to a real Technical Reference, but hand-maintained and not kept in sync with the other three"
-  },
-  {
-    "objectID": "articles/approach.html#why-not-icesdatras-as-the-access-layer",
-    "href": "articles/approach.html#why-not-icesdatras-as-the-access-layer",
-    "title": "How opus’s data dictionaries were built",
-    "section": "Why not icesDatras as the access layer",
-    "text": "Why not icesDatras as the access layer\n\nThe tempting assumption: use the existing R package as the retrieval/parsing middleman instead of calling ICES’s services directly\nWhat that would have meant inheriting: a personal fork, diverged from upstream, carrying unreviewed local patches that were initially (wrongly) described internally as official package behavior\nThe decision instead: call WSDL / getDatrasFieldList / icesVocab directly, verify every claim against at least two independent live sources, never trust a single package’s internal handling\nWhy this still matters, concretely and currently, not just in retrospect: ICES’s own official package is being actively finalized right now, with a faster replacement retrieval mechanism coming — a live example of exactly the dependency-volatility this decision was avoiding\n(May grow into its own page rather than a section here, once drafted — not deciding that now)"
-  },
-  {
-    "objectID": "articles/approach.html#how-the-dictionaries-were-actually-built",
-    "href": "articles/approach.html#how-the-dictionaries-were-actually-built",
-    "title": "How opus’s data dictionaries were built",
-    "section": "How the dictionaries were actually built",
-    "text": "How the dictionaries were actually built\n\nSeed from live sources (WSDL + getDatrasFieldList + icesVocab), keyed by legacy field names, no corrections yet\nCurate against the real archive: hand-written corrections, enum enrichment, evidence required for every range/constraint\nRename: legacy → opus’s curated names, as a single, pure, final step\nCross-link to Technical notes for the code-level version of this story"
-  },
-  {
-    "objectID": "articles/approach.html#keeping-it-rigorous",
-    "href": "articles/approach.html#keeping-it-rigorous",
-    "title": "How opus’s data dictionaries were built",
-    "section": "Keeping it rigorous",
-    "text": "Keeping it rigorous\n\nReal data as ground truth over any single documentation source\nEvery claim verified empirically against live, primary data — never a citation, a prior note, or a single source\nAudits are exhaustive, not sampled — legacy name and current name both checked, every prefix candidate, not just the first one that resolves"
-  },
-  {
-    "objectID": "articles/approach.html#scope",
-    "href": "articles/approach.html#scope",
-    "title": "How opus’s data dictionaries were built",
-    "section": "Scope",
-    "text": "Scope\n\nThis describes how the metadata specification was built — not domain QC, not data transformation. That work is downstream, in obus/imbus’s own workpackages."
-  },
-  {
     "objectID": "articles/issues.html",
     "href": "articles/issues.html",
     "title": "Issues found in ICES DATRAS web services",
@@ -238,6 +168,13 @@
     "text": "Issue 16: LT’s PARAM field uses codes that are not in icesVocab’s own PARAM list\nSeverity: Institutional governance — vocabulary coverage gap\nLT’s PARAM field takes 49 distinct real values across 75,308 of 75,310 non-null rows. icesVocab’s own PARAM code list carries 1,938 codes (confirmed present: e.g. LT-TOT = “Litter - total”) – but 6 common real values (A2, A3, A5, A6, A7, A14) do not appear anywhere in the full list.\nRecommendation: Add the missing codes to icesVocab’s PARAM list, or confirm they belong to a different or superseding code list not covered here. —"
   },
   {
+    "objectID": "articles/issues.html#issue-17-getsurveylist-returns-one-survey-code-with-trailing-space-padding",
+    "href": "articles/issues.html#issue-17-getsurveylist-returns-one-survey-code-with-trailing-space-padding",
+    "title": "Issues found in ICES DATRAS web services",
+    "section": "Issue 17: getSurveyList returns one survey code with trailing-space padding",
+    "text": "Issue 17: getSurveyList returns one survey code with trailing-space padding\nSeverity: Data quality – a single malformed value in an otherwise clean list, breaks naive consumers outright\nThe live getSurveyList endpoint (https://datras.ices.dk/WebServices/DATRASWebService.asmx/getSurveyList) currently returns 30 survey codes. 29 are clean, unpadded strings. The 30th, EVHOE, comes back as \"EVHOE     \" – the same five-character survey code followed by five literal trailing spaces, embedded directly between the &lt;Survey&gt;/&lt;/Survey&gt; tags. Confirmed by inspecting the raw response bytes directly, not inferred from any consumer’s parsing.\nConsequence. Any consumer that uses the returned string as-is to build a query parameter for the data-retrieval operations (getHHdata/getHLdata/getCAdata/getLitterAssessmentOutput) embeds literal, unencoded whitespace in the request URL. The failure is loud, not silent – the resulting URL is rejected outright (“URL rejected: Malformed input to a URL function”) rather than silently truncated or misrouted – but the practical effect is that every (year, quarter) cell for this one survey is unreachable through the most direct use of getSurveyList’s own returned value. (opus’s own pipeline now trims every survey code defensively regardless of what any single endpoint returns; noted here because the defect is in ICES’s own source data, not an artifact of any particular consumer’s parsing choices.)\nRecommendation: Strip leading/trailing whitespace from survey codes before getSurveyList returns them, so EVHOE is consistent with the other 29 entries in the same response. —"
+  },
+  {
     "objectID": "articles/issues.html#suggestion-for-consideration-not-a-bug-report",
     "href": "articles/issues.html#suggestion-for-consideration-not-a-bug-report",
     "title": "Issues found in ICES DATRAS web services",
@@ -245,10 +182,157 @@
     "text": "Suggestion for consideration (not a bug report)\nEverything above documents a confirmed error, gap, or unused feature in an existing ICES service. This section is different in kind: a design idea for ICES’s own future consideration, not a defect being reported.\n\nA single surrogate haul identifier, instead of an 8-field composite key\nHL, CA, and LT each reference haul-level data in HH via the same 8-field composite identifier (Survey, Year, Quarter, Country, Platform/Ship, Gear, StationName/StNo, HaulNumber/HaulNo). Beyond the join key itself, HL, CA, and LT also each carry a substantial number of additional columns that are literal copies of HH’s own values for the same haul – confirmed for roughly 30 fields across the three tables (gear geometry, positions, environmental readings), at 100% or near-100% match rates.\nA single, ICES-assigned surrogate identifier per haul – present on HH and carried onto every haul-referencing record in HL/CA/LT – would let the 8-field composite key, and potentially some of the other repeated columns, be replaced by one join column. It would also sidestep composite-key edge cases like CA’s own well-documented -9/orphaned-record gap (Issue 14 above, opus’s own known issues, ca_haulno_unlinkable_to_hh/ca_haulno_tail_mismatch) is a direct consequence of the composite key’s correctness depending on several independently-submitted fields all agreeing at once, something a single assigned identifier would not be exposed to in the same way.\nThis isn’t something opus can adopt unilaterally – it would require a real change to ICES’s own submission format, not a documentation or vocabulary fix, so it is offered here as an idea for ICES’s own future consideration rather than a request for immediate action."
   },
   {
-    "objectID": "articles/issues.html#issue-17-getsurveylist-returns-one-survey-code-with-trailing-space-padding",
-    "href": "articles/issues.html#issue-17-getsurveylist-returns-one-survey-code-with-trailing-space-padding",
-    "title": "Issues found in ICES DATRAS web services",
-    "section": "Issue 17: getSurveyList returns one survey code with trailing-space padding",
-    "text": "Issue 17: getSurveyList returns one survey code with trailing-space padding\nSeverity: Data quality – a single malformed value in an otherwise clean list, breaks naive consumers outright\nThe live getSurveyList endpoint (https://datras.ices.dk/WebServices/DATRASWebService.asmx/getSurveyList) currently returns 30 survey codes. 29 are clean, unpadded strings. The 30th, EVHOE, comes back as \"EVHOE     \" – the same five-character survey code followed by five literal trailing spaces, embedded directly between the &lt;Survey&gt;/&lt;/Survey&gt; tags. Confirmed by inspecting the raw response bytes directly, not inferred from any consumer’s parsing.\nConsequence. Any consumer that uses the returned string as-is to build a query parameter for the data-retrieval operations (getHHdata/getHLdata/getCAdata/getLitterAssessmentOutput) embeds literal, unencoded whitespace in the request URL. The failure is loud, not silent – the resulting URL is rejected outright (“URL rejected: Malformed input to a URL function”) rather than silently truncated or misrouted – but the practical effect is that every (year, quarter) cell for this one survey is unreachable through the most direct use of getSurveyList’s own returned value. (opus’s own pipeline now trims every survey code defensively regardless of what any single endpoint returns; noted here because the defect is in ICES’s own source data, not an artifact of any particular consumer’s parsing choices.)\nRecommendation: Strip leading/trailing whitespace from survey codes before getSurveyList returns them, so EVHOE is consistent with the other 29 entries in the same response. —"
+    "objectID": "articles/approach.html",
+    "href": "articles/approach.html",
+    "title": "How opus’s data dictionaries were built",
+    "section": "",
+    "text": "The information needed to read ICES DATRAS data correctly is real but scattered — spread across a WSDL, a separately maintained metadata service, a vocabulary server, and a hand-kept spreadsheet, none of which fully agrees with the others. This page describes how those are reconciled into two machine-readable specifications, what the R functions around them are for, and the failure modes the design guards against.\nThe dictionaries are built once and maintained by hand. The seeding and curation scripts under data-raw/ are kept as provenance — how did this entry come to say that? — not as a rebuild path. Re-running them would overwrite hand-made decisions with whatever the live sources happen to say today."
+  },
+  {
+    "objectID": "articles/approach.html#why-a-structured-dictionary-at-all",
+    "href": "articles/approach.html#why-a-structured-dictionary-at-all",
+    "title": "How opus’s data dictionaries were built",
+    "section": "Why a structured dictionary at all",
+    "text": "Why a structured dictionary at all\nAnyone reading DATRAS answers the same questions repeatedly. What type is this field? What does code 4 mean here? Is -9 a missing value or an answer? Which of these two similarly named columns is the one I want? Each consumer rediscovers those answers independently, usually by trial and error against real data, and usually without writing down what they learned.\nConsolidating them buys two things worth insisting on. The result is authoritative — every claim traced to a primary source and checked against real data. And it is portable: the deliverable is YAML conforming to a published specification, not an R object. The R package is thin tooling around those files. If nobody runs it again, the dictionaries remain usable by any language that can read a text file."
+  },
+  {
+    "objectID": "articles/approach.html#four-sources-reconciled",
+    "href": "articles/approach.html#four-sources-reconciled",
+    "title": "How opus’s data dictionaries were built",
+    "section": "Four sources, reconciled",
+    "text": "Four sources, reconciled\nNo single source is sufficient, and none is trustworthy alone.\nThe WSDL is the primary authority for field types. Each operation’s description page embeds a sample response generated from the server’s actual return type, so it cannot drift from what the service sends the way a hand-maintained table can. This is not a theoretical preference: where the WSDL and the metadata service disagree, real data has repeatedly proved the WSDL right.\ngetDatrasFieldList documents field names and the legacy names they were renamed from. It is separately maintained rather than generated from the live operations, and it is demonstrably unreliable — it covers 22 of LT’s 58 real fields, claims fields that do not exist, omits others entirely, and pairs at least one field with a legacy name that is not real. It is used, but never on its own authority.\nicesVocab supplies code semantics — what the values in a coded field mean. It carries no structural type information, and its keys are tied to each field’s legacy name rather than its current one, a dependency that stays invisible until it produces a wrong answer.\nThe DATRAS field-description spreadsheet is the closest thing to a Technical Reference and the only source for some descriptive text. It is hand-maintained and not kept in step with the other three.\nThe reconciliation rule that follows: a claim is trusted when two independent sources agree, or when one source agrees with real data. Never because a single document says so."
+  },
+  {
+    "objectID": "articles/approach.html#why-not-icesdatras-as-the-access-layer",
+    "href": "articles/approach.html#why-not-icesdatras-as-the-access-layer",
+    "title": "How opus’s data dictionaries were built",
+    "section": "Why not icesDatras as the access layer",
+    "text": "Why not icesDatras as the access layer\nThe obvious shortcut is to let ICES’s own R package (ices-tools-prod/icesDatras) handle retrieval and parsing. opus calls the web services directly instead, and the reason is specific rather than general.\nicesDatras is a convenience layer that does not merely fetch — it corrects. getDATRAS() takes fix_types and new_names arguments, both defaulting from global options, and both applied from a schema table bundled inside the package. applyDatrasNameSchema() renames columns by mapping FieldNameOld to FieldName from that table; fix_types (on by default) coerces column types from the same source.\nThat bundled table derives from getDatrasFieldList — the source opus independently finds to contain errors. So its corrections carry those errors forward, applied silently. Concretely, the bundled schema renames CA’s Age to IndividualAge; the live getCAdata operation returns Age, and there is no IndividualAge anywhere in real CA data. A consumer who opts into new_names receives a column named for a field that does not exist.\nFor most users that is a reasonable trade — a maintained package that smooths over an awkward service is worth having, and ICES ships it as the supported way in. It is the wrong foundation for this project specifically, because opus’s job is to document where ICES’s own metadata is wrong. A layer that quietly applies that metadata’s corrections removes the very signal opus exists to capture: the discrepancy stops being visible to measure, and the result would be “true, as filtered through another package’s assumptions.”\nSo opus reads the WSDL, getDatrasFieldList and icesVocab directly and verifies each claim against at least two independent live sources. The distinction matters in one direction only: opus does not need a better client than icesDatras, it needs an unmediated one."
+  },
+  {
+    "objectID": "articles/approach.html#the-build",
+    "href": "articles/approach.html#the-build",
+    "title": "How opus’s data dictionaries were built",
+    "section": "The build",
+    "text": "The build\nThree phases, keyed throughout by ICES’s legacy field names, with opus’s own names introduced exactly once at the end.\nSeed. Crawl the live sources and assemble a first-pass dictionary: one entry per real field, typed from the WSDL, with whatever ICES documents attached. The seed records what the sources say, including where they contradict each other.\nCurate. Work the seed against the real archive. Every range, every constraint, every enum membership is checked against actual values before it is written down. Codes are enriched from icesVocab where a field resolves to a controlled list. Where sources conflict, the conflict is resolved against data and the resolution recorded, not silently applied.\nRename. Translate legacy names to opus’s curated names as a single, pure, positional rename — no other change in the same step. Keeping it isolated is what makes it auditable: the two files are one specification under two naming schemes, and any divergence between them is a bug rather than a design.\nBoth files ship. DATRAS-data-dict-legacy.yaml is not an archive copy: submitters send ICES data under legacy names, so it is the submission-side specification."
+  },
+  {
+    "objectID": "articles/approach.html#what-the-functions-are-for",
+    "href": "articles/approach.html#what-the-functions-are-for",
+    "title": "How opus’s data dictionaries were built",
+    "section": "What the functions are for",
+    "text": "What the functions are for\nThe package is thin but not arbitrary. Each exported function exists because some consumer — the curation flow, the archive build, or a downstream package — needs to ask one question without re-implementing the answer. The function reference lists them all; what follows is why the groups exist.\nReading the service. op_datras_operations() lists what the DATRAS service exposes; op_datras_operation_types() returns the fields and types one operation actually returns. Everything needing to know what ICES really sends goes through these rather than parsing the service again.\nop_datras_operations() doubles as a migration tripwire. ICES is renaming DATRAS fields one table at a time, and each converted table appears as a new …NewHeaders operation. Watching that list is how the migration’s progress becomes visible without being announced.\nNames. op_datras_field_metadata() returns getDatrasFieldList as ICES publishes it — what ICES claims. op_datras_field_list() returns what survives cross-checking against each operation’s real response, tagging every mapping with the evidence behind it. op_datras_rename_crosswalk() reduces that to a collision-checked 1:1 map for callers that just need to rename columns.\nThe specification. op_field_spec() returns the dictionary as a plain data frame — legacy name, current name, type. That one accessor is the whole contract between opus and anything downstream, so no consumer parses the YAML itself.\nConversion. Four functions turn a parsed XML table into publishable parquet, and the order is load-bearing:\ndf &lt;- op_cast_wsdl_types(df, \"HL\")   # physical types; sentinels untouched\ndf &lt;- op_rename_to_new(df, \"HL\")     # legacy -&gt; current names\ndf &lt;- op_strip_sentinels(df, \"HL\")   # -9 -&gt; NA, where it means absence\ndf &lt;- op_cast_to_spec(df, \"HL\")      # semantic types the wire can't express\nCasting is first because the WSDL type map is keyed by each operation’s own field names, which are the legacy ones. Renaming precedes sentinel resolution because the sentinel registry is keyed by current names. The semantic cast is last because a date column cannot hold -9.\nBecause these are exported rather than buried in a build script, a downstream package can produce results identical to the published archive by calling the same four functions on its own live fetch, instead of reimplementing the rules and slowly diverging from them.\nSentinels. op_sentinels() reads the registry, op_sentinel_policy() resolves it into a per-column verdict with the reasoning attached, and op_sentinel_audit() measures a real parquet file against it. The audit is both the evidence behind each decision and the regression check afterwards.\nValidation. op_validate_spec() checks the dictionary is well-formed, op_validate_meta() checks a dataset’s names and types against it, and op_validate_data() checks the values. These matter more than usual under hand-maintenance: they are what makes editing a large YAML by hand safe, and op_validate_meta() is the gate saying the published data and the specification still describe each other."
+  },
+  {
+    "objectID": "articles/approach.html#what-the-design-guards-against",
+    "href": "articles/approach.html#what-the-design-guards-against",
+    "title": "How opus’s data dictionaries were built",
+    "section": "What the design guards against",
+    "text": "What the design guards against\nMost of the hazards here share a shape: they produce a plausible result instead of an error. That is what the following are built to prevent.\n\nA metadata service that disagrees with its own data\nTaking getDatrasFieldList at face value produces wrong answers, so op_datras_field_list() grades it rather than discarding it. A rename is accepted when the legacy name actually appears in that operation’s live response; accepted at lower confidence when another table confirms the same mapping; and otherwise recorded as unverified rather than acted on.\nThat middle tier carries real weight. Most of LT’s renames resolve only that way — its fields are renamed exactly as their HH counterparts are, but ICES documents the rename only for HH. Without cross-table evidence the majority of that table would keep its legacy names.\n\n\nEvidence that vanishes when the question narrows\nBecause that middle tier borrows evidence between tables, asking about one table alone leaves nothing to borrow from — and the honest failure would be an error, not a smaller answer. Resolution therefore always runs over the full set of tables and narrows at the end, so no caller can ask the question in a way that quietly degrades the result.\n\n\nGuards that can pass vacuously\nA check written as “is this table name among the dictionary’s keys” passes for every input when those keys are tables and glossary — never a table name. Such a guard converts a loud failure into a silent one, and a type caster built on it does nothing at all while appearing to work.\nTypes therefore come from an explicit per-column cast against the WSDL, applied to every typed column rather than only the numeric ones, and an unrecognised type is reported rather than passed through. Otherwise a column can be integer in files where every value happens to be a sentinel and text in files with a real value.\n\n\nA value that means two things\nDATRAS uses -9 to mean “not recorded”. In some fields it is an answer: for tickler chains it means none were used, an icesVocab-documented code and the dominant value in that column rather than a rare one. Replacing it wholesale destroys real data, and once destroyed the evidence needed to notice is gone with it.\nThe opposite reflex is also wrong. Parquet has a native null, so carrying -9 onward makes every downstream consumer rediscover the convention, with any naive average silently incorrect.\nWhat resolves it is that neither the value nor its frequency is the discriminator. Two fields can both be almost entirely -9 — one because nobody records that measurement, one because “none” is the usual answer. What separates them is the label ICES publishes for the code: a set meaning absence (Not known, Not available, Unknown, …) against a much smaller set naming a real answer (No ticklers are allowed, No plus group, Invalid hauls).\nSo the policy strips by default, keeps where the vocabulary documents the sentinel as a real answer, and records the label list in the known-issues registry where it can be reviewed. Anything the list does not recognise resolves to keep: an unrecognised label must never silently destroy a documented code.\nThat -9 carries both meanings inside one vocabulary is an ICES-side defect, not a modelling choice, and it is recorded as such.\n\n\nOrdering that turns a correct conversion into data loss\nDateofCalculation arrives as YYYYMMDD and should be a date. Converting it while sentinels are still present turns every -9 into a null — a conversion that is individually correct and collectively destructive, and one that reports nothing.\nSentinel resolution therefore runs first, as a declared decision recorded in the registry, and only then does the date conversion. As a backstop op_cast_to_spec() refuses to convert a column containing anything it cannot parse rather than producing nulls. A conversion that cannot be done losslessly is an error, not a result.\n\n\nA specification that does not describe its own data\nValidating opus’s output against opus’s specification is the check that catches drift between the two. It surfaces a consistent class of mismatch: fields typed enum whose data is stored as integers. Under the dictionary specification an enum’s underlying data must be string-like, so those are genuine violations.\nResolving them needs a judgement rather than a rule, because the options are not equivalent. A number column may not carry a code-to-label map, so retyping a field to a number deletes its labels from both the dictionary and the published catalog. For quarter and month that costs nothing — the labels restate the number. For tickler counts and species categories, where the codes are not self-explanatory, the labels are the useful part, and those fields stay enums stored as text.\nThe general point: “make the validator pass” is not the goal. The validator identifies where description and data disagree; which of the two should move is a question about what the specification is for."
+  },
+  {
+    "objectID": "articles/approach.html#keeping-it-rigorous",
+    "href": "articles/approach.html#keeping-it-rigorous",
+    "title": "How opus’s data dictionaries were built",
+    "section": "Keeping it rigorous",
+    "text": "Keeping it rigorous\nA few habits do most of the work.\nReal data outranks any document. Where a source and the archive disagree, the archive wins and the source becomes an issue to report.\nTwo sources, or one plus data. No structural claim rests on a single document, including ICES’s own.\nAudits are exhaustive, not sampled. Both name schemes are checked, not just the current one; every vocabulary prefix candidate, not just the first that resolves; every column, not a handful.\nPrefer a loud failure. A check that can pass vacuously is treated as a defect, and a function that cannot do its job correctly stops rather than returning something plausible."
+  },
+  {
+    "objectID": "articles/approach.html#scope",
+    "href": "articles/approach.html#scope",
+    "title": "How opus’s data dictionaries were built",
+    "section": "Scope",
+    "text": "Scope\nThis describes how the metadata specification is built. It is not domain QC and not data transformation — that work belongs downstream, in obus/imbus’s own workpackages. opus’s boundary is what a field is called, what type it is, what its values may be, and where ICES’s own documentation of that is wrong.\nFor the code-level detail behind several sections above, see Technical notes. For the findings reported back to ICES, see Issues found."
+  },
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "opus",
+    "section": "",
+    "text": "opus consolidates ICES DATRAS’s own field-level metadata — types, units, valid ranges and codes, plus a growing registry of “ICES documents X, but the service actually does Y” findings — into two machine-readable YAML specifications, covering four exchange tables:\nThe R package around these files is thin tooling only (validation, curation, no domain QC) — the yaml is the deliverable, independent of R or any other language. It feeds imbus WP2 (reference specification)."
+  },
+  {
+    "objectID": "index.html#where-to-go-next",
+    "href": "index.html#where-to-go-next",
+    "title": "opus",
+    "section": "Where to go next",
+    "text": "Where to go next\n\nApproach — how the dictionaries were built: the sources consolidated, why some were rejected, how the reconciliation actually works\nData dictionary — the yaml itself, rendered as a browsable, dated snapshot\nFunction reference — the exported R functions, grouped by what they are for; generated from the package’s own documentation\nIssues found — confirmed gaps and inconsistencies in ICES’s own DATRAS metadata services, reported upstream\nTechnical notes — implementation-level decisions and discoveries, for anyone who wants more depth than Approach covers\n\nRaw yaml, for anyone who wants the machine-readable version directly: DATRAS-data-dict.yaml · DATRAS-known-issues.yaml"
+  },
+  {
+    "objectID": "articles/dictionary.html",
+    "href": "articles/dictionary.html",
+    "title": "The data dictionary, browsable",
+    "section": "",
+    "text": "opus’s yaml dictionaries describe every field across HH, HL, CA, and LT — type, unit, valid range or code list, and (where the data profile below shows it’s worth a second look) an evidence-linked todo. Embedded below: a relationship diagram, a searchable field index, and a live profile of each column’s real values, generated directly from the shipped dictionary and the full local DATRAS archive via data-dict’s own render command.\n\n\n\n\n\n\nImportantThis is a dated snapshot, not a live page\n\n\n\nUnlike the yaml itself, this render isn’t rebuilt automatically — the underlying archive it profiles against keeps growing as new DATRAS years land, and isn’t part of this repository. Treat the date below as the “as of,” not a promise of continuous freshness.\n\n\nSnapshot as of 2026-08-29 (HH/HL/CA/LT coverage complete):\n\nFeels cramped? Open it on its own: dictionary-snapshot-2026-08-29.html.\nTo regenerate at a later milestone: opus::op_render_spec(data_dir = \".datras/to_https/raw\"), saved under a new dated filename here rather than overwriting this one — so which snapshot is current stays visible, not hidden.\nRaw yaml, if you want the machine-readable version directly: DATRAS-data-dict.yaml"
+  },
+  {
+    "objectID": "articles/reference.html",
+    "href": "articles/reference.html",
+    "title": "Function reference",
+    "section": "",
+    "text": "This page is generated from the package’s own man/*.Rd files by data-raw/build_reference.R, so it cannot drift from the roxygen. Full documentation for any function is ?name in an R session.\nopus exports 34 functions. The yaml dictionaries are the deliverable; these are the tooling around them."
+  },
+  {
+    "objectID": "articles/reference.html#the-specification",
+    "href": "articles/reference.html#the-specification",
+    "title": "Function reference",
+    "section": "The specification",
+    "text": "The specification\nThe dictionary as data. Downstream code should reach the yaml through these rather than parsing it, so there is one place where the shape of the specification is known.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_field_spec()\nBuild a combined old-name / new-name / type spec from opus’s own shipped YAMLs\n\n\nop_field_name_map()\nBuild field name mapping from data-dict YAML\n\n\nop_legacy_field_name()\nExtract legacy field name from column details"
+  },
+  {
+    "objectID": "articles/reference.html#converting-datras-xml-to-parquet",
+    "href": "articles/reference.html#converting-datras-xml-to-parquet",
+    "title": "Function reference",
+    "section": "Converting DATRAS XML to parquet",
+    "text": "Converting DATRAS XML to parquet\nThe four steps of the conversion, in the order they must run: physical types, then names, then sentinels, then the semantic types the wire cannot express. A consumer calling these on its own live fetch gets a result identical to the published archive rather than a near-miss.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_cast_wsdl_types()\nCast a parsed DATRAS table to its WSDL-declared physical types\n\n\nop_rename_to_new()\nRename a DATRAS table from ICES’s legacy names to opus’s current names\n\n\nop_strip_sentinels()\nReplace sentinels with NA, where they mean absence\n\n\nop_cast_to_spec()\nRealise the semantic types the wire format cannot express\n\n\nop_wsdl_type_overrides()\nThe documented WSDL type overrides"
+  },
+  {
+    "objectID": "articles/reference.html#sentinels",
+    "href": "articles/reference.html#sentinels",
+    "title": "Function reference",
+    "section": "Sentinels",
+    "text": "Sentinels\nDATRAS overloads -9: in most fields it means “not recorded”, in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_sentinels()\nRead the sentinel registry\n\n\nop_sentinel_policy()\nResolve, per column, whether a sentinel means absence\n\n\nop_sentinel_audit()\nCount sentinel values per column in a parquet file"
+  },
+  {
+    "objectID": "articles/reference.html#field-names",
+    "href": "articles/reference.html#field-names",
+    "title": "Function reference",
+    "section": "Field names",
+    "text": "Field names\nICES is renaming DATRAS fields one table at a time. These separate what ICES claims about renames from what survives checking against what the service actually returns.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_datras_field_metadata()\nFetch ICES’s getDatrasFieldList metadata, as ICES publishes it\n\n\nop_datras_field_list()\nDerive verified Tier 1 legacy field-name mappings, without icesDatras\n\n\nop_datras_rename_crosswalk()\nBuild a rename-ready legacy -&gt; new name crosswalk for one or more tables"
+  },
+  {
+    "objectID": "articles/reference.html#reading-the-datras-web-service",
+    "href": "articles/reference.html#reading-the-datras-web-service",
+    "title": "Function reference",
+    "section": "Reading the DATRAS web service",
+    "text": "Reading the DATRAS web service\nPrimary-source readers. Everything that needs to know what ICES really sends goes through these rather than parsing the service again.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_datras_operations()\nList the DATRAS web service’s currently exposed operations\n\n\nop_datras_operation_types()\nFetch the field names and types a DATRAS operation actually returns"
+  },
+  {
+    "objectID": "articles/reference.html#validation",
+    "href": "articles/reference.html#validation",
+    "title": "Function reference",
+    "section": "Validation",
+    "text": "Validation\nIs the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance – they are what makes editing a large yaml by hand safe.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_validate_spec()\nValidate opus specs against real DATRAS data\n\n\nop_validate_meta()\nValidate dataset metadata against dictionary\n\n\nop_validate_data()\nValidate dataset values against dictionary constraints\n\n\nop_validate_full()\nRun full validation suite\n\n\nop_validation_problems()\nFlatten a data-dict validation report’s problems into a data frame\n\n\nop_flag_violations()\nFlag rows with violations against dictionary constraints"
+  },
+  {
+    "objectID": "articles/reference.html#ices-vocabularies",
+    "href": "articles/reference.html#ices-vocabularies",
+    "title": "Function reference",
+    "section": "ICES vocabularies",
+    "text": "ICES vocabularies\nCode semantics from icesVocab. Keys are tied to each field’s legacy name, which is not obvious until it produces a wrong answer.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_vocab_resolve_datras_key()\nResolve a DATRAS Tier 1 field to its correct icesVocab key (opus’s audited proposal)\n\n\nop_vocab_resolve_key()\nResolve a Field Name to Candidate Vocabulary Keys\n\n\nop_vocab_resolve_guid()\nResolve an ICES Vocabulary GUID to Its Key – an Exact Match, Not a Guess\n\n\nop_vocab_get_types()\nGet ICES Vocabulary Types with Prefix Metadata\n\n\nop_vocab_get_codes()\nFetch Code:Meaning Pairs from an ICES Vocabulary Key\n\n\nop_vocab_first_usable()\nFind the First Vocabulary Key with Usable Codes"
+  },
+  {
+    "objectID": "articles/reference.html#parquet-and-export",
+    "href": "articles/reference.html#parquet-and-export",
+    "title": "Function reference",
+    "section": "Parquet and export",
+    "text": "Parquet and export\nInspecting real data, and rendering the dictionary for other tools.\n\n\n\n\n\n\n\nFunction\n\n\n\n\n\nop_inspect_parquet()\nInspect parquet file schema\n\n\nop_describe_parquet()\nDescribe columns of a parquet file\n\n\nop_draft_from_parquet()\nDraft a data-dict.yaml from parquet files\n\n\nop_export_spec()\nExport dictionary as fully-resolved JSON\n\n\nop_export_data()\nExport dictionary with per-column data profiles\n\n\nop_render_spec()\nRender a data dictionary as a self-contained HTML page"
+  },
+  {
+    "objectID": "articles/reference.html#where-to-look-next",
+    "href": "articles/reference.html#where-to-look-next",
+    "title": "Function reference",
+    "section": "Where to look next",
+    "text": "Where to look next\n\nApproach explains what these are for – the sources they reconcile, and the problems that shaped them.\nTechnical notes has the code-level detail."
   }
 ]

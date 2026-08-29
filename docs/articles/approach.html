@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -102,6 +137,10 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Data dictionary</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../articles/reference.html"> 
+<span class="menu-text">Function reference</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="../articles/issues.html"> 
 <span class="menu-text">Issues found</span></a>
   </li>  
@@ -135,7 +174,17 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#why-a-structured-dictionary-at-all" id="toc-why-a-structured-dictionary-at-all" class="nav-link active" data-scroll-target="#why-a-structured-dictionary-at-all">Why a structured dictionary at all</a></li>
   <li><a href="#four-sources-reconciled" id="toc-four-sources-reconciled" class="nav-link" data-scroll-target="#four-sources-reconciled">Four sources, reconciled</a></li>
   <li><a href="#why-not-icesdatras-as-the-access-layer" id="toc-why-not-icesdatras-as-the-access-layer" class="nav-link" data-scroll-target="#why-not-icesdatras-as-the-access-layer">Why not <code>icesDatras</code> as the access layer</a></li>
-  <li><a href="#how-the-dictionaries-were-actually-built" id="toc-how-the-dictionaries-were-actually-built" class="nav-link" data-scroll-target="#how-the-dictionaries-were-actually-built">How the dictionaries were actually built</a></li>
+  <li><a href="#the-build" id="toc-the-build" class="nav-link" data-scroll-target="#the-build">The build</a></li>
+  <li><a href="#what-the-functions-are-for" id="toc-what-the-functions-are-for" class="nav-link" data-scroll-target="#what-the-functions-are-for">What the functions are for</a></li>
+  <li><a href="#what-the-design-guards-against" id="toc-what-the-design-guards-against" class="nav-link" data-scroll-target="#what-the-design-guards-against">What the design guards against</a>
+  <ul class="collapse">
+  <li><a href="#a-metadata-service-that-disagrees-with-its-own-data" id="toc-a-metadata-service-that-disagrees-with-its-own-data" class="nav-link" data-scroll-target="#a-metadata-service-that-disagrees-with-its-own-data">A metadata service that disagrees with its own data</a></li>
+  <li><a href="#evidence-that-vanishes-when-the-question-narrows" id="toc-evidence-that-vanishes-when-the-question-narrows" class="nav-link" data-scroll-target="#evidence-that-vanishes-when-the-question-narrows">Evidence that vanishes when the question narrows</a></li>
+  <li><a href="#guards-that-can-pass-vacuously" id="toc-guards-that-can-pass-vacuously" class="nav-link" data-scroll-target="#guards-that-can-pass-vacuously">Guards that can pass vacuously</a></li>
+  <li><a href="#a-value-that-means-two-things" id="toc-a-value-that-means-two-things" class="nav-link" data-scroll-target="#a-value-that-means-two-things">A value that means two things</a></li>
+  <li><a href="#ordering-that-turns-a-correct-conversion-into-data-loss" id="toc-ordering-that-turns-a-correct-conversion-into-data-loss" class="nav-link" data-scroll-target="#ordering-that-turns-a-correct-conversion-into-data-loss">Ordering that turns a correct conversion into data loss</a></li>
+  <li><a href="#a-specification-that-does-not-describe-its-own-data" id="toc-a-specification-that-does-not-describe-its-own-data" class="nav-link" data-scroll-target="#a-specification-that-does-not-describe-its-own-data">A specification that does not describe its own data</a></li>
+  </ul></li>
   <li><a href="#keeping-it-rigorous" id="toc-keeping-it-rigorous" class="nav-link" data-scroll-target="#keeping-it-rigorous">Keeping it rigorous</a></li>
   <li><a href="#scope" id="toc-scope" class="nav-link" data-scroll-target="#scope">Scope</a></li>
   </ul>
@@ -163,67 +212,104 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<div class="callout callout-style-default callout-note callout-titled">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-title-container flex-fill">
-<span class="screen-reader-only">Note</span>Outline, not yet drafted
-</div>
-</div>
-<div class="callout-body-container callout-body">
-<p>This page currently sketches what each section will cover. When the prose gets written, favor describing method over today’s snapshot numbers (row counts, percentages) — this page is expected to go untouched for long stretches, so it should age well unattended rather than rely on someone circling back to refresh it.</p>
-</div>
-</div>
+<p>The information needed to read ICES DATRAS data correctly is real but scattered — spread across a WSDL, a separately maintained metadata service, a vocabulary server, and a hand-kept spreadsheet, none of which fully agrees with the others. This page describes how those are reconciled into two machine-readable specifications, what the R functions around them are for, and the failure modes the design guards against.</p>
+<p>The dictionaries are built once and maintained by hand. The seeding and curation scripts under <code>data-raw/</code> are kept as provenance — <em>how did this entry come to say that?</em> — not as a rebuild path. Re-running them would overwrite hand-made decisions with whatever the live sources happen to say today.</p>
 <section id="why-a-structured-dictionary-at-all" class="level2">
 <h2 class="anchored" data-anchor-id="why-a-structured-dictionary-at-all">Why a structured dictionary at all</h2>
-<ul>
-<li>Scattered institutional knowledge (WSDL, icesVocab, Technical Reference, real submissions) consolidated into one authoritative, machine-readable place</li>
-<li>Portable and language-independent — not an R-specific artifact; usable even if opus’s own R tooling is never touched again</li>
-</ul>
+<p>Anyone reading DATRAS answers the same questions repeatedly. What type is this field? What does code <code>4</code> mean here? Is <code>-9</code> a missing value or an answer? Which of these two similarly named columns is the one I want? Each consumer rediscovers those answers independently, usually by trial and error against real data, and usually without writing down what they learned.</p>
+<p>Consolidating them buys two things worth insisting on. The result is <strong>authoritative</strong> — every claim traced to a primary source and checked against real data. And it is <strong>portable</strong>: the deliverable is YAML conforming to a published specification, not an R object. The R package is thin tooling around those files. If nobody runs it again, the dictionaries remain usable by any language that can read a text file.</p>
 </section>
 <section id="four-sources-reconciled" class="level2">
 <h2 class="anchored" data-anchor-id="four-sources-reconciled">Four sources, reconciled</h2>
-<ul>
-<li><strong>WSDL</strong> — primary authority for field types; DATRAS-specific</li>
-<li><strong><code>getDatrasFieldList</code></strong> — secondary, and confirmed unreliable (6 filed errors: LT coverage gap, wrong LT renames, a phantom field, an unverifiable CA rename, missing entries, a duplication miss)</li>
-<li><strong>icesVocab</strong> — code semantics only, not structural types; keyed by each field’s <em>legacy</em> name, not its current one — a dependency that isn’t obvious until it bites</li>
-<li><strong>DATRAS field-description spreadsheet</strong> — closest thing to a real Technical Reference, but hand-maintained and not kept in sync with the other three</li>
-</ul>
+<p>No single source is sufficient, and none is trustworthy alone.</p>
+<p><strong>The WSDL</strong> is the primary authority for field types. Each operation’s description page embeds a sample response generated from the server’s actual return type, so it cannot drift from what the service sends the way a hand-maintained table can. This is not a theoretical preference: where the WSDL and the metadata service disagree, real data has repeatedly proved the WSDL right.</p>
+<p><strong><code>getDatrasFieldList</code></strong> documents field names and the legacy names they were renamed from. It is separately maintained rather than generated from the live operations, and it is demonstrably unreliable — it covers 22 of LT’s 58 real fields, claims fields that do not exist, omits others entirely, and pairs at least one field with a legacy name that is not real. It is used, but never on its own authority.</p>
+<p><strong>icesVocab</strong> supplies code semantics — what the values in a coded field mean. It carries no structural type information, and its keys are tied to each field’s <em>legacy</em> name rather than its current one, a dependency that stays invisible until it produces a wrong answer.</p>
+<p><strong>The DATRAS field-description spreadsheet</strong> is the closest thing to a Technical Reference and the only source for some descriptive text. It is hand-maintained and not kept in step with the other three.</p>
+<p>The reconciliation rule that follows: <strong>a claim is trusted when two independent sources agree, or when one source agrees with real data.</strong> Never because a single document says so.</p>
 </section>
 <section id="why-not-icesdatras-as-the-access-layer" class="level2">
 <h2 class="anchored" data-anchor-id="why-not-icesdatras-as-the-access-layer">Why not <code>icesDatras</code> as the access layer</h2>
-<ul>
-<li>The tempting assumption: use the existing R package as the retrieval/parsing middleman instead of calling ICES’s services directly</li>
-<li>What that would have meant inheriting: a personal fork, diverged from upstream, carrying unreviewed local patches that were initially (wrongly) described internally as official package behavior</li>
-<li>The decision instead: call WSDL / <code>getDatrasFieldList</code> / icesVocab directly, verify every claim against at least two independent live sources, never trust a single package’s internal handling</li>
-<li>Why this still matters, concretely and currently, not just in retrospect: ICES’s own official package is being actively finalized right now, with a faster replacement retrieval mechanism coming — a live example of exactly the dependency-volatility this decision was avoiding</li>
-<li>(May grow into its own page rather than a section here, once drafted — not deciding that now)</li>
-</ul>
+<p>The obvious shortcut is to let ICES’s own R package (<a href="https://github.com/ices-tools-prod/icesDatras"><code>ices-tools-prod/icesDatras</code></a>) handle retrieval and parsing. opus calls the web services directly instead, and the reason is specific rather than general.</p>
+<p><code>icesDatras</code> is a convenience layer that does not merely fetch — it <em>corrects</em>. <code>getDATRAS()</code> takes <code>fix_types</code> and <code>new_names</code> arguments, both defaulting from global options, and both applied from a schema table bundled inside the package. <code>applyDatrasNameSchema()</code> renames columns by mapping <code>FieldNameOld</code> to <code>FieldName</code> from that table; <code>fix_types</code> (on by default) coerces column types from the same source.</p>
+<p>That bundled table derives from <code>getDatrasFieldList</code> — the source opus independently finds to contain errors. So its corrections carry those errors forward, applied silently. Concretely, the bundled schema renames CA’s <code>Age</code> to <code>IndividualAge</code>; the live <code>getCAdata</code> operation returns <code>Age</code>, and there is no <code>IndividualAge</code> anywhere in real CA data. A consumer who opts into <code>new_names</code> receives a column named for a field that does not exist.</p>
+<p>For most users that is a reasonable trade — a maintained package that smooths over an awkward service is worth having, and ICES ships it as the supported way in. It is the wrong foundation for <em>this</em> project specifically, because opus’s job is to document where ICES’s own metadata is wrong. A layer that quietly applies that metadata’s corrections removes the very signal opus exists to capture: the discrepancy stops being visible to measure, and the result would be “true, as filtered through another package’s assumptions.”</p>
+<p>So opus reads the WSDL, <code>getDatrasFieldList</code> and icesVocab directly and verifies each claim against at least two independent live sources. The distinction matters in one direction only: opus does not need a <em>better</em> client than <code>icesDatras</code>, it needs an <em>unmediated</em> one.</p>
 </section>
-<section id="how-the-dictionaries-were-actually-built" class="level2">
-<h2 class="anchored" data-anchor-id="how-the-dictionaries-were-actually-built">How the dictionaries were actually built</h2>
-<ul>
-<li>Seed from live sources (WSDL + <code>getDatrasFieldList</code> + icesVocab), keyed by legacy field names, no corrections yet</li>
-<li>Curate against the real archive: hand-written corrections, enum enrichment, evidence required for every range/constraint</li>
-<li>Rename: legacy → opus’s curated names, as a single, pure, final step</li>
-<li>Cross-link to <a href="../articles/technical-notes.html">Technical notes</a> for the code-level version of this story</li>
-</ul>
+<section id="the-build" class="level2">
+<h2 class="anchored" data-anchor-id="the-build">The build</h2>
+<p>Three phases, keyed throughout by ICES’s legacy field names, with opus’s own names introduced exactly once at the end.</p>
+<p><strong>Seed.</strong> Crawl the live sources and assemble a first-pass dictionary: one entry per real field, typed from the WSDL, with whatever ICES documents attached. The seed records what the sources say, including where they contradict each other.</p>
+<p><strong>Curate.</strong> Work the seed against the real archive. Every range, every constraint, every enum membership is checked against actual values before it is written down. Codes are enriched from icesVocab where a field resolves to a controlled list. Where sources conflict, the conflict is resolved against data and the resolution recorded, not silently applied.</p>
+<p><strong>Rename.</strong> Translate legacy names to opus’s curated names as a single, pure, positional rename — no other change in the same step. Keeping it isolated is what makes it auditable: the two files are one specification under two naming schemes, and any divergence between them is a bug rather than a design.</p>
+<p>Both files ship. <code>DATRAS-data-dict-legacy.yaml</code> is not an archive copy: submitters send ICES data under legacy names, so it is the submission-side specification.</p>
+</section>
+<section id="what-the-functions-are-for" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-functions-are-for">What the functions are for</h2>
+<p>The package is thin but not arbitrary. Each exported function exists because some consumer — the curation flow, the archive build, or a downstream package — needs to ask one question without re-implementing the answer. The <a href="../articles/reference.html">function reference</a> lists them all; what follows is why the groups exist.</p>
+<p><strong>Reading the service.</strong> <code>op_datras_operations()</code> lists what the DATRAS service exposes; <code>op_datras_operation_types()</code> returns the fields and types one operation actually returns. Everything needing to know what ICES really sends goes through these rather than parsing the service again.</p>
+<p><code>op_datras_operations()</code> doubles as a migration tripwire. ICES is renaming DATRAS fields one table at a time, and each converted table appears as a new <code>…NewHeaders</code> operation. Watching that list is how the migration’s progress becomes visible without being announced.</p>
+<p><strong>Names.</strong> <code>op_datras_field_metadata()</code> returns <code>getDatrasFieldList</code> as ICES publishes it — what ICES claims. <code>op_datras_field_list()</code> returns what survives cross-checking against each operation’s real response, tagging every mapping with the evidence behind it. <code>op_datras_rename_crosswalk()</code> reduces that to a collision-checked 1:1 map for callers that just need to rename columns.</p>
+<p><strong>The specification.</strong> <code>op_field_spec()</code> returns the dictionary as a plain data frame — legacy name, current name, type. That one accessor is the whole contract between opus and anything downstream, so no consumer parses the YAML itself.</p>
+<p><strong>Conversion.</strong> Four functions turn a parsed XML table into publishable parquet, and the order is load-bearing:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">op_cast_wsdl_types</span>(df, <span class="st">"HL"</span>)   <span class="co"># physical types; sentinels untouched</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">op_rename_to_new</span>(df, <span class="st">"HL"</span>)     <span class="co"># legacy -&gt; current names</span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">op_strip_sentinels</span>(df, <span class="st">"HL"</span>)   <span class="co"># -9 -&gt; NA, where it means absence</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>df <span class="ot">&lt;-</span> <span class="fu">op_cast_to_spec</span>(df, <span class="st">"HL"</span>)      <span class="co"># semantic types the wire can't express</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Casting is first because the WSDL type map is keyed by each operation’s own field names, which are the legacy ones. Renaming precedes sentinel resolution because the sentinel registry is keyed by current names. The semantic cast is last because a date column cannot hold <code>-9</code>.</p>
+<p>Because these are exported rather than buried in a build script, a downstream package can produce results identical to the published archive by calling the same four functions on its own live fetch, instead of reimplementing the rules and slowly diverging from them.</p>
+<p><strong>Sentinels.</strong> <code>op_sentinels()</code> reads the registry, <code>op_sentinel_policy()</code> resolves it into a per-column verdict with the reasoning attached, and <code>op_sentinel_audit()</code> measures a real parquet file against it. The audit is both the evidence behind each decision and the regression check afterwards.</p>
+<p><strong>Validation.</strong> <code>op_validate_spec()</code> checks the dictionary is well-formed, <code>op_validate_meta()</code> checks a dataset’s names and types against it, and <code>op_validate_data()</code> checks the values. These matter more than usual under hand-maintenance: they are what makes editing a large YAML by hand safe, and <code>op_validate_meta()</code> is the gate saying the published data and the specification still describe each other.</p>
+</section>
+<section id="what-the-design-guards-against" class="level2">
+<h2 class="anchored" data-anchor-id="what-the-design-guards-against">What the design guards against</h2>
+<p>Most of the hazards here share a shape: they produce a plausible result instead of an error. That is what the following are built to prevent.</p>
+<section id="a-metadata-service-that-disagrees-with-its-own-data" class="level3">
+<h3 class="anchored" data-anchor-id="a-metadata-service-that-disagrees-with-its-own-data">A metadata service that disagrees with its own data</h3>
+<p>Taking <code>getDatrasFieldList</code> at face value produces wrong answers, so <code>op_datras_field_list()</code> <strong>grades</strong> it rather than discarding it. A rename is accepted when the legacy name actually appears in that operation’s live response; accepted at lower confidence when another table confirms the same mapping; and otherwise recorded as unverified rather than acted on.</p>
+<p>That middle tier carries real weight. Most of LT’s renames resolve only that way — its fields are renamed exactly as their HH counterparts are, but ICES documents the rename only for HH. Without cross-table evidence the majority of that table would keep its legacy names.</p>
+</section>
+<section id="evidence-that-vanishes-when-the-question-narrows" class="level3">
+<h3 class="anchored" data-anchor-id="evidence-that-vanishes-when-the-question-narrows">Evidence that vanishes when the question narrows</h3>
+<p>Because that middle tier borrows evidence <em>between</em> tables, asking about one table alone leaves nothing to borrow from — and the honest failure would be an error, not a smaller answer. Resolution therefore always runs over the full set of tables and narrows at the end, so no caller can ask the question in a way that quietly degrades the result.</p>
+</section>
+<section id="guards-that-can-pass-vacuously" class="level3">
+<h3 class="anchored" data-anchor-id="guards-that-can-pass-vacuously">Guards that can pass vacuously</h3>
+<p>A check written as “is this table name among the dictionary’s keys” passes for every input when those keys are <code>tables</code> and <code>glossary</code> — never a table name. Such a guard converts a loud failure into a silent one, and a type caster built on it does nothing at all while appearing to work.</p>
+<p>Types therefore come from an explicit per-column cast against the WSDL, applied to every typed column rather than only the numeric ones, and an unrecognised type is reported rather than passed through. Otherwise a column can be integer in files where every value happens to be a sentinel and text in files with a real value.</p>
+</section>
+<section id="a-value-that-means-two-things" class="level3">
+<h3 class="anchored" data-anchor-id="a-value-that-means-two-things">A value that means two things</h3>
+<p>DATRAS uses <code>-9</code> to mean “not recorded”. In some fields it is an answer: for tickler chains it means <em>none were used</em>, an icesVocab-documented code and the dominant value in that column rather than a rare one. Replacing it wholesale destroys real data, and once destroyed the evidence needed to notice is gone with it.</p>
+<p>The opposite reflex is also wrong. Parquet has a native null, so carrying <code>-9</code> onward makes every downstream consumer rediscover the convention, with any naive average silently incorrect.</p>
+<p>What resolves it is that neither the value nor its frequency is the discriminator. Two fields can both be almost entirely <code>-9</code> — one because nobody records that measurement, one because “none” is the usual answer. What separates them is the <strong>label ICES publishes for the code</strong>: a set meaning absence (<code>Not known</code>, <code>Not available</code>, <code>Unknown</code>, …) against a much smaller set naming a real answer (<code>No ticklers are allowed</code>, <code>No plus group</code>, <code>Invalid hauls</code>).</p>
+<p>So the policy strips by default, keeps where the vocabulary documents the sentinel as a real answer, and records the label list in the known-issues registry where it can be reviewed. Anything the list does not recognise resolves to <em>keep</em>: an unrecognised label must never silently destroy a documented code.</p>
+<p>That <code>-9</code> carries both meanings inside one vocabulary is an ICES-side defect, not a modelling choice, and it is recorded as such.</p>
+</section>
+<section id="ordering-that-turns-a-correct-conversion-into-data-loss" class="level3">
+<h3 class="anchored" data-anchor-id="ordering-that-turns-a-correct-conversion-into-data-loss">Ordering that turns a correct conversion into data loss</h3>
+<p><code>DateofCalculation</code> arrives as <code>YYYYMMDD</code> and should be a date. Converting it while sentinels are still present turns every <code>-9</code> into a null — a conversion that is individually correct and collectively destructive, and one that reports nothing.</p>
+<p>Sentinel resolution therefore runs first, as a declared decision recorded in the registry, and only then does the date conversion. As a backstop <code>op_cast_to_spec()</code> <strong>refuses</strong> to convert a column containing anything it cannot parse rather than producing nulls. A conversion that cannot be done losslessly is an error, not a result.</p>
+</section>
+<section id="a-specification-that-does-not-describe-its-own-data" class="level3">
+<h3 class="anchored" data-anchor-id="a-specification-that-does-not-describe-its-own-data">A specification that does not describe its own data</h3>
+<p>Validating opus’s output against opus’s specification is the check that catches drift between the two. It surfaces a consistent class of mismatch: fields typed <code>enum</code> whose data is stored as integers. Under the dictionary specification an enum’s underlying data must be string-like, so those are genuine violations.</p>
+<p>Resolving them needs a judgement rather than a rule, because the options are not equivalent. A number column may not carry a code-to-label map, so retyping a field to a number <strong>deletes its labels</strong> from both the dictionary and the published catalog. For quarter and month that costs nothing — the labels restate the number. For tickler counts and species categories, where the codes are not self-explanatory, the labels are the useful part, and those fields stay enums stored as text.</p>
+<p>The general point: “make the validator pass” is not the goal. The validator identifies where description and data disagree; which of the two should move is a question about what the specification is for.</p>
+</section>
 </section>
 <section id="keeping-it-rigorous" class="level2">
 <h2 class="anchored" data-anchor-id="keeping-it-rigorous">Keeping it rigorous</h2>
-<ul>
-<li>Real data as ground truth over any single documentation source</li>
-<li>Every claim verified empirically against live, primary data — never a citation, a prior note, or a single source</li>
-<li>Audits are exhaustive, not sampled — legacy name and current name both checked, every prefix candidate, not just the first one that resolves</li>
-</ul>
+<p>A few habits do most of the work.</p>
+<p><strong>Real data outranks any document.</strong> Where a source and the archive disagree, the archive wins and the source becomes an issue to report.</p>
+<p><strong>Two sources, or one plus data.</strong> No structural claim rests on a single document, including ICES’s own.</p>
+<p><strong>Audits are exhaustive, not sampled.</strong> Both name schemes are checked, not just the current one; every vocabulary prefix candidate, not just the first that resolves; every column, not a handful.</p>
+<p><strong>Prefer a loud failure.</strong> A check that can pass vacuously is treated as a defect, and a function that cannot do its job correctly stops rather than returning something plausible.</p>
 </section>
 <section id="scope" class="level2">
 <h2 class="anchored" data-anchor-id="scope">Scope</h2>
-<ul>
-<li>This describes how the metadata <em>specification</em> was built — not domain QC, not data transformation. That work is downstream, in obus/imbus’s own workpackages.</li>
-</ul>
+<p>This describes how the metadata <em>specification</em> is built. It is not domain QC and not data transformation — that work belongs downstream, in obus/imbus’s own workpackages. opus’s boundary is what a field is called, what type it is, what its values may be, and where ICES’s own documentation of that is wrong.</p>
+<p>For the code-level detail behind several sections above, see <a href="../articles/technical-notes.html">Technical notes</a>. For the findings reported back to ICES, see <a href="../articles/issues.html">Issues found</a>.</p>
 
 
 </section>

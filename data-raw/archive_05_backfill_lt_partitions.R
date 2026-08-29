@@ -11,7 +11,7 @@
 #' already-long day; it now does more than LT.)
 #'
 #' Reprocessing became necessary the same day for a second reason: rigid
-#' type casting is now apply_wsdl_types(df, rt) (data-raw/archive_00_wsdl_types.R),
+#' type casting is now op_cast_wsdl_types(df, rt) (opus, R/cast.R),
 #' replacing a yaml-based caster whose entry guard was broken and silently
 #' did nothing -- confirmed via a real per-file schema scan to have produced
 #' inconsistently-typed columns across different files for the same field
@@ -26,7 +26,7 @@
 #' column (e.g. RecordType) was missing, with different rules hardcoded per
 #' table -- removed. That was a completeness/validation judgment, not a
 #' type-casting one, and it doesn't belong at this stage any more than the
-#' yaml or the word "enum" do (same reasoning as archive_00_wsdl_types.R).
+#' yaml or the word "enum" do (same reasoning as opus's R/cast.R).
 #' A file that's missing an expected column, or has a genuinely different
 #' shape from its siblings, should still become parquet -- reconciling that
 #' across files is a downstream (consolidation/validation) concern, not
@@ -64,7 +64,7 @@ suppressPackageStartupMessages({
 })
 
 source("data-raw/archive_01_download_config.R")
-source("data-raw/archive_00_wsdl_types.R")
+library(opus)
 
 DATRAS_PARQUET_DIR <- file.path(WORKSPACE, "parquet")
 DATRAS_ISSUES_DIR <- file.path(WORKSPACE, "issues")
@@ -96,7 +96,7 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
     # matching comment. Without it, read.delim()'s default type-guessing turns
     # any file where a column's real values happen to be only T/F into a
     # logical vector, silently destroying the T-vs-TRUE distinction before
-    # apply_wsdl_types() ever runs (confirmed 2026-08-17, ~2.12M rows across
+    # op_cast_wsdl_types() ever runs (confirmed 2026-08-17, ~2.12M rows across
     # HH/HL/CA, never LT -- see AGENTS.md).
     con <- textConnection(output)
     df <- read.delim(con, stringsAsFactors = FALSE, na.strings = "", colClasses = "character")
@@ -155,7 +155,15 @@ for (rt in tables_to_run) {
       next
     }
 
-    df <- apply_wsdl_types(df, rt)
+    # Types, names, sentinels -- all four steps are opus:: functions so this
+    # script holds no conversion logic of its own. Order matters and is
+    # enforced by the functions themselves: the WSDL type map is keyed by
+    # legacy names, the sentinel registry by current ones, and a Date column
+    # cannot hold -9.
+    df <- op_cast_wsdl_types(df, rt)     # A: physical types, sentinels intact
+    df <- op_rename_to_new(df, rt)       # legacy -> current names (interim)
+    df <- op_strip_sentinels(df, rt)     # B: -9 -> NA where it means absence
+    df <- op_cast_to_spec(df, rt)        # C: semantic types (date, ...)
 
     pq_dir <- file.path(DATRAS_PARQUET_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y))
     dir.create(pq_dir, showWarnings = FALSE, recursive = TRUE)

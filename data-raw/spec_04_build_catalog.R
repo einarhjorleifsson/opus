@@ -3,7 +3,7 @@
 #' Compiles both inst/DATRAS-data-dict.yaml (curated names) and
 #' inst/DATRAS-data-dict-legacy.yaml (legacy/ICES on-the-wire names) into one
 #' .datras/to_https/catalog.duckdb: a small, self-describing companion to
-#' the parquet files data-raw/archive_06_split_legacy_new.R writes to the
+#' the parquet files data-raw/archive_06_consolidate.R writes to the
 #' same directory. Consumers ATTACH this file (locally, or once manually
 #' copied to the https server, remotely) and get typed, documented,
 #' validated SQL access with nothing but a DuckDB client -- no yaml parsing,
@@ -17,9 +17,12 @@
 #' existing function rather than silently diverging from it).
 #'
 #' Per table, per name variant (curated / legacy), generates:
-#' - a VIEW over the (future) https-hosted parquet -- `{table}_new` for
-#'   curated names, `{table}_legacy` for ICES on-the-wire names, matching
-#'   archive_06_split_legacy_new.R's own file naming
+#' - a VIEW per table, named plainly `{table}`, over the https-hosted
+#'   parquet at raw/{table}.parquet -- matching what
+#'   data-raw/archive_06_consolidate.R stages. The former `{table}_new` /
+#'   `{table}_legacy` view pair is gone: opus publishes current names only
+#'   as of 2026-08-29, so there is one name per table and no suffix needed
+#'   to disambiguate.
 #' - COMMENT ON TABLE/COLUMN from each table/column's description
 #' - enum_labels rows for every `type: enum` column's `values:` map
 #' - range_constraints rows for every ordinal/quantity/date/datetime column
@@ -43,12 +46,14 @@ unlink(CATALOG_PATH)
 
 sql_escape <- function(x) gsub("'", "''", x, fixed = TRUE)
 
-build_catalog_for_dict <- function(con, dict_path, name_suffix, base_url) {
+build_catalog_for_dict <- function(con, dict_path, base_url) {
   dict <- yaml::read_yaml(dict_path)
 
   for (tbl in dict$tables) {
-    view_name <- paste0(tbl$name, name_suffix)
-    url <- paste0(base_url, "/", view_name, ".parquet")
+    view_name <- tbl$name
+    # raw/ mirrors archive_06_consolidate.R's staging layout: the four raw
+    # exchange tables sit under raw/, the catalog beside it at the root.
+    url <- paste0(base_url, "/raw/", view_name, ".parquet")
 
     dbExecute(con, sprintf(
       "CREATE VIEW %s AS SELECT * FROM read_parquet('%s')",
@@ -117,8 +122,10 @@ dbExecute(con, "CREATE TABLE enum_labels (table_name VARCHAR, column_name VARCHA
 dbExecute(con, "CREATE TABLE range_constraints (table_name VARCHAR, column_name VARCHAR, min_value DOUBLE, max_value DOUBLE)")
 dbExecute(con, "CREATE TABLE field_constraints (table_name VARCHAR, column_name VARCHAR, constraint_type VARCHAR)")
 
-build_catalog_for_dict(con, "inst/DATRAS-data-dict.yaml", "_new", BASE_URL)
-build_catalog_for_dict(con, "inst/DATRAS-data-dict-legacy.yaml", "_legacy", BASE_URL)
+# Current names only. The legacy-named dictionary is still shipped and still
+# maintained (it is the submission-side spec), but it no longer describes
+# anything opus publishes, so it gets no view here.
+build_catalog_for_dict(con, "inst/DATRAS-data-dict.yaml", BASE_URL)
 
 dbDisconnect(con, shutdown = TRUE)
 

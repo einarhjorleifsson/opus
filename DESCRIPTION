@@ -13,14 +13,14 @@ Description: Reference specifications package consolidating ICES DATRAS data dic
     constraints across four Tier-1 exchange tables (HH, HL, CA, LT), plus structured
     tracking of metadata issues for reporting to ICES.
  .
-      The YAML dictionaries are the primary reference artifact; the package provides
+       The YAML dictionaries are the primary reference artifact; the package provides
     thin R wrappers around them (spec/metadata/data validation, vocabulary lookup,
     field-name utilities -- no domain QC or data transformation). YAML dictionaries
     conform to the data-dict.yaml v0.1.0 specification. The known-issues registry
     documents gaps and inconsistencies in ICES specifications, distinct from
     data-quality QC (which belongs downstream in obus/imbus).
  .
-      Intended for pre-submission validation: data submitters can use opus specs
+       Intended for pre-submission validation: data submitters can use opus specs
     locally to validate DATRAS submissions before uploading to ICES.
 License: CC0
 URL: https://github.com/einarhjorleifsson/opus
@@ -48,4 +48,4 @@ Suggests:
     rmarkdown,
     quarto,
     pkgdown
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.0

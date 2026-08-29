@@ -63,7 +63,6 @@ library(purrr)
 library(readr)
 library(opus)
 
-source("data-raw/spec_00_operation_types.R")
 
 tier1_tables <- c("HH", "HL", "CA", "LT")
 record_operations <- c(
@@ -90,11 +89,10 @@ map_wsdl_type <- function(x) {
 # 1. Crawl WSDL types + old (legacy, real) names directly from ICES's own
 #    operation pages -----------------------------------------------------
 message("Crawling WSDL operation pages for ", length(record_operations), " operations...")
-valid_ops <- get_datras_operations()
 
 crawled <-
   imap(record_operations, \(op, rh) {
-    get_datras_operation_types(op, valid_operations = valid_ops) |>
+    op_datras_operation_types(op) |>
       transmute(
         RecordHeader = rh,
         FieldNameOld = field,
@@ -123,7 +121,7 @@ crawled <-
 #
 # Was previously a direct call to `getDatrasFieldList()` via whichever
 # `icesDatras` package was installed at the time. Replaced 2026-08-06 with
-# opus's own direct fetch (`opus:::.fetch_live_datras_field_list()`): the
+# opus's own direct fetch (`op_datras_field_metadata()`): the
 # installed package turned out to be a personal development fork layering
 # its own hand-typed patch on top of the same live endpoint (undocumented,
 # not sourced from ICES -- confirmed 2026-08-09 against the official
@@ -138,7 +136,7 @@ crawled <-
 # TRUE for every field ICES marks "-" (e.g. Survey), the opposite of
 # what "-" means.
 fl <-
-  opus:::.fetch_live_datras_field_list() |>
+  op_datras_field_metadata() |>
   filter(RecordHeader %in% tier1_tables) |>
   mutate(FieldNameOld = ifelse(FieldNameOld == "-", FieldName, FieldNameOld)) |>
   distinct(RecordHeader, FieldNameOld, .keep_all = TRUE) |>

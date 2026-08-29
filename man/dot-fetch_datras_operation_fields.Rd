@@ -15,12 +15,10 @@ Character vector of field names, in the order the operation
   returns them.
 }
 \description{
-Reads the operation's own ASMX description page, which embeds a sample
-SOAP response showing the field names and types the server's own code
-actually generates for that operation -- independent of (and, per
-[op_datras_field_list()]'s tracing, sometimes more accurate than) the
-separately-maintained getDatrasFieldList metadata service. Ported from
-`data-raw/spec_00_operation_types.R`'s crawler so this capability doesn't
-require sourcing a data-raw file at package runtime.
+Thin wrapper over [op_datras_operation_types()] -- the field-name half of
+the same crawl. Kept as a named internal because
+[op_datras_field_list()]'s algorithm reads as intended with it, but it
+holds no parsing logic of its own: there is exactly one implementation of
+the ASMX crawl, in `R/datras_service.R`.
 }
 \keyword{internal}

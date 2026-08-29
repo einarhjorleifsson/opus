@@ -53,6 +53,61 @@ sentinels:
       values: ["-9", "-1", "-5", "-95"]
       meaning: "'-9' (1,995,814 rows, 34% of all CA rows) is the dominant, standard 'not recorded' case -- not visible until 2026-08-16 (see known_violations: sentinel_replacement_data_loss). '-1' (1,757 rows) is a smaller, systematic 'not determined' sentinel, undocumented by ICES; '-5'/'-95' (1 row each) are isolated anomalies."
 
+  # Resolution policy for the XML -> parquet conversion (op_strip_sentinels()).
+  #
+  # The published parquet must carry no sentinel: Parquet has native NULL, and
+  # "-9" is an artifact of a fixed-width text format that cannot express
+  # missingness. Carrying it forward makes every naive mean() silently wrong.
+  #
+  # But "-9" cannot be stripped blindly, because ICES overloads it. Of the 29
+  # Tier 1 enum fields whose `values:` map documents a "-9" code, 24 label it
+  # as absence ("Not known", "Not available", ...) and 5 label it as a real
+  # answer ("No ticklers are allowed", "No plus group", "Invalid hauls").
+  # Presence in the vocabulary is therefore NOT the discriminator; the label
+  # is. That overloading is an ICES-side defect -- see known_violations:
+  # ices_sentinel_code_overloading.
+  #
+  # Resolution order, per column:
+  #   1. field_specific `action` below, if one names this table+field.
+  #   2. enum column whose `values:` documents the sentinel -> KEEP if its
+  #      label is not in labels_meaning_absent, else STRIP.
+  #   3. anything else -> STRIP.
+  # An unrecognised label defaults to KEEP: never silently destroy a
+  # documented code (see known_violations: sentinel_replacement_data_loss for
+  # what that costs).
+  resolution:
+    # Compared case-insensitively, after trimming. Covers all 24 absence
+    # labels ICES currently uses across Tier 1.
+    labels_meaning_absent:
+      - "not known"
+      - "not know"          # ICES's own typo, present in all four GearExceptions
+      - "not available"
+      - "not provided"
+      - "not sampled"
+      - "missing value"
+      - "no information"
+      - "unknown"
+      - "na"
+
+    # Documented codes that are real answers, kept as-is. Their meaning is
+    # published to users through the catalog's enum_labels table.
+    keep:
+      - field: Tickler
+        table: "HH, LT"
+        values: ["-9"]
+        label: "No ticklers are allowed"
+        reason: "A real answer: the gear was rigged with no ticklers. Dominant rather than rare -- 117,290 of 150,217 HH rows (78.08%) and 31,536 of 79,451 LT rows (39.69%)."
+      - field: AgePlusGroup
+        table: "CA"
+        values: ["-9"]
+        label: "No plus group"
+        reason: "A real answer: the age reading has no plus group. 5,963,393 of 5,968,027 CA rows (99.92%) -- prevalence is not evidence of missingness, which is exactly why the label decides."
+      - field: DataType
+        table: "HH, LT"
+        values: ["-9"]
+        label: "Invalid hauls"
+        reason: "A real classification: the haul was flagged invalid. Nulling it would erase the only marker distinguishing a haul known to be invalid from one whose DataType was never recorded."
+
 # Known Data Quality Issues (Tier 1 validation, 2026-07-29)
 known_violations:
   - id: "sentinel_replacement_data_loss"

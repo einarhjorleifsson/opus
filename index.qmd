@@ -25,6 +25,9 @@ any other language. It feeds imbus WP2 (reference specification).
   actually works
 - **[Data dictionary](articles/dictionary.qmd)** — the yaml itself,
   rendered as a browsable, dated snapshot
+- **[Function reference](articles/reference.qmd)** — the exported R
+  functions, grouped by what they are for; generated from the package's own
+  documentation
 - **[Issues found](articles/issues.qmd)** — confirmed gaps and
   inconsistencies in ICES's own DATRAS metadata services, reported upstream
 - **[Technical notes](articles/technical-notes.qmd)** —

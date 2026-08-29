@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>opus</title>
+<title>Function reference – opus</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -23,24 +23,24 @@ ul.task-list li input[type="checkbox"] {
 </style>
 
 
-<script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
-<script src="site_libs/clipboard/clipboard.min.js"></script>
-<script src="site_libs/quarto-search/autocomplete.umd.js"></script>
-<script src="site_libs/quarto-search/fuse.min.js"></script>
-<script src="site_libs/quarto-search/quarto-search.js"></script>
-<meta name="quarto:offset" content="./">
-<script src="site_libs/quarto-html/quarto.js" type="module"></script>
-<script src="site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
-<script src="site_libs/quarto-html/axe/axe-check.js" type="module"></script>
-<script src="site_libs/quarto-html/popper.min.js"></script>
-<script src="site_libs/quarto-html/tippy.umd.min.js"></script>
-<script src="site_libs/quarto-html/anchor.min.js"></script>
-<link href="site_libs/quarto-html/tippy.css" rel="stylesheet">
-<link href="site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
-<script src="site_libs/bootstrap/bootstrap.min.js"></script>
-<link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
-<link href="site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<script src="../site_libs/quarto-nav/quarto-nav.js"></script>
+<script src="../site_libs/quarto-nav/headroom.min.js"></script>
+<script src="../site_libs/clipboard/clipboard.min.js"></script>
+<script src="../site_libs/quarto-search/autocomplete.umd.js"></script>
+<script src="../site_libs/quarto-search/fuse.min.js"></script>
+<script src="../site_libs/quarto-search/quarto-search.js"></script>
+<meta name="quarto:offset" content="../">
+<script src="../site_libs/quarto-html/quarto.js" type="module"></script>
+<script src="../site_libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="../site_libs/quarto-html/axe/axe-check.js" type="module"></script>
+<script src="../site_libs/quarto-html/popper.min.js"></script>
+<script src="../site_libs/quarto-html/tippy.umd.min.js"></script>
+<script src="../site_libs/quarto-html/anchor.min.js"></script>
+<link href="../site_libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="../site_libs/quarto-html/quarto-syntax-highlighting-587c61ba64f3a5504c4d52d930310e48.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="../site_libs/bootstrap/bootstrap.min.js"></script>
+<link href="../site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="../site_libs/bootstrap/bootstrap-5b4ad623e5705c0698d39aec6f10cf02.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
   "location": "navbar",
   "copy-button": false,
@@ -79,7 +79,7 @@ ul.task-list li input[type="checkbox"] {
     <nav class="navbar navbar-expand-lg " data-bs-theme="dark">
       <div class="navbar-container container-fluid">
       <div class="navbar-brand-container mx-auto">
-    <a class="navbar-brand" href="./index.html">
+    <a class="navbar-brand" href="../index.html">
     <span class="navbar-title">opus</span>
     </a>
   </div>
@@ -90,27 +90,27 @@ ul.task-list li input[type="checkbox"] {
           <div class="collapse navbar-collapse" id="navbarCollapse">
             <ul class="navbar-nav navbar-nav-scroll me-auto">
   <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page"> 
+    <a class="nav-link" href="../index.html"> 
 <span class="menu-text">Home</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./articles/approach.html"> 
+    <a class="nav-link" href="../articles/approach.html"> 
 <span class="menu-text">Approach</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./articles/dictionary.html"> 
+    <a class="nav-link" href="../articles/dictionary.html"> 
 <span class="menu-text">Data dictionary</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./articles/reference.html"> 
+    <a class="nav-link active" href="../articles/reference.html" aria-current="page"> 
 <span class="menu-text">Function reference</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./articles/issues.html"> 
+    <a class="nav-link" href="../articles/issues.html"> 
 <span class="menu-text">Issues found</span></a>
   </li>  
   <li class="nav-item">
-    <a class="nav-link" href="./articles/technical-notes.html"> 
+    <a class="nav-link" href="../articles/technical-notes.html"> 
 <span class="menu-text">Technical notes</span></a>
   </li>  
 </ul>
@@ -136,7 +136,15 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#where-to-go-next" id="toc-where-to-go-next" class="nav-link active" data-scroll-target="#where-to-go-next">Where to go next</a></li>
+  <li><a href="#the-specification" id="toc-the-specification" class="nav-link active" data-scroll-target="#the-specification">The specification</a></li>
+  <li><a href="#converting-datras-xml-to-parquet" id="toc-converting-datras-xml-to-parquet" class="nav-link" data-scroll-target="#converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</a></li>
+  <li><a href="#sentinels" id="toc-sentinels" class="nav-link" data-scroll-target="#sentinels">Sentinels</a></li>
+  <li><a href="#field-names" id="toc-field-names" class="nav-link" data-scroll-target="#field-names">Field names</a></li>
+  <li><a href="#reading-the-datras-web-service" id="toc-reading-the-datras-web-service" class="nav-link" data-scroll-target="#reading-the-datras-web-service">Reading the DATRAS web service</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  <li><a href="#ices-vocabularies" id="toc-ices-vocabularies" class="nav-link" data-scroll-target="#ices-vocabularies">ICES vocabularies</a></li>
+  <li><a href="#parquet-and-export" id="toc-parquet-and-export" class="nav-link" data-scroll-target="#parquet-and-export">Parquet and export</a></li>
+  <li><a href="#where-to-look-next" id="toc-where-to-look-next" class="nav-link" data-scroll-target="#where-to-look-next">Where to look next</a></li>
   </ul>
 </nav>
     </div>
@@ -145,8 +153,7 @@ ul.task-list li input[type="checkbox"] {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">opus</h1>
-<p class="subtitle lead">ICES DATRAS data dictionary and known-issues registry</p>
+<h1 class="title">Function reference</h1>
 </div>
 
 
@@ -163,22 +170,303 @@ ul.task-list li input[type="checkbox"] {
 </header>
 
 
-<p>opus consolidates ICES DATRAS’s own field-level metadata — types, units, valid ranges and codes, plus a growing registry of “ICES documents X, but the service actually does Y” findings — into two machine-readable YAML specifications, covering four exchange tables:</p>
+<div class="callout callout-style-simple callout-note">
+<div class="callout-body d-flex">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-body-container">
+<p>This page is generated from the package’s own <code>man/*.Rd</code> files by <code>data-raw/build_reference.R</code>, so it cannot drift from the roxygen. Full documentation for any function is <code>?name</code> in an R session.</p>
+</div>
+</div>
+</div>
+<p>opus exports 34 functions. The yaml dictionaries are the deliverable; these are the tooling around them.</p>
+<section id="the-specification" class="level2">
+<h2 class="anchored" data-anchor-id="the-specification">The specification</h2>
+<p>The dictionary as data. Downstream code should reach the yaml through these rather than parsing it, so there is one place where the shape of the specification is known.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_field_spec()</code></td>
+<td>Build a combined old-name / new-name / type spec from opus’s own shipped YAMLs</td>
+</tr>
+<tr class="even">
+<td><code>op_field_name_map()</code></td>
+<td>Build field name mapping from data-dict YAML</td>
+</tr>
+<tr class="odd">
+<td><code>op_legacy_field_name()</code></td>
+<td>Extract legacy field name from column details</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="converting-datras-xml-to-parquet" class="level2">
+<h2 class="anchored" data-anchor-id="converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</h2>
+<p>The four steps of the conversion, in the order they must run: physical types, then names, then sentinels, then the semantic types the wire cannot express. A consumer calling these on its own live fetch gets a result identical to the published archive rather than a near-miss.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_cast_wsdl_types()</code></td>
+<td>Cast a parsed DATRAS table to its WSDL-declared physical types</td>
+</tr>
+<tr class="even">
+<td><code>op_rename_to_new()</code></td>
+<td>Rename a DATRAS table from ICES’s legacy names to opus’s current names</td>
+</tr>
+<tr class="odd">
+<td><code>op_strip_sentinels()</code></td>
+<td>Replace sentinels with NA, where they mean absence</td>
+</tr>
+<tr class="even">
+<td><code>op_cast_to_spec()</code></td>
+<td>Realise the semantic types the wire format cannot express</td>
+</tr>
+<tr class="odd">
+<td><code>op_wsdl_type_overrides()</code></td>
+<td>The documented WSDL type overrides</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="sentinels" class="level2">
+<h2 class="anchored" data-anchor-id="sentinels">Sentinels</h2>
+<p>DATRAS overloads <code>-9</code>: in most fields it means “not recorded”, in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_sentinels()</code></td>
+<td>Read the sentinel registry</td>
+</tr>
+<tr class="even">
+<td><code>op_sentinel_policy()</code></td>
+<td>Resolve, per column, whether a sentinel means absence</td>
+</tr>
+<tr class="odd">
+<td><code>op_sentinel_audit()</code></td>
+<td>Count sentinel values per column in a parquet file</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="field-names" class="level2">
+<h2 class="anchored" data-anchor-id="field-names">Field names</h2>
+<p>ICES is renaming DATRAS fields one table at a time. These separate what ICES <em>claims</em> about renames from what survives checking against what the service actually returns.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_datras_field_metadata()</code></td>
+<td>Fetch ICES’s getDatrasFieldList metadata, as ICES publishes it</td>
+</tr>
+<tr class="even">
+<td><code>op_datras_field_list()</code></td>
+<td>Derive verified Tier 1 legacy field-name mappings, without icesDatras</td>
+</tr>
+<tr class="odd">
+<td><code>op_datras_rename_crosswalk()</code></td>
+<td>Build a rename-ready legacy -&gt; new name crosswalk for one or more tables</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reading-the-datras-web-service" class="level2">
+<h2 class="anchored" data-anchor-id="reading-the-datras-web-service">Reading the DATRAS web service</h2>
+<p>Primary-source readers. Everything that needs to know what ICES really sends goes through these rather than parsing the service again.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_datras_operations()</code></td>
+<td>List the DATRAS web service’s currently exposed operations</td>
+</tr>
+<tr class="even">
+<td><code>op_datras_operation_types()</code></td>
+<td>Fetch the field names and types a DATRAS operation actually returns</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation">Validation</h2>
+<p>Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance – they are what makes editing a large yaml by hand safe.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_validate_spec()</code></td>
+<td>Validate opus specs against real DATRAS data</td>
+</tr>
+<tr class="even">
+<td><code>op_validate_meta()</code></td>
+<td>Validate dataset metadata against dictionary</td>
+</tr>
+<tr class="odd">
+<td><code>op_validate_data()</code></td>
+<td>Validate dataset values against dictionary constraints</td>
+</tr>
+<tr class="even">
+<td><code>op_validate_full()</code></td>
+<td>Run full validation suite</td>
+</tr>
+<tr class="odd">
+<td><code>op_validation_problems()</code></td>
+<td>Flatten a data-dict validation report’s problems into a data frame</td>
+</tr>
+<tr class="even">
+<td><code>op_flag_violations()</code></td>
+<td>Flag rows with violations against dictionary constraints</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="ices-vocabularies" class="level2">
+<h2 class="anchored" data-anchor-id="ices-vocabularies">ICES vocabularies</h2>
+<p>Code semantics from icesVocab. Keys are tied to each field’s <em>legacy</em> name, which is not obvious until it produces a wrong answer.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_vocab_resolve_datras_key()</code></td>
+<td>Resolve a DATRAS Tier 1 field to its correct icesVocab key (opus’s audited proposal)</td>
+</tr>
+<tr class="even">
+<td><code>op_vocab_resolve_key()</code></td>
+<td>Resolve a Field Name to Candidate Vocabulary Keys</td>
+</tr>
+<tr class="odd">
+<td><code>op_vocab_resolve_guid()</code></td>
+<td>Resolve an ICES Vocabulary GUID to Its Key – an Exact Match, Not a Guess</td>
+</tr>
+<tr class="even">
+<td><code>op_vocab_get_types()</code></td>
+<td>Get ICES Vocabulary Types with Prefix Metadata</td>
+</tr>
+<tr class="odd">
+<td><code>op_vocab_get_codes()</code></td>
+<td>Fetch Code:Meaning Pairs from an ICES Vocabulary Key</td>
+</tr>
+<tr class="even">
+<td><code>op_vocab_first_usable()</code></td>
+<td>Find the First Vocabulary Key with Usable Codes</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="parquet-and-export" class="level2">
+<h2 class="anchored" data-anchor-id="parquet-and-export">Parquet and export</h2>
+<p>Inspecting real data, and rendering the dictionary for other tools.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_inspect_parquet()</code></td>
+<td>Inspect parquet file schema</td>
+</tr>
+<tr class="even">
+<td><code>op_describe_parquet()</code></td>
+<td>Describe columns of a parquet file</td>
+</tr>
+<tr class="odd">
+<td><code>op_draft_from_parquet()</code></td>
+<td>Draft a data-dict.yaml from parquet files</td>
+</tr>
+<tr class="even">
+<td><code>op_export_spec()</code></td>
+<td>Export dictionary as fully-resolved JSON</td>
+</tr>
+<tr class="odd">
+<td><code>op_export_data()</code></td>
+<td>Export dictionary with per-column data profiles</td>
+</tr>
+<tr class="even">
+<td><code>op_render_spec()</code></td>
+<td>Render a data dictionary as a self-contained HTML page</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="where-to-look-next" class="level2">
+<h2 class="anchored" data-anchor-id="where-to-look-next">Where to look next</h2>
 <ul>
-<li><strong>HH</strong> (Haul Information), <strong>HL</strong> (Length Frequency), <strong>CA</strong> (Catch at Age) — primary exchange tables</li>
-<li><strong>LT</strong> (Litter Assessment) — a hybrid: some novel observations, some fields joined in from HH; not purely exchange data in the same sense as the other three</li>
+<li><a href="../articles/approach.html">Approach</a> explains what these are <em>for</em> – the sources they reconcile, and the problems that shaped them.</li>
+<li><a href="../articles/technical-notes.html">Technical notes</a> has the code-level detail.</li>
 </ul>
-<p>The R package around these files is thin tooling only (validation, curation, no domain QC) — the yaml is the deliverable, independent of R or any other language. It feeds imbus WP2 (reference specification).</p>
-<section id="where-to-go-next" class="level2">
-<h2 class="anchored" data-anchor-id="where-to-go-next">Where to go next</h2>
-<ul>
-<li><strong><a href="./articles/approach.html">Approach</a></strong> — how the dictionaries were built: the sources consolidated, why some were rejected, how the reconciliation actually works</li>
-<li><strong><a href="./articles/dictionary.html">Data dictionary</a></strong> — the yaml itself, rendered as a browsable, dated snapshot</li>
-<li><strong><a href="./articles/reference.html">Function reference</a></strong> — the exported R functions, grouped by what they are for; generated from the package’s own documentation</li>
-<li><strong><a href="./articles/issues.html">Issues found</a></strong> — confirmed gaps and inconsistencies in ICES’s own DATRAS metadata services, reported upstream</li>
-<li><strong><a href="./articles/technical-notes.html">Technical notes</a></strong> — implementation-level decisions and discoveries, for anyone who wants more depth than Approach covers</li>
-</ul>
-<p>Raw yaml, for anyone who wants the machine-readable version directly: <a href="https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-data-dict.yaml"><code>DATRAS-data-dict.yaml</code></a> · <a href="https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-known-issues.yaml"><code>DATRAS-known-issues.yaml</code></a></p>
 
 
 </section>

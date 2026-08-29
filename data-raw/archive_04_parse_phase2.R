@@ -5,14 +5,13 @@
 #'    hard technical failures only, not completeness judgments; a
 #'    "required fields" gate used to also live here and got removed
 #'    2026-08-08, see below)
-#' 2. Rigid type casting from live WSDL (physical type only -- string/int/
-#'    decimal; deliberately not from the curated yaml, and deliberately
-#'    doesn't know "enum" exists -- see data-raw/archive_00_wsdl_types.R's
-#'    own header for why. Fixed 2026-08-08: the previous yaml-based caster
-#'    had a broken entry guard that made it a silent no-op for every column,
-#'    every call -- confirmed via a real per-file schema scan, 16 CA columns
-#'    and 8 HL columns ended up typed inconsistently across different files
-#'    for the same column.)
+#' 2. Conversion, as four opus:: calls (see the block below): WSDL physical
+#'    types, legacy -> current names, sentinel resolution, then the semantic
+#'    types the wire cannot express. This script holds none of that logic.
+#'    Fixed 2026-08-08: an earlier yaml-based caster had a broken entry guard
+#'    that made it a silent no-op for every column, every call -- confirmed
+#'    via a real per-file schema scan, 16 CA columns and 8 HL columns ended
+#'    up typed inconsistently across different files for the same column.
 #'
 #' Scope, deliberately narrow (2026-08-08): this stage converts XML to
 #' parquet conditional only on WSDL's declared type, nothing else. A
@@ -53,7 +52,7 @@ suppressPackageStartupMessages({
 })
 
 source("data-raw/archive_01_download_config.R")
-source("data-raw/archive_00_wsdl_types.R")
+library(opus)
 
 # ============================================================================
 # ---- SETUP ----
@@ -123,7 +122,7 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
     # "TRUE"/"FALSE" as logical, so any file where a column's real values
     # happen to be only T/F (e.g. SpecCodeType with no "W" rows) silently
     # becomes a logical vector here -- destroying the T-vs-TRUE distinction
-    # before apply_wsdl_types() ever runs, since as.character(TRUE) is
+    # before op_cast_wsdl_types() ever runs, since as.character(TRUE) is
     # "TRUE", not "T". Confirmed 2026-08-17 against 7 real (table, column)
     # pairs, ~2.12M rows, HH/HL/CA only (never LT) -- see AGENTS.md.
     con <- textConnection(output)
@@ -151,11 +150,11 @@ parse_xml_to_dataframe <- function(xml_path, rt, survey, year, quarter) {
   })
 }
 
-# Rigid type casting is now apply_wsdl_types(df, rt), from
-# data-raw/archive_00_wsdl_types.R (sourced above) -- physical type only,
-# straight from live WSDL. See that file's header for why the yaml-based
-# version this replaces was both wrong (a silent no-op bug) and the wrong
-# design (enum-ness isn't an input this stage should depend on at all).
+# Conversion lives entirely in opus:: (R/cast.R, R/rename.R, R/sentinels.R),
+# so it is one implementation shared with every other consumer rather than a
+# copy in data-raw. Phase A is still physical-type-only, straight from the
+# live WSDL: enum-ness is a curation conclusion drawn from archive data, so
+# it cannot be an input to building that archive without circularity.
 
 # ============================================================================
 # ---- PROCESS CELLS ----
@@ -201,8 +200,15 @@ for (i in seq_len(nrow(cells_to_process))) {
 
   n_rows <- nrow(df)
 
-  # Rigid type casting
-  df <- apply_wsdl_types(df, rt)
+  # Types, names, sentinels -- all four steps are opus:: functions so this
+  # script holds no conversion logic of its own. Order matters and is
+  # enforced by the functions themselves: the WSDL type map is keyed by
+  # legacy names, the sentinel registry by current ones, and a Date column
+  # cannot hold -9.
+  df <- op_cast_wsdl_types(df, rt)     # A: physical types, sentinels intact
+  df <- op_rename_to_new(df, rt)       # legacy -> current names (interim)
+  df <- op_strip_sentinels(df, rt)     # B: -9 -> NA where it means absence
+  df <- op_cast_to_spec(df, rt)        # C: semantic types (date, ...)
 
   # Create output path
   pq_dir <- file.path(DATRAS_PARQUET_DIR, rt, sprintf("Survey=%s", s), sprintf("Year=%d", y))

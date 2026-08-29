@@ -80,27 +80,3 @@ datras_get_catalog <- function(years) {
 }
 
 # ---- Public: Get DATRAS field list (metadata about field names, types, descriptions) ----
-datras_get_field_list <- function() {
-  url <- "https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList"
-  xml_text <- paste(.fetch_ices_xml(url), collapse = "\n")
-
-  # Fix malformed namespace
-  xml_text <- gsub(
-    'xmlns="ices.dk.local/DATRAS"',
-    'xmlns="https://ices.dk.local/DATRAS"',
-    xml_text,
-    fixed = TRUE
-  )
-
-  # Parse XML to dataframe
-  df <- tryCatch(
-    XML::xmlToDataFrame(xml_text),
-    error = function(e) {
-      stop("Failed to parse DATRAS field list: ", conditionMessage(e), call. = FALSE)
-    }
-  )
-
-  # Standardize columns
-  df[] <- lapply(df, trimws)
-  as.data.frame(df, stringsAsFactors = FALSE)
-}

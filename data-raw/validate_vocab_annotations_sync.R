@@ -94,9 +94,14 @@ archive_cache <- new.env()
 read_field <- function(table, field) {
   cache_key <- paste(table, field)
   if (!is.null(archive_cache[[cache_key]])) return(archive_cache[[cache_key]])
-  pq <- sprintf(".datras/%s_legacy.parquet", table)
+  # The published archive is current-named (opus dropped the legacy-named
+  # copy 2026-08-29); `field` here is a legacy name, so translate it.
+  pq <- sprintf(".datras/to_https/raw/%s.parquet", table)
+  xw <- op_datras_rename_crosswalk()
+  hit <- xw$RecordHeader == table & xw$old_name == field
+  pq_field <- if (any(hit)) xw$new_name[hit][1] else field
   v <- tryCatch({
-    t <- arrow::read_parquet(pq, col_select = all_of(field))
+    t <- arrow::read_parquet(pq, col_select = all_of(pq_field))
     unique(as.character(t[[1]][!is.na(t[[1]])]))
   }, error = function(e) NULL)
   archive_cache[[cache_key]] <- v

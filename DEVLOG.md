@@ -1688,3 +1688,177 @@ and to state its actual (narrower-than-implied) scope, so a future
 session doesn't re-discover the same gap. Updated the corresponding
 memory entries (`data_dict_current_status`, `data_dict_trajectory`,
 `data_dict_spec_tidyverse`) to match.
+
+---
+
+## 2026-08-28 -- obus's consistency check finds the WSDL-vs-curated type seam
+
+Raised from obus, not from opus's own testing. obus ran the
+parquet-vs-xml class-consistency check its `AGENTS.md` prescribes
+(fetch the same table both ways, compare `sapply(x, class)`) on
+NS-IBTS 2022 Q1. Row counts matched exactly; **types did not** -- 7
+mismatched columns in HL, 6 in CA, plus `.id` present only in the
+parquet.
+
+**Root cause: opus answers "what type is this field" two different
+ways, and nothing says which is authoritative.**
+
+1. `data-raw/archive_00_wsdl_types.R` types the parquet archive from
+   ICES's **WSDL physical types** (string/int/decimal). This is
+   deliberate and well-reasoned -- that file's own header explains why
+   the curated spec must not be an input here (enum-ness is a curation
+   conclusion drawn from archive data, so feeding it back in would be
+   circular), and states plainly that the YAML "plays no role here and
+   is never loaded by this file or its callers."
+2. `op_field_spec()` reports the **curated semantic types**
+   (`number(quantity)`, `number(ordinal)`, `enum`) from the YAML.
+
+Both are internally consistent. The problem is only visible downstream,
+where a consumer touches both: obus types its live-XML path from (2)
+and reads an archive built from (1), so the same column arrives as a
+different R class depending on which source the user asked for --
+silently, with no error anywhere.
+
+Traced to the physical parquet schema rather than inferred from R
+classes, which is what made the three distinct mechanisms legible:
+
+- `SweepLength`, `LengthClass`, `SubsampleWeight`,
+  `SpeciesCategoryWeight`, `SubsampledNumber`, `NumberAtLength`, `Age`
+  -- **INT32** in the archive (R integer); `number(quantity)` in the
+  YAML (R numeric). The straightforward physical-vs-semantic case.
+- `Year` -- **INT64** in the archive. R has no native 64-bit integer,
+  so it renders as numeric; the YAML's `number(ordinal)` gives integer.
+  Not a typing disagreement at all -- a representation artifact of a
+  storage width that looks like overkill for a year.
+- `DateofCalculation` -- INT32 carrying a parquet **DATE** logical type
+  (R `Date`); `number(ordinal)` in the YAML. Here the archive made a
+  real semantic choice the WSDL doesn't express.
+
+Worth noting the WSDL reports a plain `int` for **all five** of the
+fields checked, including `Year` and `DateofCalculation` -- so "the
+archive follows the WSDL" is not a complete account either. Something
+downstream of `archive_00_wsdl_types.R` widened `Year` to INT64 and
+annotated `DateofCalculation` as DATE; worth locating if the
+reconciliation item is taken up.
+
+Nothing was changed in opus as a result. The finding is recorded in
+`TODO.md` as three items -- the reconciliation decision itself, the
+narrower `DateofCalculation` question (a date typed `number(ordinal)`
+looks wrong regardless of how the larger question resolves), and a
+missing R accessor for `inst/DATRAS-known-issues.yaml`, which turned
+out to have no reader anywhere in `R/` and is blocking obus's
+sentinel-to-`NA` work.
+
+**Also surfaced, unrelated to types:** NS-IBTS 2022 Q1 HL is exactly
+32767 rows (2^15 - 1) in *both* the live ICES response and the archive,
+while neighbouring quarters of the same survey run 44k-52k (2021 Q1:
+51151; 2023 Q1: 45752). A scan of the whole HL archive found it is the
+only one of 971 survey/year/quarter groups on that value, and that 115
+groups exceed it (max 54712) -- so there is no global cap, and a
+signed-16-bit truncation specific to that submission is the most likely
+reading. Unproven; logged in `TODO.md` as a candidate registry entry
+pending a targeted check against ICES.
+
+The general lesson matches the 2026-08-16 entry's: a divergence between
+two internally-consistent sources is invisible to anyone reading either
+one, and only shows up when something reads both and compares real
+values. opus has no such consumer of its own -- obus is it.
+
+---
+
+## 2026-08-29 -- the XML->parquet conversion becomes an R API; archive rebuilt; sentinel policy written down
+
+Driven by a question from obus: the same DATRAS column arrived as a
+different R class depending on whether it came from the parquet archive or
+a live XML fetch. Tracing it found not a bug but a seam -- opus answered
+"what type is this field" two ways (WSDL physical types building the
+archive, curated semantic types in the yaml) and nothing reconciled them.
+
+**The fix was structural rather than a reconciliation.** The conversion
+moved out of `data-raw/` and into `R/` as four exported functions --
+`op_cast_wsdl_types()`, `op_rename_to_new()`, `op_strip_sentinels()`,
+`op_cast_to_spec()` -- so the archive build and any downstream consumer run
+the *same code* rather than two implementations that agree by luck. The
+question of which type system wins is now answered once, inside those
+functions, instead of per-consumer. Also promoted: the ASMX readers
+(`op_datras_operations()`, `op_datras_operation_types()`,
+`op_datras_field_metadata()`) and the sentinel accessors. 22 exports -> 34.
+
+**All three data-raw/R duplications resolved**, two of which the code's own
+comments admitted to. `spec_00_operation_types.R` was a port of
+`R/field_names.R`'s ASMX crawler; `archive_03`'s `datras_get_field_list()`
+independently re-implemented `.fetch_live_datras_field_list()` down to the
+same malformed-namespace fix; `archive_00_wsdl_types.R` held the caster.
+All deleted, callers repointed. Recorded as Working Principle 7b. The
+vocab helpers were already correct (they call `op_vocab_get_codes()` and
+add only caching) and are cited as the model. One remains:
+`spec_04_build_catalog.R` still mirrors `op_flag_violations()` verbatim.
+
+**Two real bugs found by doing this.** `apply_wsdl_types()`'s switch handled
+`int`/`decimal`/`string` and silently passed anything else through: exactly
+one field in the specification is declared `float` (LT's `BottomDepth`) and
+it had been a text column throughout. And -- introduced during this work,
+caught by the acceptance test -- caching the rename crosswalk *per table*
+degraded it silently, because tier 2 borrows evidence between tables:
+asked for `"LT"` alone it returned 1 rename instead of 23. Fixed at source
+so no caller can ask the question in a way that quietly degrades, rather
+than by documenting the hazard.
+
+**The sentinel policy is now written down and machine-readable.** A sweep
+found `-9` in 133 column-instances (an earlier count of 98 was wrong: it
+compared `CAST(col AS VARCHAR) = '-9'`, which misses every double column
+because DuckDB renders those as `"-9.0"`). Prevalence turned out to be
+useless as a discriminator -- `Tickler` is 78% `-9` and real, `Turbidity`
+99.6% and never recorded. What separates them is the label ICES publishes:
+of 29 enum fields documenting a `-9` code, 24 label it as absence and 5 as
+a real answer. `inst/DATRAS-known-issues.yaml` grew a `sentinels:
+resolution` block -- a list of absence-meaning labels plus explicit keep
+entries -- and an unrecognised label resolves to *keep*, so a documented
+code can never be silently destroyed.
+
+**Dictionary retypes.** `Quarter`/`Month` -> `number(ordinal)` with ranges;
+`DateofCalculation` -> `date` (the format's `date` type, previously unused);
+`Tickler`/`SpeciesCategory` stay `enum` but are now stored as text, because
+`S07` forbids a `values:` map on a number column and their 32 and 56 code
+labels are load-bearing. Applied to both dictionaries in lockstep.
+
+**Archive rebuilt from `.datras/xml/`** -- verified beforehand that the
+rebuild depends on nothing else in `.datras/` -- and consolidated to
+`.datras/to_https/raw/{T}.parquet`, current names only.
+`archive_06_split_legacy_new.R` became `archive_06_consolidate.R`: one step
+instead of three, no legacy-named output, with the per-file crosswalk
+assertion moved into `op_rename_to_new()`.
+
+`op_validate_meta()` now passes on all four tables -- **194 checks, 0
+failures, from 13**. Every column is all-or-nothing on sentinels; the only
+five still holding `-9` are the documented keeps, at exactly their
+pre-rebuild counts. `DateofCalculation` is a real `DATE` everywhere and no
+column is `INT64`.
+
+**Ordering note worth keeping.** Converting `DateofCalculation` to a date
+while sentinels are present turns every `-9` into a null -- individually
+correct, collectively destructive, and it reports nothing. The published
+archive had done exactly that: its null count matched the sentinel count
+exactly. Hence strip-then-cast, and `op_cast_to_spec()` refuses to convert
+anything it cannot parse rather than producing `NA`.
+
+**Site.** `articles/approach.qmd` written (it had been a stub outline).
+`articles/reference.qmd` added, generated from `man/*.Rd` by
+`data-raw/build_reference.R` -- which fails if an export belongs to no
+group, so the curation cannot rot. The dictionary snapshot was regenerated
+and now *actually profiles the data*: `op_render_spec()`'s `data_dir` only
+rewrote existing `source:` lines, and the shipped dictionary declares none,
+so every previous render was spec-only despite the page claiming otherwise.
+It now injects one (395KB -> 923KB, with real row counts).
+
+The `icesDatras` rationale in `approach.qmd` was corrected: the reason is
+not a fork, it is that the official `ices-tools-prod/icesDatras` *corrects*
+rather than merely fetches -- `fix_types` (on by default) and `new_names`
+apply a bundled schema derived from `getDatrasFieldList`, so its
+corrections carry that source's errors forward silently. Its bundled table
+renames CA's `Age` to `IndividualAge`; the live operation returns `Age`.
+Fine for most users, wrong for a project whose job is to document where
+that metadata is wrong.
+
+`.datras/` tidied: superseded artifacts moved to `.datras/retired/` with a
+README, not deleted. `devtools::check()`: 0 errors, 0 warnings, 0 notes.

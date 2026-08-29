@@ -7,8 +7,10 @@
 op_datras_field_list(tables = c("HH", "HL", "CA", "LT"))
 }
 \arguments{
-\item{tables}{Character vector: which RecordHeaders to resolve (default
-opus's Tier 1 scope).}
+\item{tables}{Character vector: which RecordHeaders to *return* (default
+opus's Tier 1 scope). Resolution always runs over the full Tier 1 set
+regardless, because tier 2 borrows evidence across tables; narrowing
+this only narrows the output.}
 }
 \value{
 Data frame: RecordHeader, old_name, new_name, source_tier, note.

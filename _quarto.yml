@@ -22,6 +22,8 @@ website:
         file: articles/approach.qmd
       - text: "Data dictionary"
         file: articles/dictionary.qmd
+      - text: "Function reference"
+        file: articles/reference.qmd
       - text: "Issues found"
         file: articles/issues.qmd
       - text: "Technical notes"

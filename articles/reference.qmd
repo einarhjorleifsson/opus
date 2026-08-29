@@ -1,0 +1,106 @@
+---
+title: "Function reference"
+---
+
+::: {.callout-note appearance="simple"}
+This page is generated from the package's own `man/*.Rd` files by `data-raw/build_reference.R`, so it cannot drift from the roxygen.
+Full documentation for any function is `?name` in an R session.
+:::
+
+opus exports 34 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
+
+## The specification
+
+The dictionary as data. Downstream code should reach the yaml through these rather than parsing it, so there is one place where the shape of the specification is known.
+
+| Function | |
+|---|---|
+| `op_field_spec()` | Build a combined old-name / new-name / type spec from opus's own shipped YAMLs |
+| `op_field_name_map()` | Build field name mapping from data-dict YAML |
+| `op_legacy_field_name()` | Extract legacy field name from column details |
+
+## Converting DATRAS XML to parquet
+
+The four steps of the conversion, in the order they must run: physical types, then names, then sentinels, then the semantic types the wire cannot express. A consumer calling these on its own live fetch gets a result identical to the published archive rather than a near-miss.
+
+| Function | |
+|---|---|
+| `op_cast_wsdl_types()` | Cast a parsed DATRAS table to its WSDL-declared physical types |
+| `op_rename_to_new()` | Rename a DATRAS table from ICES's legacy names to opus's current names |
+| `op_strip_sentinels()` | Replace sentinels with NA, where they mean absence |
+| `op_cast_to_spec()` | Realise the semantic types the wire format cannot express |
+| `op_wsdl_type_overrides()` | The documented WSDL type overrides |
+
+## Sentinels
+
+DATRAS overloads `-9`: in most fields it means "not recorded", in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.
+
+| Function | |
+|---|---|
+| `op_sentinels()` | Read the sentinel registry |
+| `op_sentinel_policy()` | Resolve, per column, whether a sentinel means absence |
+| `op_sentinel_audit()` | Count sentinel values per column in a parquet file |
+
+## Field names
+
+ICES is renaming DATRAS fields one table at a time. These separate what ICES *claims* about renames from what survives checking against what the service actually returns.
+
+| Function | |
+|---|---|
+| `op_datras_field_metadata()` | Fetch ICES's getDatrasFieldList metadata, as ICES publishes it |
+| `op_datras_field_list()` | Derive verified Tier 1 legacy field-name mappings, without icesDatras |
+| `op_datras_rename_crosswalk()` | Build a rename-ready legacy -> new name crosswalk for one or more tables |
+
+## Reading the DATRAS web service
+
+Primary-source readers. Everything that needs to know what ICES really sends goes through these rather than parsing the service again.
+
+| Function | |
+|---|---|
+| `op_datras_operations()` | List the DATRAS web service's currently exposed operations |
+| `op_datras_operation_types()` | Fetch the field names and types a DATRAS operation actually returns |
+
+## Validation
+
+Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance -- they are what makes editing a large yaml by hand safe.
+
+| Function | |
+|---|---|
+| `op_validate_spec()` | Validate opus specs against real DATRAS data |
+| `op_validate_meta()` | Validate dataset metadata against dictionary |
+| `op_validate_data()` | Validate dataset values against dictionary constraints |
+| `op_validate_full()` | Run full validation suite |
+| `op_validation_problems()` | Flatten a data-dict validation report's problems into a data frame |
+| `op_flag_violations()` | Flag rows with violations against dictionary constraints |
+
+## ICES vocabularies
+
+Code semantics from icesVocab. Keys are tied to each field's *legacy* name, which is not obvious until it produces a wrong answer.
+
+| Function | |
+|---|---|
+| `op_vocab_resolve_datras_key()` | Resolve a DATRAS Tier 1 field to its correct icesVocab key (opus's audited proposal) |
+| `op_vocab_resolve_key()` | Resolve a Field Name to Candidate Vocabulary Keys |
+| `op_vocab_resolve_guid()` | Resolve an ICES Vocabulary GUID to Its Key -- an Exact Match, Not a Guess |
+| `op_vocab_get_types()` | Get ICES Vocabulary Types with Prefix Metadata |
+| `op_vocab_get_codes()` | Fetch Code:Meaning Pairs from an ICES Vocabulary Key |
+| `op_vocab_first_usable()` | Find the First Vocabulary Key with Usable Codes |
+
+## Parquet and export
+
+Inspecting real data, and rendering the dictionary for other tools.
+
+| Function | |
+|---|---|
+| `op_inspect_parquet()` | Inspect parquet file schema |
+| `op_describe_parquet()` | Describe columns of a parquet file |
+| `op_draft_from_parquet()` | Draft a data-dict.yaml from parquet files |
+| `op_export_spec()` | Export dictionary as fully-resolved JSON |
+| `op_export_data()` | Export dictionary with per-column data profiles |
+| `op_render_spec()` | Render a data dictionary as a self-contained HTML page |
+
+## Where to look next
+
+- [Approach](approach.qmd) explains what these are *for* -- the sources they reconcile, and the problems that shaped them.
+- [Technical notes](technical-notes.qmd) has the code-level detail.
+

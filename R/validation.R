@@ -734,13 +734,37 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 
   render_path <- dict_path
   if (!is.null(data_dir)) {
-    data_dir <- path.expand(data_dir)
+    data_dir <- normalizePath(path.expand(data_dir), mustWork = FALSE)
     lines <- readLines(dict_path)
+
+    # Point any source: the dictionary already declares at `data_dir`.
     lines <- gsub(
       "^(\\s*parquet:\\s*)([A-Za-z0-9_]+)\\.parquet\\s*$",
       paste0("\\1", data_dir, "/\\2.parquet"),
       lines
     )
+
+    # ...and give a source to any table that declares none. Without this the
+    # render is spec-only: data-dict profiles row counts, histograms and
+    # missing values into the page only when at least one table's source file
+    # is present. The shipped dictionary deliberately declares no source --
+    # the archive is not part of the repository, so a committed path would
+    # dangle for everyone but whoever built it -- which makes injecting one
+    # here the whole point of `data_dir`.
+    table_starts <- grep("^- name: [A-Za-z0-9_]+\\s*$", lines)
+    for (i in rev(table_starts)) {
+      tbl <- sub("^- name: ", "", lines[i])
+      block_end <- if (i == max(table_starts)) length(lines) else {
+        nxt <- table_starts[table_starts > i][1]
+        nxt - 1L
+      }
+      if (any(grepl("^  source:\\s*$", lines[i:block_end]))) next
+      pq <- file.path(data_dir, paste0(trimws(tbl), ".parquet"))
+      if (!file.exists(pq)) next
+      lines <- append(lines, c("  source:", paste0("    parquet: ", pq)),
+                      after = i)
+    }
+
     tmp_dict <- tempfile(fileext = ".yaml")
     on.exit(unlink(tmp_dict), add = TRUE)
     writeLines(lines, tmp_dict)
@@ -767,9 +791,12 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     exit_status = status,
     output_path = output,
     raw_output  = raw_output,
-    command     = paste(c(cli_bin, "render", dict_path, "-o", output,
-                           if (!is.null(data_dir)) c("--data-dir", data_dir)),
-                         collapse = " ")
+    # The command actually run. It names the temporary dictionary when
+    # `data_dir` was given, because that -- not the shipped file -- is what
+    # was rendered. Reporting `--data-dir` here would be doubly wrong: the
+    # CLI has no such flag, and the shipped dictionary alone renders
+    # spec-only.
+    command     = paste(c(cli_bin, args), collapse = " ")
   )
 }
 

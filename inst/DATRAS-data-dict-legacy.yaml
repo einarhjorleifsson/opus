@@ -44,26 +44,21 @@ tables:
     constraints:
     - primary_key
   - name: Quarter
-    type: enum
+    type: number(ordinal)
+    range: [1, 4]
     description: >-
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
-    values:
-      '1': 1. quarter
-      '2': 2. quarter
-      '3': 3. quarter
-      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
-      An accepted, permanent M01 divergence between the WSDL-driven archive (which
-      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
-      enum spec (whose values must be quoted strings per the data-dict spec's own
-      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
-      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
-      also resolves this field (a bare 'Quarter' key is separately registered too,
-      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
-      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml so the two dictionaries stay a pure positional
+      rename of each other (op_field_spec() depends on that). The live WSDL declares
+      this int, the archive stores it int, and an enum's underlying data must be
+      string-like (data-dict validation.md, "Enum membership"). The former values:
+      map ('1' -> '1. quarter') carried nothing the number itself does not -- unlike
+      Tickler and CatIdentifier, whose code labels are load-bearing and which stay
+      enums stored as strings. icesVocab's TS_Quarter also resolves this field.
+      Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4.
     constraints:
     - primary_key
   - name: Country
@@ -323,29 +318,16 @@ tables:
     - required
     - primary_key
   - name: Month
-    type: enum
+    type: number(ordinal)
+    range: [1, 12]
     description: >-
       Sampling month, as part of the calendar date.
-    values:
-      '1': January
-      '10': October
-      '11': November
-      '12': December
-      '2': February
-      '3': March
-      '4': April
-      '5': May
-      '6': June
-      '7': July
-      '8': August
-      '9': September
     details: >-
-      Live WSDL (getHHdata) declares this field int, not string -- the same
-      accepted, permanent M01 divergence as Quarter above (curated enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Month
-      also resolves this field (a bare 'Month' key is separately registered too,
-      redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT
-      11 of 12; 0 real values fall outside the vocab in either table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml, for the same reason as Quarter above. The former
+      values: map ('1' -> January) is a calendar convention, not DATRAS-specific
+      knowledge, so dropping it loses nothing. icesVocab's TS_Month also resolves
+      this field. Against the real archive: HH uses all 12 codes, LT 11 of 12.
     constraints:
     - required
   - name: Day
@@ -1143,9 +1125,9 @@ tables:
     details: >-
       Same inferred-unit caveat as MinTrawlDepth above.
   - name: DateofCalculation
-    type: number(ordinal)
+    type: date
     range:
-    - 20120419
+    - '2012-04-19'
     - .inf
     details: >-
       8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
@@ -1210,26 +1192,21 @@ tables:
     - required
     - foreign_key
   - name: Quarter
-    type: enum
+    type: number(ordinal)
+    range: [1, 4]
     description: >-
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
-    values:
-      '1': 1. quarter
-      '2': 2. quarter
-      '3': 3. quarter
-      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
-      An accepted, permanent M01 divergence between the WSDL-driven archive (which
-      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
-      enum spec (whose values must be quoted strings per the data-dict spec's own
-      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
-      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
-      also resolves this field (a bare 'Quarter' key is separately registered too,
-      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
-      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml so the two dictionaries stay a pure positional
+      rename of each other (op_field_spec() depends on that). The live WSDL declares
+      this int, the archive stores it int, and an enum's underlying data must be
+      string-like (data-dict validation.md, "Enum membership"). The former values:
+      map ('1' -> '1. quarter') carried nothing the number itself does not -- unlike
+      Tickler and CatIdentifier, whose code labels are load-bearing and which stay
+      enums stored as strings. icesVocab's TS_Quarter also resolves this field.
+      Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4.
     constraints:
     - required
     - foreign_key
@@ -1834,9 +1811,9 @@ tables:
       list. Against the real HL archive: 11 of 14 codes in use, 0 real values outside
       the vocab.
   - name: DateofCalculation
-    type: number(ordinal)
+    type: date
     range:
-    - 20120419
+    - '2012-04-19'
     - .inf
     details: >-
       8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
@@ -1910,26 +1887,21 @@ tables:
     - required
     - foreign_key
   - name: Quarter
-    type: enum
+    type: number(ordinal)
+    range: [1, 4]
     description: >-
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
-    values:
-      '1': 1. quarter
-      '2': 2. quarter
-      '3': 3. quarter
-      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
-      An accepted, permanent M01 divergence between the WSDL-driven archive (which
-      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
-      enum spec (whose values must be quoted strings per the data-dict spec's own
-      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
-      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
-      also resolves this field (a bare 'Quarter' key is separately registered too,
-      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
-      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml so the two dictionaries stay a pure positional
+      rename of each other (op_field_spec() depends on that). The live WSDL declares
+      this int, the archive stores it int, and an enum's underlying data must be
+      string-like (data-dict validation.md, "Enum membership"). The former values:
+      map ('1' -> '1. quarter') carried nothing the number itself does not -- unlike
+      Tickler and CatIdentifier, whose code labels are load-bearing and which stay
+      enums stored as strings. icesVocab's TS_Quarter also resolves this field.
+      Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4.
     constraints:
     - required
     - foreign_key
@@ -2602,9 +2574,9 @@ tables:
     constraints:
     - required
   - name: DateofCalculation
-    type: number(ordinal)
+    type: date
     range:
-    - 20120419
+    - '2012-04-19'
     - .inf
     details: >-
       8-digit YYYYMMDD stamp, digit order (month before day) verified consistent
@@ -2683,26 +2655,21 @@ tables:
     - required
     - foreign_key
   - name: Quarter
-    type: enum
+    type: number(ordinal)
+    range: [1, 4]
     description: >-
       Cruise quarter. Hauls outside of the calendar quarter can be reported
       with the same quarter reference, if agreed by the survey group.
-    values:
-      '1': 1. quarter
-      '2': 2. quarter
-      '3': 3. quarter
-      '4': 4. quarter
     details: >-
-      Live WSDL (getHHdata and getCAdata) declares this field int, not string.
-      An accepted, permanent M01 divergence between the WSDL-driven archive (which
-      stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated
-      enum spec (whose values must be quoted strings per the data-dict spec's own
-      S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id)
-      vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Quarter
-      also resolves this field (a bare 'Quarter' key is separately registered too,
-      redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use
-      all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml so the two dictionaries stay a pure positional
+      rename of each other (op_field_spec() depends on that). The live WSDL declares
+      this int, the archive stores it int, and an enum's underlying data must be
+      string-like (data-dict validation.md, "Enum membership"). The former values:
+      map ('1' -> '1. quarter') carried nothing the number itself does not -- unlike
+      Tickler and CatIdentifier, whose code labels are load-bearing and which stay
+      enums stored as strings. icesVocab's TS_Quarter also resolves this field.
+      Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4.
     constraints:
     - required
     - foreign_key
@@ -3276,27 +3243,14 @@ tables:
     description: >-
       Type of door used
   - name: Month
-    type: enum
-    values:
-      '1': January
-      '10': October
-      '11': November
-      '12': December
-      '2': February
-      '3': March
-      '4': April
-      '5': May
-      '6': June
-      '7': July
-      '8': August
-      '9': September
+    type: number(ordinal)
+    range: [1, 12]
     details: >-
-      Live WSDL (getHHdata) declares this field int, not string -- the same
-      accepted, permanent M01 divergence as Quarter above (curated enum vs WSDL's
-      own 'int'), not a bug to fix by changing either side. icesVocab's TS_Month
-      also resolves this field (a bare 'Month' key is separately registered too,
-      redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT
-      11 of 12; 0 real values fall outside the vocab in either table.
+      Retyped from enum to number(ordinal) 2026-08-29, mirroring the same change in
+      inst/DATRAS-data-dict.yaml, for the same reason as Quarter above. The former
+      values: map ('1' -> January) is a calendar convention, not DATRAS-specific
+      knowledge, so dropping it loses nothing. icesVocab's TS_Month also resolves
+      this field. Against the real archive: HH uses all 12 codes, LT 11 of 12.
     description: >-
       Sampling month, as part of the calendar date.
   - name: Day
@@ -3718,7 +3672,7 @@ tables:
       description present. 17 distinct values, 49,581 of 75,310 rows unpopulated.
       Not treated as a closed set, same reasoning as EEZ.
   - name: DateofCalculation
-    type: number(ordinal)
+    type: date
     details: >-
       See known issue dateofcalculation_type_mismatch (DATRAS-known-issues.yaml,
       not yet filed): ICES's WSDL declares this field character for LT's own retrieval
@@ -3731,7 +3685,7 @@ tables:
       -- consistent with LT/litter reporting being a newer addition to DATRAS than
       the main haul/length/age exchange.
     range:
-    - 20151127
+    - '2015-11-27'
     - .inf
   label: Litter Assessment
   description: >-

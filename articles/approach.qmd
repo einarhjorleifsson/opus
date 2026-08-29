@@ -2,73 +2,317 @@
 title: "How opus's data dictionaries were built"
 ---
 
-::: {.callout-note}
-## Outline, not yet drafted
-This page currently sketches what each section will cover. When the prose
-gets written, favor describing method over today's snapshot numbers (row
-counts, percentages) — this page is expected to go untouched for long
-stretches, so it should age well unattended rather than rely on someone
-circling back to refresh it.
-:::
+The information needed to read ICES DATRAS data correctly is real but
+scattered — spread across a WSDL, a separately maintained metadata service,
+a vocabulary server, and a hand-kept spreadsheet, none of which fully
+agrees with the others. This page describes how those are reconciled into
+two machine-readable specifications, what the R functions around them are
+for, and the failure modes the design guards against.
+
+The dictionaries are built once and maintained by hand. The seeding and
+curation scripts under `data-raw/` are kept as provenance — *how did this
+entry come to say that?* — not as a rebuild path. Re-running them would
+overwrite hand-made decisions with whatever the live sources happen to say
+today.
 
 ## Why a structured dictionary at all
 
-- Scattered institutional knowledge (WSDL, icesVocab, Technical Reference,
-  real submissions) consolidated into one authoritative, machine-readable
-  place
-- Portable and language-independent — not an R-specific artifact; usable
-  even if opus's own R tooling is never touched again
+Anyone reading DATRAS answers the same questions repeatedly. What type is
+this field? What does code `4` mean here? Is `-9` a missing value or an
+answer? Which of these two similarly named columns is the one I want? Each
+consumer rediscovers those answers independently, usually by trial and
+error against real data, and usually without writing down what they
+learned.
+
+Consolidating them buys two things worth insisting on. The result is
+**authoritative** — every claim traced to a primary source and checked
+against real data. And it is **portable**: the deliverable is YAML
+conforming to a published specification, not an R object. The R package is
+thin tooling around those files. If nobody runs it again, the dictionaries
+remain usable by any language that can read a text file.
 
 ## Four sources, reconciled
 
-- **WSDL** — primary authority for field types; DATRAS-specific
-- **`getDatrasFieldList`** — secondary, and confirmed unreliable (6 filed
-  errors: LT coverage gap, wrong LT renames, a phantom field, an
-  unverifiable CA rename, missing entries, a duplication miss)
-- **icesVocab** — code semantics only, not structural types; keyed by each
-  field's *legacy* name, not its current one — a dependency that isn't
-  obvious until it bites
-- **DATRAS field-description spreadsheet** — closest thing to a real
-  Technical Reference, but hand-maintained and not kept in sync with the
-  other three
+No single source is sufficient, and none is trustworthy alone.
+
+**The WSDL** is the primary authority for field types. Each operation's
+description page embeds a sample response generated from the server's
+actual return type, so it cannot drift from what the service sends the way
+a hand-maintained table can. This is not a theoretical preference: where
+the WSDL and the metadata service disagree, real data has repeatedly proved
+the WSDL right.
+
+**`getDatrasFieldList`** documents field names and the legacy names they
+were renamed from. It is separately maintained rather than generated from
+the live operations, and it is demonstrably unreliable — it covers 22 of
+LT's 58 real fields, claims fields that do not exist, omits others
+entirely, and pairs at least one field with a legacy name that is not real.
+It is used, but never on its own authority.
+
+**icesVocab** supplies code semantics — what the values in a coded field
+mean. It carries no structural type information, and its keys are tied to
+each field's *legacy* name rather than its current one, a dependency that
+stays invisible until it produces a wrong answer.
+
+**The DATRAS field-description spreadsheet** is the closest thing to a
+Technical Reference and the only source for some descriptive text. It is
+hand-maintained and not kept in step with the other three.
+
+The reconciliation rule that follows: **a claim is trusted when two
+independent sources agree, or when one source agrees with real data.**
+Never because a single document says so.
 
 ## Why not `icesDatras` as the access layer
 
-- The tempting assumption: use the existing R package as the
-  retrieval/parsing middleman instead of calling ICES's services directly
-- What that would have meant inheriting: a personal fork, diverged from
-  upstream, carrying unreviewed local patches that were initially (wrongly)
-  described internally as official package behavior
-- The decision instead: call WSDL / `getDatrasFieldList` / icesVocab
-  directly, verify every claim against at least two independent live
-  sources, never trust a single package's internal handling
-- Why this still matters, concretely and currently, not just in
-  retrospect: ICES's own official package is being actively finalized right
-  now, with a faster replacement retrieval mechanism coming — a live
-  example of exactly the dependency-volatility this decision was avoiding
-- (May grow into its own page rather than a section here, once drafted —
-  not deciding that now)
+The obvious shortcut is to let ICES's own R package
+([`ices-tools-prod/icesDatras`](https://github.com/ices-tools-prod/icesDatras))
+handle retrieval and parsing. opus calls the web services directly instead,
+and the reason is specific rather than general.
 
-## How the dictionaries were actually built
+`icesDatras` is a convenience layer that does not merely fetch — it
+*corrects*. `getDATRAS()` takes `fix_types` and `new_names` arguments, both
+defaulting from global options, and both applied from a schema table
+bundled inside the package. `applyDatrasNameSchema()` renames columns by
+mapping `FieldNameOld` to `FieldName` from that table; `fix_types` (on by
+default) coerces column types from the same source.
 
-- Seed from live sources (WSDL + `getDatrasFieldList` + icesVocab), keyed
-  by legacy field names, no corrections yet
-- Curate against the real archive: hand-written corrections, enum
-  enrichment, evidence required for every range/constraint
-- Rename: legacy → opus's curated names, as a single, pure, final step
-- Cross-link to [Technical notes](technical-notes.qmd) for the code-level
-  version of this story
+That bundled table derives from `getDatrasFieldList` — the source opus
+independently finds to contain errors. So its corrections carry those
+errors forward, applied silently. Concretely, the bundled schema renames
+CA's `Age` to `IndividualAge`; the live `getCAdata` operation returns
+`Age`, and there is no `IndividualAge` anywhere in real CA data. A
+consumer who opts into `new_names` receives a column named for a field
+that does not exist.
+
+For most users that is a reasonable trade — a maintained package that
+smooths over an awkward service is worth having, and ICES ships it as the
+supported way in. It is the wrong foundation for *this* project
+specifically, because opus's job is to document where ICES's own metadata
+is wrong. A layer that quietly applies that metadata's corrections removes
+the very signal opus exists to capture: the discrepancy stops being
+visible to measure, and the result would be "true, as filtered through
+another package's assumptions."
+
+So opus reads the WSDL, `getDatrasFieldList` and icesVocab directly and
+verifies each claim against at least two independent live sources. The
+distinction matters in one direction only: opus does not need a *better*
+client than `icesDatras`, it needs an *unmediated* one.
+
+## The build
+
+Three phases, keyed throughout by ICES's legacy field names, with opus's
+own names introduced exactly once at the end.
+
+**Seed.** Crawl the live sources and assemble a first-pass dictionary: one
+entry per real field, typed from the WSDL, with whatever ICES documents
+attached. The seed records what the sources say, including where they
+contradict each other.
+
+**Curate.** Work the seed against the real archive. Every range, every
+constraint, every enum membership is checked against actual values before
+it is written down. Codes are enriched from icesVocab where a field
+resolves to a controlled list. Where sources conflict, the conflict is
+resolved against data and the resolution recorded, not silently applied.
+
+**Rename.** Translate legacy names to opus's curated names as a single,
+pure, positional rename — no other change in the same step. Keeping it
+isolated is what makes it auditable: the two files are one specification
+under two naming schemes, and any divergence between them is a bug rather
+than a design.
+
+Both files ship. `DATRAS-data-dict-legacy.yaml` is not an archive copy:
+submitters send ICES data under legacy names, so it is the submission-side
+specification.
+
+## What the functions are for
+
+The package is thin but not arbitrary. Each exported function exists
+because some consumer — the curation flow, the archive build, or a
+downstream package — needs to ask one question without re-implementing the
+answer. The [function reference](reference.qmd) lists them all; what
+follows is why the groups exist.
+
+**Reading the service.** `op_datras_operations()` lists what the DATRAS
+service exposes; `op_datras_operation_types()` returns the fields and types
+one operation actually returns. Everything needing to know what ICES really
+sends goes through these rather than parsing the service again.
+
+`op_datras_operations()` doubles as a migration tripwire. ICES is renaming
+DATRAS fields one table at a time, and each converted table appears as a
+new `…NewHeaders` operation. Watching that list is how the migration's
+progress becomes visible without being announced.
+
+**Names.** `op_datras_field_metadata()` returns `getDatrasFieldList` as
+ICES publishes it — what ICES claims. `op_datras_field_list()` returns what
+survives cross-checking against each operation's real response, tagging
+every mapping with the evidence behind it. `op_datras_rename_crosswalk()`
+reduces that to a collision-checked 1:1 map for callers that just need to
+rename columns.
+
+**The specification.** `op_field_spec()` returns the dictionary as a plain
+data frame — legacy name, current name, type. That one accessor is the
+whole contract between opus and anything downstream, so no consumer parses
+the YAML itself.
+
+**Conversion.** Four functions turn a parsed XML table into publishable
+parquet, and the order is load-bearing:
+
+```r
+df <- op_cast_wsdl_types(df, "HL")   # physical types; sentinels untouched
+df <- op_rename_to_new(df, "HL")     # legacy -> current names
+df <- op_strip_sentinels(df, "HL")   # -9 -> NA, where it means absence
+df <- op_cast_to_spec(df, "HL")      # semantic types the wire can't express
+```
+
+Casting is first because the WSDL type map is keyed by each operation's own
+field names, which are the legacy ones. Renaming precedes sentinel
+resolution because the sentinel registry is keyed by current names. The
+semantic cast is last because a date column cannot hold `-9`.
+
+Because these are exported rather than buried in a build script, a
+downstream package can produce results identical to the published archive
+by calling the same four functions on its own live fetch, instead of
+reimplementing the rules and slowly diverging from them.
+
+**Sentinels.** `op_sentinels()` reads the registry, `op_sentinel_policy()`
+resolves it into a per-column verdict with the reasoning attached, and
+`op_sentinel_audit()` measures a real parquet file against it. The audit is
+both the evidence behind each decision and the regression check afterwards.
+
+**Validation.** `op_validate_spec()` checks the dictionary is well-formed,
+`op_validate_meta()` checks a dataset's names and types against it, and
+`op_validate_data()` checks the values. These matter more than usual under
+hand-maintenance: they are what makes editing a large YAML by hand safe,
+and `op_validate_meta()` is the gate saying the published data and the
+specification still describe each other.
+
+## What the design guards against
+
+Most of the hazards here share a shape: they produce a plausible result
+instead of an error. That is what the following are built to prevent.
+
+### A metadata service that disagrees with its own data
+
+Taking `getDatrasFieldList` at face value produces wrong answers, so
+`op_datras_field_list()` **grades** it rather than discarding it. A rename
+is accepted when the legacy name actually appears in that operation's live
+response; accepted at lower confidence when another table confirms the same
+mapping; and otherwise recorded as unverified rather than acted on.
+
+That middle tier carries real weight. Most of LT's renames resolve only
+that way — its fields are renamed exactly as their HH counterparts are, but
+ICES documents the rename only for HH. Without cross-table evidence the
+majority of that table would keep its legacy names.
+
+### Evidence that vanishes when the question narrows
+
+Because that middle tier borrows evidence *between* tables, asking about
+one table alone leaves nothing to borrow from — and the honest failure
+would be an error, not a smaller answer. Resolution therefore always runs
+over the full set of tables and narrows at the end, so no caller can ask
+the question in a way that quietly degrades the result.
+
+### Guards that can pass vacuously
+
+A check written as "is this table name among the dictionary's keys" passes
+for every input when those keys are `tables` and `glossary` — never a table
+name. Such a guard converts a loud failure into a silent one, and a type
+caster built on it does nothing at all while appearing to work.
+
+Types therefore come from an explicit per-column cast against the WSDL,
+applied to every typed column rather than only the numeric ones, and an
+unrecognised type is reported rather than passed through. Otherwise a
+column can be integer in files where every value happens to be a sentinel
+and text in files with a real value.
+
+### A value that means two things
+
+DATRAS uses `-9` to mean "not recorded". In some fields it is an answer:
+for tickler chains it means *none were used*, an icesVocab-documented code
+and the dominant value in that column rather than a rare one. Replacing it
+wholesale destroys real data, and once destroyed the evidence needed to
+notice is gone with it.
+
+The opposite reflex is also wrong. Parquet has a native null, so carrying
+`-9` onward makes every downstream consumer rediscover the convention, with
+any naive average silently incorrect.
+
+What resolves it is that neither the value nor its frequency is the
+discriminator. Two fields can both be almost entirely `-9` — one because
+nobody records that measurement, one because "none" is the usual answer.
+What separates them is the **label ICES publishes for the code**: a set
+meaning absence (`Not known`, `Not available`, `Unknown`, …) against a much
+smaller set naming a real answer (`No ticklers are allowed`, `No plus
+group`, `Invalid hauls`).
+
+So the policy strips by default, keeps where the vocabulary documents the
+sentinel as a real answer, and records the label list in the known-issues
+registry where it can be reviewed. Anything the list does not recognise
+resolves to *keep*: an unrecognised label must never silently destroy a
+documented code.
+
+That `-9` carries both meanings inside one vocabulary is an ICES-side
+defect, not a modelling choice, and it is recorded as such.
+
+### Ordering that turns a correct conversion into data loss
+
+`DateofCalculation` arrives as `YYYYMMDD` and should be a date. Converting
+it while sentinels are still present turns every `-9` into a null — a
+conversion that is individually correct and collectively destructive, and
+one that reports nothing.
+
+Sentinel resolution therefore runs first, as a declared decision recorded
+in the registry, and only then does the date conversion. As a backstop
+`op_cast_to_spec()` **refuses** to convert a column containing anything it
+cannot parse rather than producing nulls. A conversion that cannot be done
+losslessly is an error, not a result.
+
+### A specification that does not describe its own data
+
+Validating opus's output against opus's specification is the check that
+catches drift between the two. It surfaces a consistent class of mismatch:
+fields typed `enum` whose data is stored as integers. Under the dictionary
+specification an enum's underlying data must be string-like, so those are
+genuine violations.
+
+Resolving them needs a judgement rather than a rule, because the options
+are not equivalent. A number column may not carry a code-to-label map, so
+retyping a field to a number **deletes its labels** from both the
+dictionary and the published catalog. For quarter and month that costs
+nothing — the labels restate the number. For tickler counts and species
+categories, where the codes are not self-explanatory, the labels are the
+useful part, and those fields stay enums stored as text.
+
+The general point: "make the validator pass" is not the goal. The validator
+identifies where description and data disagree; which of the two should
+move is a question about what the specification is for.
 
 ## Keeping it rigorous
 
-- Real data as ground truth over any single documentation source
-- Every claim verified empirically against live, primary data — never a
-  citation, a prior note, or a single source
-- Audits are exhaustive, not sampled — legacy name and current name both
-  checked, every prefix candidate, not just the first one that resolves
+A few habits do most of the work.
+
+**Real data outranks any document.** Where a source and the archive
+disagree, the archive wins and the source becomes an issue to report.
+
+**Two sources, or one plus data.** No structural claim rests on a single
+document, including ICES's own.
+
+**Audits are exhaustive, not sampled.** Both name schemes are checked, not
+just the current one; every vocabulary prefix candidate, not just the first
+that resolves; every column, not a handful.
+
+**Prefer a loud failure.** A check that can pass vacuously is treated as a
+defect, and a function that cannot do its job correctly stops rather than
+returning something plausible.
 
 ## Scope
 
-- This describes how the metadata *specification* was built — not domain
-  QC, not data transformation. That work is downstream, in obus/imbus's own
-  workpackages.
+This describes how the metadata *specification* is built. It is not domain
+QC and not data transformation — that work belongs downstream, in
+obus/imbus's own workpackages. opus's boundary is what a field is called,
+what type it is, what its values may be, and where ICES's own documentation
+of that is wrong.
+
+For the code-level detail behind several sections above, see
+[Technical notes](technical-notes.qmd). For the findings reported back to
+ICES, see [Issues found](issues.qmd).

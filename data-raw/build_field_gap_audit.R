@@ -51,8 +51,7 @@ suppressPackageStartupMessages({
   library(arrow)
   library(dplyr)
 })
-source("R/vocab.R")
-source("data-raw/spec_00_operation_types.R")
+library(opus)
 
 SENTINELS <- c("-9", "-99", "-999", "-1", "-5", "-95", "-100", "-900", "88888888")
 SENTINEL_MIN_ROWS <- 10   # below this, "sentinel-shaped value present" is noise, not a finding
@@ -83,7 +82,7 @@ excel_sheets <- list(
 )
 
 wsdl_ops <- c(HH = "getHHdata", HL = "getHLdata", CA = "getCAdata", LT = "getLitterAssessmentOutput")
-wsdl_types <- lapply(wsdl_ops, get_datras_operation_types)
+wsdl_types <- lapply(wsdl_ops, op_datras_operation_types)
 
 wsdl_to_excel_type <- function(wsdl_type) {
   switch(wsdl_type, "string" = "char", "int" = "int",
@@ -106,7 +105,13 @@ for (ti in seq_along(legacy_dict$tables)) {
   tname <- tbl_legacy$name
   stopifnot(tname == tbl_curated$name, length(tbl_legacy$columns) == length(tbl_curated$columns))
 
-  pq <- open_dataset(sprintf(".datras/%s_legacy.parquet", tname))
+  # opus publishes current names only as of 2026-08-29 (there is no
+  # {T}_legacy.parquet any more). This audit works in legacy-name space, so
+  # translate at the read boundary and leave the rest of the loop untouched.
+  pq <- open_dataset(sprintf(".datras/to_https/raw/%s.parquet", tname))
+  xw <- op_datras_rename_crosswalk()
+  xw <- xw[xw$RecordHeader == tname, ]
+  to_current <- setNames(xw$new_name, xw$old_name)
   pq_cols <- names(pq)
   excel_sheet <- excel_sheets[[tname]]
   wsdl_map <- setNames(wsdl_types[[tname]]$type, wsdl_types[[tname]]$field)
@@ -119,9 +124,10 @@ for (ti in seq_along(legacy_dict$tables)) {
 
     # -- 1. real sentinel usage --
     sentinel_n <- 0L
-    if (legacy_name %in% pq_cols) {
+    pq_name <- if (legacy_name %in% names(to_current)) to_current[[legacy_name]] else legacy_name
+    if (pq_name %in% pq_cols) {
       cnt <- tryCatch(
-        pq |> filter(.data[[legacy_name]] %in% SENTINELS) |> summarise(n = n()) |> collect() |> pull(n),
+        pq |> filter(.data[[pq_name]] %in% SENTINELS) |> summarise(n = n()) |> collect() |> pull(n),
         error = function(e) 0L
       )
       if (length(cnt) == 1 && !is.na(cnt)) sentinel_n <- cnt

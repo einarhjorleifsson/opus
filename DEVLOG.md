@@ -1907,3 +1907,63 @@ during an implicit date cast; the new one reaches it by a declared,
 registered sentinel decision. Same number, opposite epistemic status -- and
 the agreement is a useful cross-check that the strip removed exactly the set
 the old cast had destroyed.
+
+---
+
+## 2026-08-29 (continued) -- catalog published and exercised; two things the rebuild had quietly changed
+
+The catalog went live at `.../datras/raw/catalog.duckdb`, byte-identical to
+the local build. It works remotely with no download: `ATTACH '<url>' AS cat
+(READ_ONLY)` streams over HTTP range requests, all four views resolve
+against the published parquet, and a filtered aggregate over HL's 14.4M rows
+returned in 0.3s because the predicate pushes down to parquet row-group
+statistics. `httpfs` auto-installs; there is nothing to set up. dplyr works
+via `tbl(con, I("cat.HH"))` -- the `I()` is needed for the schema-qualified
+name.
+
+The join that makes the sentinel work legible from the outside:
+
+    SELECT h.Tickler, e.label, COUNT(*)
+    FROM cat.HH h LEFT JOIN cat.enum_labels e
+      ON e.table_name='HH' AND e.column_name='Tickler' AND e.code=h.Tickler
+
+returns `-9 | No ticklers are allowed | 117290`. A user who knows nothing
+about any of this reads it correctly.
+
+**Catalog placement settled, and the earlier reasoning was wrong.** It now
+sits *inside* `raw/`, with the exchange tables it describes. The earlier
+argument for the root assumed one catalog spanning every layer; the actual
+intent is that `raw/` is the minimum faithful parquet rendering of the
+exchange data and downstream products may get their own catalog. A catalog
+per layer means each lives beside its own data. Nothing constrains this
+mechanically -- the view URLs are absolute -- so it is a judgement about
+what the file describes.
+
+**Two things surfaced by questions rather than by testing.**
+
+*The rebuild dropped embedded metadata.* The old archive carried `obus:file`
+(1.2 KB) and `obus:fields` (140 KB) in the parquet footer, so a detached
+file described itself and `duckdbfs::open_dataset()` alone could reach it.
+`archive_06_consolidate.R` uses `arrow::write_parquet()` and embeds only
+`ARROW:schema`. Not a decision -- an omission, found when asked whether the
+metadata was reachable without the catalog. Logged in TODO.md.
+
+*The duplication objection did not survive checking.* Against embedding
+per-file dictionaries I argued four copies could drift. But the yaml already
+duplicates shared fields per table, both artifacts are generated from it in
+one run, and a check of all 50 multi-table field names found `type` and
+`units` identical in every case; the 23 that differ do so only in
+`constraints`, `range`, `label` and `values`, all legitimately per-table. The
+argument was wrong and the correction is recorded in AGENTS.md, because it
+matters for any future decision that would duplicate field definitions.
+
+**`arrow` vs DuckDB.** Prompted by the question of why the writer is `arrow`
+at all. `archive_06_consolidate.R:53` collects 14.4M rows into memory purely
+to write them out again; DuckDB's `COPY (SELECT * FROM read_parquet(...)) TO
+...` streams it and takes `KV_METADATA` in the same statement, so the
+embedding above would come free. `arrow` is a hard `Imports` while `duckdb`
+is not declared at all, despite the catalog, the validation wrappers and
+every consumer already being DuckDB. Verified that `KV_METADATA` writes and
+`decode(value)` reads back byte-identically (29 KB test blob). Deferred to a
+fresh session rather than started at the end of a long one; the full
+rationale, caveats and open question are in TODO.md.

@@ -89,6 +89,49 @@ below and `DEVLOG.md`.
       Switching obus over is therefore not just a URL change — it needs a
       decision on those Tier-3 names and on `.id`. Until then the two
       archives coexist and obus consumes the older one.
+- [ ] **Write parquet with DuckDB rather than `arrow`, and embed the
+      dictionary while doing it.** One change, two payoffs, sized for a
+      fresh session:
+
+      *Why.* `archive_06_consolidate.R:53` does
+      `arrow::open_dataset(part_dir) |> collect()` — materialising 14.4M HL
+      rows in memory purely to write them out again. DuckDB streams it:
+      `COPY (SELECT * FROM read_parquet('.datras/parquet/HL/**/*.parquet'))
+      TO '…/raw/HL.parquet' (FORMAT PARQUET, COMPRESSION zstd, KV_METADATA
+      {…})`. No collect, no 14M-row R object.
+
+      *And it closes a regression.* The rebuild silently dropped something
+      the previous archive had: embedded footer metadata. The old root files
+      carry `obus:file` (1.2 KB) and `obus:fields` (140 KB) of per-field
+      descriptions; the new `raw/` files carry only `ARROW:schema`. So a
+      detached parquet is no longer self-describing, and
+      `duckdbfs::open_dataset()` alone can no longer surface any of it —
+      the metadata now lives only in the sidecar catalog. Verified 2026-08-29:
+      `KV_METADATA` writes and `decode(value)` reads back byte-identically,
+      including a 29 KB blob, so there is no capacity or correctness
+      obstacle. Embedding is one clause of the same `COPY`.
+
+      *Dependency shape is backwards today.* `arrow` is a hard `Imports`
+      while `duckdb` is not declared at all, despite the catalog, the
+      validation wrappers and every consumer already being DuckDB.
+
+      *Two caveats.* `arrow` also backs `op_sentinel_audit()` (`R/sentinels.R`)
+      and `op_validate_full()` (`R/validation.R`) — switch those too or
+      `arrow` stays an `Imports` and the win shrinks to the streaming write.
+      And DuckDB will produce a byte-different file (different row-group
+      layout, no `ARROW:schema`), so it needs the same verification pass:
+      `op_validate_meta()` clean on all four, the sentinel guard
+      all-or-nothing per column, and row counts unchanged.
+
+      *Open design question, not settled:* how much to embed. The dictionary
+      duplicates shared fields per table already and they were checked
+      consistent — `type` and `units` are byte-identical across all 50 shared
+      fields, and the 23 that differ do so only in `constraints` (19),
+      `range` (4), `label` (2) and `values` (1), all legitimately per-table.
+      So embedding four copies adds no drift risk. What a footer cannot hold
+      is the collection-level content: 3 `relationships` and a 14-term
+      glossary describe the set, not any one table.
+
 - [ ] **`spec_04_build_catalog.R` still mirrors `op_flag_violations()`
       verbatim** — the third and last `data-raw`/`R` duplication, and the
       most dangerous kind (a behavioural copy carrying a known `.inf` quirk).

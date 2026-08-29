@@ -98,7 +98,7 @@ build_catalog_for_dict <- function(con, dict_path, base_url) {
         if (is.character(max_val) && max_val == ".inf") max_val <- Inf
         dbExecute(
           con, "INSERT INTO range_constraints VALUES (?, ?, ?, ?)",
-          params = list(view_name, col_def$name, as.numeric(min_val), as.numeric(max_val))
+          params = list(view_name, col_def$name, as.character(min_val), as.character(max_val))
         )
       }
 
@@ -119,7 +119,12 @@ build_catalog_for_dict <- function(con, dict_path, base_url) {
 con <- dbConnect(duckdb(dbdir = CATALOG_PATH))
 
 dbExecute(con, "CREATE TABLE enum_labels (table_name VARCHAR, column_name VARCHAR, code VARCHAR, label VARCHAR)")
-dbExecute(con, "CREATE TABLE range_constraints (table_name VARCHAR, column_name VARCHAR, min_value DOUBLE, max_value DOUBLE)")
+# Bounds are VARCHAR, not DOUBLE: RANGE_TYPES covers date and datetime as
+# well as the numeric measures, and a date bound ("2012-04-19") cannot be
+# held in a DOUBLE. It used to be coerced, which silently wrote a NULL lower
+# bound for every DateofCalculation. Consumers cast per the column's own
+# declared type, which the catalog's COMMENT already carries.
+dbExecute(con, "CREATE TABLE range_constraints (table_name VARCHAR, column_name VARCHAR, min_value VARCHAR, max_value VARCHAR)")
 dbExecute(con, "CREATE TABLE field_constraints (table_name VARCHAR, column_name VARCHAR, constraint_type VARCHAR)")
 
 # Current names only. The legacy-named dictionary is still shipped and still
@@ -130,4 +135,4 @@ build_catalog_for_dict(con, "inst/DATRAS-data-dict.yaml", BASE_URL)
 dbDisconnect(con, shutdown = TRUE)
 
 message("")
-message("Done. ", CATALOG_PATH, " built from both yaml dictionaries.")
+message("Done. ", CATALOG_PATH, " built from inst/DATRAS-data-dict.yaml (current names only).")

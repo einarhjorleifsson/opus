@@ -1862,3 +1862,48 @@ that metadata is wrong.
 
 `.datras/` tidied: superseded artifacts moved to `.datras/retired/` with a
 README, not deleted. `devtools::check()`: 0 errors, 0 warnings, 0 notes.
+
+---
+
+## 2026-08-29 (continued) -- archive published; catalog built; a date range that could not fit a DOUBLE
+
+The rebuilt parquet went live at
+`https://heima.hafro.is/~einarhj/datras/raw/{HH,HL,CA,LT}.parquet`,
+byte-identical to the locally validated files (sizes match exactly, and a
+remote read confirms the same row counts, `DATE`-typed `DateofCalculation`
+and no `INT64` columns). `op_validate_meta()` takes a local path rather than
+a URL, so it validated the staged copies; identical bytes make that the same
+check.
+
+With the parquet live, `spec_04_build_catalog.R` could run -- the ordering
+constraint is real and it held. All four views resolve against the published
+files, and `enum_labels` carries Tickler's 32 and SpeciesCategory's 56 codes,
+which is the entire reason those two stayed enums stored as text. The five
+`-9` labels a user needs to read the kept sentinels (`No ticklers are
+allowed`, `Invalid hauls`, `No plus group`) are all present.
+
+**The `date` retype surfaced a latent catalog bug.** `range_constraints` was
+declared `min_value DOUBLE, max_value DOUBLE`, but `RANGE_TYPES` has always
+included `date` and `datetime`. Once `DateofCalculation` became a `date`, its
+bound `'2012-04-19'` hit `as.numeric()` and silently became `NULL` for all
+four tables -- four "NAs introduced by coercion" warnings and a lost
+constraint. Bounds are now `VARCHAR`, so numeric and date ranges both survive
+and consumers cast per the column's declared type. Nothing consumed the
+catalog yet (it had never been published), so the schema change costs
+nothing.
+
+**Two archives are now live, and obus reads the older one.** The root
+`…/datras/{T}.parquet` files remain in place and are a genuinely different
+artifact from `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against
+14,423,771, 30 columns against 29, and it carries obus's Tier-3 `aphia`/`sex`
+names plus an `.id` column the new archive has no equivalent for. Pointing
+obus at `raw/` is therefore not a URL change -- it needs a decision on the
+Tier-3 naming layer and on `.id`. Recorded in TODO.md rather than resolved
+here.
+
+One incidental confirmation: both archives report 1,050,496 nulls in HL's
+`DateofCalculation`. The old file reached that by silently coercing `-9`
+during an implicit date cast; the new one reaches it by a declared,
+registered sentinel decision. Same number, opposite epistemic status -- and
+the agreement is a useful cross-check that the strip removed exactly the set
+the old cast had destroyed.

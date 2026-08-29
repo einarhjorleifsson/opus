@@ -67,11 +67,26 @@ below and `DEVLOG.md`.
 
 ## Immediate: next
 
-- [ ] **Publish** `.datras/to_https/raw/*.parquet` + `catalog.duckdb` to the
-      server. Note the ordering constraint from `spec_04_build_catalog.R`:
-      the parquet must be live at the target URL *before* the catalog is
-      built, because DuckDB's `COMMENT ON COLUMN` resolves the view's real
-      remote schema eagerly.
+- [x] ~~**Publish** the parquet~~ — live at
+      `https://heima.hafro.is/~einarhj/datras/raw/{HH,HL,CA,LT}.parquet`,
+      byte-identical to the validated local files. Catalog built afterwards
+      (the ordering constraint held: the parquet had to be live first,
+      because DuckDB's `COMMENT ON COLUMN` resolves the view's real remote
+      schema eagerly). All four catalog views resolve against the published
+      files, and `enum_labels` carries Tickler's 32 and SpeciesCategory's 56
+      codes — including the five `-9` labels that make the kept sentinels
+      interpretable.
+- [ ] **Publish `catalog.duckdb`** — built at `.datras/to_https/catalog.duckdb`,
+      not yet uploaded (404 on the server). It belongs beside `raw/`, not
+      inside it.
+- [ ] **The old archive is still live at the server root and obus still
+      reads it.** `…/datras/{T}.parquet` remains a different artifact from
+      `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against 14,423,771,
+      30 columns against 29, and it carries obus's Tier-3 `aphia`/`sex`
+      names plus an `.id` column the new archive has no equivalent for.
+      Switching obus over is therefore not just a URL change — it needs a
+      decision on those Tier-3 names and on `.id`. Until then the two
+      archives coexist and obus consumes the older one.
 - [ ] **`spec_04_build_catalog.R` still mirrors `op_flag_violations()`
       verbatim** — the third and last `data-raw`/`R` duplication, and the
       most dangerous kind (a behavioural copy carrying a known `.inf` quirk).

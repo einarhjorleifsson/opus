@@ -90,6 +90,21 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       same meaning, and `GearEx` uses both inside LT (19,296 empty vs 26,856
       `-9`). Nothing in ICES's documentation says which to expect where.
 
+- [ ] **The CSV download route is paused — revisit only if ICES catches up.**
+      `DATRASDownloadAPI.aspx` is dramatically faster (all of NS-IBTS in 86s
+      against hours by XML, ~128x smaller on the wire for CA) and
+      `data-raw/archive_02b_download_csv.R` is written and verified — on DWS the
+      CSV-derived and XML-derived partitions matched exactly, 72 x 69, same
+      names, order, classes and values. It is paused anyway, and not because it
+      fails: **the endpoint is in flux and on the evidence is a step backwards
+      from the ASMX service.** Its HH export is malformed (#63); it names one
+      concept four ways where the XML is consistent (#64); it serves no LT or FL
+      and misses CODS-Q4; it ships no metadata at all; its type source is wrong
+      about `Year`/`SpecCode` and silent about eight of its own columns; and it
+      reports failure as HTTP 200. Building a second archive on that buys
+      download speed at the cost of correctness that already holds. The archive
+      stays XML-derived. Revisit when #63 and #64 close and LT is served.
+
 - [ ] **Track the two filed icesDatras issues** —
       [#63](https://github.com/ices-tools-prod/icesDatras/issues/63) (HH CSV has
       a 72-field header over 70-field rows, so `DateofCalculation` is lost and

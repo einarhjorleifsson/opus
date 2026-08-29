@@ -1,5 +1,33 @@
 #' Build the Tier 1 parquet partitions from ICES's CSV download API
 #'
+#' ==========================================================================
+#' PAUSED, 2026-08-29. NOT part of the pipeline. The archive is built from XML.
+#'
+#' Kept because it works and because the investigation behind it is worth
+#' having: it was verified end-to-end on DWS, where the CSV-derived and
+#' XML-derived partitions came out 72 x 69 each with identical column names,
+#' order, classes and values. The reason to stop is not that it fails.
+#'
+#' The reason is that this endpoint is in flux, and on the evidence it is a step
+#' backwards from the ASMX service rather than forwards:
+#'
+#'   - Its HH export is malformed and loses a column (icesDatras#63).
+#'   - It names one concept four ways across HL and CA, where the XML service is
+#'     consistent -- a regression, not a legacy quirk (icesDatras#64).
+#'   - It does not serve LT or FL at all, and misses CODS-Q4.
+#'   - It ships no metadata: one file, always DATRASDataTable.csv, no schema, no
+#'     provenance.
+#'   - Its type source, getDatrasFieldList(), is wrong about Year and SpecCode
+#'     (registry: datras_field_list_type_divergence) and has no entry for eight
+#'     of the columns it serves.
+#'   - It signals failure with HTTP 200 and a valid-looking zip.
+#'
+#' Building a second archive on a moving, lossier foundation buys download speed
+#' at the cost of correctness that already holds. Revisit when #63 and #64 are
+#' resolved and LT is served -- the code below should still work, and the guards
+#' will fail loudly if the shape has changed underneath it.
+#' ==========================================================================
+#'
 #' An alternative to archive_02_download.R + archive_04_parse_phase2.R for the
 #' three record types ICES serves as CSV. Same partition layout, same four
 #' conversion steps, same current names -- but written to a SEPARATE tree, so

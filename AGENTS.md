@@ -151,7 +151,21 @@ opus unifies these four sources into a single YAML specification, making inconsi
 
 ## Implementation
 
-**User-facing exported functions** (34 total; the rendered index is `articles/reference.qmd`, generated from `man/*.Rd` by `data-raw/build_reference.R`):
+**User-facing exported functions** (50 total; the rendered index is `articles/reference.qmd`, generated from `man/*.Rd` by `data-raw/build_reference.R`):
+
+*Reading the published archive and the dictionary embedded in it* (`R/archive.R`) — every one of these is a parquet **footer** read, so against the hosted archive each costs one HTTP range request (~0.1s), not a download:
+- `op_archive(path)` — resolve the archive root. An opus archive is a directory named `raw` holding the four exchange tables, local or hosted; anything else is an error. The narrowness is what lets every accessor below assume the five `datras:` keys are present.
+- `op_con(table, path)` — a lazy `tbl` over one raw table
+- `op_dict(table)` — the dictionary, one row per column, carrying **three type views**: `type` (opus's curated semantic type), `parquet_type`/`logical_type` (what is physically stored), `r_type` (what a reader gets back). They are allowed to disagree; making that visible is the point (see TODO.md's open decision).
+- `op_crosswalk(table)` / `op_rename(d, table, to)` — legacy ↔ current names **with no external list**: the mapping is written into the footer at build time and read back from the same file as the data, so it cannot describe a different vintage than what you loaded. `op_crosswalk()` asserts it is 1:1 and total rather than trusting it.
+- `op_enums(table, column)` — code → label for enum columns
+- `op_definitions(table)` / `op_define(d, table, name)` — the dictionary's named filters and metrics, each carrying code already rendered for R and DuckDB, so one authored rule runs in both engines
+- `op_relationships(table)` — the resolved join `by =` and `conflicts` (the 8-field composite haul key)
+- `op_coverage(table)` / `op_surveys()` — what the archive holds; the survey list without a live ICES call
+- `op_sentinel_meta(table)` — the strip/keep policy actually applied to that file
+- `op_provenance(table)` / `op_known_issues(table)` — build facts (including `dict_sha256`, which is how a consumer tells whether its installed opus is the opus that built the file) and the issues naming that table
+- `op_keys(table)` — which metadata keys the footer carries, and their sizes
+- `op_catalog(path)` — rebuilds the views, comments and `enum_labels`/`range_constraints`/`field_constraints` lookups in an in-memory DuckDB, from the footers
 
 *Specification validation, parquet exploration, and drafting* (`R/validation.R` -- all of them; despite the name, `op_describe_parquet()`/`op_draft_from_parquet()` live here too, not in a separate file):
 - `op_validate_spec(dict_path, json)` — Check YAML spec conformation (uses data-dict CLI); `json=TRUE` also returns the structured report (`$report`)
@@ -248,7 +262,7 @@ Full construction history, reorg, and bug fixes for both pipelines are in `DEVLO
 
 **Ordering in the conversion is load-bearing, and getting it wrong is silent.** Cast → rename → strip sentinels → cast to spec. The WSDL type map is keyed by each operation's own (legacy) field names, so casting must precede renaming. The sentinel registry is keyed by current names, so the strip must follow it. And a `Date` column cannot hold `-9`, so the semantic cast must come last — converting `DateofCalculation` while sentinels are present turns every one into a null, a conversion that is individually correct, collectively destructive, and reports nothing. `op_cast_to_spec()` refuses to convert anything it cannot parse rather than producing `NA`, as the backstop.
 
-**An `enum`'s data must be string-like, and retyping to a number deletes its labels.** data-dict's own rule (`site/validation.md`, "Enum membership") makes an integer-stored `enum` a type mismatch (M01); `S07` separately forbids a `values:` map on a `number(*)` column. So each such field is a judgement, not a rule: `Quarter`/`Month` became `number(ordinal)` (their labels restate the number), while `Tickler`/`SpeciesCategory` stay enums stored as **text** — their 32 and 56 codes carry meaning, and the labels reach users through the catalog's `enum_labels` table. "Make the validator pass" is not the goal; which side moves is a question about what the specification is for.
+**An `enum`'s data must be string-like, and retyping to a number deletes its labels.** data-dict's own rule (`site/validation.md`, "Enum membership") makes an integer-stored `enum` a type mismatch (M01); `S07` separately forbids a `values:` map on a `number(*)` column. So each such field is a judgement, not a rule: `Quarter`/`Month` became `number(ordinal)` (their labels restate the number), while `Tickler`/`SpeciesCategory` stay enums stored as **text** — their 32 and 56 codes carry meaning, and the labels reach users through `op_enums()` (or `op_catalog()`'s `enum_labels` table), read from the dictionary embedded in the file itself. "Make the validator pass" is not the goal; which side moves is a question about what the specification is for.
 
 **`op_validate_meta()` against the published archive is the gate.** All four tables validate clean (194 checks, 0 failures). Treat any regression there as a release blocker rather than a note — it is the only automated check that the dictionary and the data still describe each other.
 

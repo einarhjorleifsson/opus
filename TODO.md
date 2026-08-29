@@ -1,252 +1,151 @@
 # opus — TODO
 
-**Status:** v0.2.0 complete. Tier 1 (HH, HL, CA, LT) fully curated and documented. Ready for forward work: Tier 2 + imbus coordination.
+**Status:** Tier 1 (HH, HL, CA, LT) curated, validated and published. The
+archive at `…/datras/raw/` is self-describing: each parquet carries its own
+dictionary in its footer, read by `R/archive.R`'s `op_*` accessors. Forward
+work is Tier 2 and imbus coordination.
 
-*Detailed dated development history lives in `DEVLOG.md`, not here. This file tracks only current backlog state.*
-
-**Latest:** 2026-08-28 — obus's consistency check surfaced a
-WSDL-vs-curated type divergence and two other opus-side items; see
-below and `DEVLOG.md`.
-
----
-
-## v0.2.0 — Complete
-
-✓ **Bootstrap workflow** — Three-phase bootstrap (WSDL seed → parquet enrich → curate) with supporting R functions
-✓ **Tier 1 (HH, HL, CA, LT)** — Curated YAML specs + descriptive/strict YAML variants + known-issues registry
-✓ **R package** — 22 exported functions (validation, vocabulary, field name utilities)
-✓ **Documentation** — standalone Quarto site (`_quarto.yml`, `index.qmd`, `articles/`) replacing pkgdown/vignettes entirely, rendered to `docs/` for GitHub Pages; ICES issue report is now `articles/issues.qmd` (see DEVLOG.md)
-~~Test data — Parquet samples for each Tier 1 table~~ — dropped 2026-08-17, see DEVLOG.md
-✓ **Git history** — Clean three-phase commits with milestone tags
-✓ **Package build** — devtools::check() passing; .rbuildignore optimized
-✓ **Zero R-package dependency on `icesDatras`/`icesVocab`** (2026-08-06) — direct, cross-verified web-service calls instead (`op_datras_field_list()` in `R/field_names.R`, direct HTTP in `R/vocab.R`)
+*This file tracks outstanding work only. Dated development history — what was
+done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md`.*
 
 ---
 
-## Immediate: Tier 1 Validation + Known-Issues Escalation
+## Immediate
 
-- [x] ~~**Known-issues registry refinement:**~~ — done 2026-08-18, see DEVLOG.md
-  - [x] ~~Restructure for two-level escalation: field-level gaps vs. systemic patterns~~ — done 2026-08-17: added a `scope` field (`field-level`/`systemic`/`opus-internal`) to all 8 `known_violations` entries, designed around today's own findings (`icesVocab_gaps`/`datras_field_list_type_divergence` are the systemic examples) rather than guessed at in the abstract.
-  - [x] ~~Inventory findings from 2026-07-29/08-02 sessions (5 original D-level fields)~~ — done 2026-08-18: 3 of 5 (AgeSource, AgePreparationMethod, LTSRC) turned out to be false leads on re-verification, not real issues; `icesVocab_gaps`'s own GearExceptions example was also stale (same name-key-resolution artifact). Corrected registry: replaced with `icesvocab_key_resolution_hazard` (systemic) + `param_vocab_incomplete` (the one real gap that held up). See DEVLOG.md.
-  - [x] ~~Prioritize escalation candidates for imbus feedback~~ — done 2026-08-18: see DEVLOG.md for the full ready-to-file / already-filed / needs-diagnosis / excluded breakdown.
-
-- [ ] **imbus/ICES liaison (WP2 handoff):**
-  - [ ] Post opus's confirmed issues (16, in `articles/issues.qmd`) to ICES's own tracker, `ices-tools-dev/IMBUS_FISHMAP#29` — the venue question is resolved (see DEVLOG.md), but posting still needs the user's explicit go-ahead each time (it's a public ICES-side ticket, not opus's own repo), and format (one comment per issue vs. a consolidated summary) is still an open choice.
-  - [ ] Clarify opus's role vs. imbus's data governance work
-  - [ ] Establish timeline for ICES feedback loop (e.g., HaulValidity vocab completion)
-
-- [ ] **QC workflow decision:**
-  - [ ] Domain-expert review of borderline constraints (range calls, enum membership)
-  - [ ] Spot-check Quarto renders for accuracy
-  - [ ] Validate enum audit results (enum_field_inventory.csv from 2026-08-02)
-
-## Done — 2026-08-29 conversion pipeline
-
-✓ **Conversion is `R/` code, called by `data-raw/`** — `op_cast_wsdl_types()`,
-  `op_rename_to_new()`, `op_strip_sentinels()`, `op_cast_to_spec()`, plus the
-  service readers and sentinel accessors. 34 exports.
-✓ **All three `data-raw`/`R` duplications resolved** —
-  `spec_00_operation_types.R` and `archive_00_wsdl_types.R` deleted,
-  `archive_03`'s `datras_get_field_list()` dropped; callers now use the
-  exported functions (Working Principle 7b).
-✓ **Both dictionaries retyped and validating** — `Quarter`/`Month` →
-  `number(ordinal)` with ranges; `DateofCalculation` → `date`;
-  `Tickler`/`SpeciesCategory` stay enums stored as text.
-✓ **Sentinel policy encoded** in `inst/DATRAS-known-issues.yaml`
-  (`sentinels: resolution`), label-driven with 3 documented keep entries.
-✓ **Archive rebuilt from `.datras/xml/`**, consolidated to
-  `.datras/to_https/raw/{T}.parquet` — current names only, no sentinels except
-  the documented keeps, `DateofCalculation` a real `DATE`, no `INT64`.
-✓ **`op_validate_meta()` clean on all four tables** (was HH 3, HL 3, CA 2, LT 5).
-✓ **Site**: `articles/approach.qmd` written; `articles/reference.qmd` generated
-  from `man/*.Rd` by `data-raw/build_reference.R`; dictionary snapshot
-  regenerated — and it now actually profiles the data, which it never did
-  before (`op_render_spec()`'s `data_dir` injects a `source:`).
-✓ **`.datras/` tidied** — superseded artifacts moved to `.datras/retired/`
-  (documented in its own README), not deleted.
-
-## Immediate: next
-
-- [x] ~~**Publish** the parquet~~ — live at
-      `https://heima.hafro.is/~einarhj/datras/raw/{HH,HL,CA,LT}.parquet`,
-      byte-identical to the validated local files. Catalog built afterwards
-      (the ordering constraint held: the parquet had to be live first,
-      because DuckDB's `COMMENT ON COLUMN` resolves the view's real remote
-      schema eagerly). All four catalog views resolve against the published
-      files, and `enum_labels` carries Tickler's 32 and SpeciesCategory's 56
-      codes — including the five `-9` labels that make the kept sentinels
-      interpretable.
-- [x] ~~**Delete `catalog.duckdb` from the server**~~ — done 2026-08-29.
-      `…/datras/raw/catalog.duckdb` now 404s. Superseded by the dictionary
-      embedded in each parquet footer; `op_catalog()` rebuilds everything it
-      served, in memory, from those footers in ~1.2s (verified row-for-row
-      against it before removal). The builder `spec_04_build_catalog.R` is
-      deleted.
-- [x] ~~**Publish the metadata-carrying archive**~~ — done 2026-08-29. All four
-      `…/datras/raw/{HH,HL,CA,LT}.parquet` are live and byte-identical to the
-      staged files, each carrying its five `datras:` keys and no
-      `ARROW:schema`. Read over https in ~0.14s per footer. The rendered
-      dictionary is beside them at `…/datras/raw/datras-data-dict.html`.
-      Confirmed `dict_sha256` agrees across source YAML, installed opus and
-      the published files (`0a70ca61…`) — the skew guard works.
-- [ ] **The old archive is still live at the server root and obus still
-      reads it.** `…/datras/{T}.parquet` remains a different artifact from
+- [ ] **The old archive is still live at the server root, and obus reads it.**
+      `…/datras/{T}.parquet` is a different artifact from
       `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against 14,423,771,
-      30 columns against 29, and it carries obus's Tier-3 `aphia`/`sex`
-      names plus an `.id` column the new archive has no equivalent for.
-      Switching obus over is therefore not just a URL change — it needs a
-      decision on those Tier-3 names and on `.id`. Until then the two
+      30 columns against 29, and it carries obus's Tier-3 `aphia`/`sex` names
+      plus an `.id` column the current archive has no equivalent for. Switching
+      obus over is not just a URL change — it needs a decision on those Tier-3
+      names and on `.id`, and that decision is obus's. Until then the two
       archives coexist and obus consumes the older one.
-- [x] ~~**Embed the dictionary in the parquet footer**~~ — done 2026-08-29.
-      `data-raw/archive_06_metadata.R` builds five `datras:` keys per table
-      (`dict`, `provenance`, `sentinels`, `coverage`, `known_issues`) from
-      `data-dict export-spec`, and `archive_06_consolidate.R` writes them in
-      the same call as the data, so no staged file exists without its
-      dictionary. Read side is `R/archive.R` (16 exported `op_*` functions).
 
-      *Writer: `nanoparquet`, not DuckDB and not `arrow`.* Measured on LT
-      with a 120 KB payload: `arrow` serializes the payload a second time
-      inside `ARROW:schema` (284 KB of footer for 120 KB of content);
-      `nanoparquet` with `write_arrow_metadata = FALSE` writes 120 KB and
-      drops `ARROW:schema` entirely, which parquet does not require and
-      DuckDB never reads. DuckDB's `COPY … KV_METADATA` also works and would
-      additionally solve the `collect()` materialisation, but it loses
-      `DateofCalculation`'s DATE logical type, so it was not taken. The
-      14.4M-row `collect()` in `archive_06_consolidate.R:53` is therefore
-      still there — worth revisiting separately, on its own merits.
+- [ ] **`.datras/retired/` (656M) can now be deleted.** It was kept for
+      before/after comparison against the rebuilt data; that data is published,
+      so the comparison window has closed.
 
-      *Payload sizes:* HH 86.8 KB, LT 71.0 KB, CA 65.4 KB, HL 59.4 KB.
-      Uncompressed and JSON on purpose: DuckDB has no gunzip scalar and
-      cannot parse YAML, and the point is that
-      `SELECT decode(value) FROM parquet_kv_metadata(url)` works with
-      nothing but a DuckDB client.
+- [ ] **`archive_06_consolidate.R` still materialises the whole table in
+      memory** (`arrow::open_dataset(part_dir) |> collect()`, 14.4M rows for
+      HL) purely to write it out again. DuckDB's `COPY (SELECT * FROM
+      read_parquet(...)) TO ... (FORMAT parquet, KV_METADATA {...})` would
+      stream it and embed the metadata in the same statement. Not taken when the
+      metadata work landed because DuckDB drops `DateofCalculation`'s DATE
+      logical type, which nanoparquet preserves — so this needs either a fix for
+      that or a deliberate trade. Worth revisiting on its own merits.
 
-      *The open design question resolved itself.* Per-table duplication of
-      shared fields is a non-issue as noted; the collection-level content
-      (3 `relationships`, 14-term glossary) is embedded in every file rather
-      than omitted — it is small, and a detached file needs its join keys.
+## Open decision: which type system is the public contract?
 
-      *One thing to know:* `nanoparquet::infer_parquet_schema()` is not a
-      faithful predictor of `write_parquet()` — it reports DOUBLE for a Date
-      column that is actually written as INT32/DATE. The first build shipped
-      a wrong `parquet_type` for `DateofCalculation` because of it.
-      `dm_written_schema()` now learns the schema from a real one-row write
-      and `dm_assert_schema()` re-checks every finished file against its own
-      footer, failing the build on disagreement.
+- [ ] opus answers "what type is this field" two ways, and consumers hit both.
+      The archive is built from **WSDL physical types**
+      (`data-raw/archive_00_wsdl_types.R`, which deliberately never loads the
+      curated spec); `op_field_spec()` reports the **curated semantic types**.
+      obus types its live-XML path from the second and reads an archive built
+      from the first, so the same column arrives as a different R class
+      depending on source.
 
-- [x] ~~**`spec_04_build_catalog.R` still mirrors `op_flag_violations()`
-      verbatim**~~ — resolved by deleting the script (2026-08-29). The
-      catalog is now derived by `op_catalog()` from the embedded dictionary,
-      which `data-dict export-spec` resolves, so there is no second yaml
-      field-walk to keep in step. The `.inf` quirk went with it: export-spec
-      resolves an open bound to null rather than to `Inf`.
+      **The divergence is now a single uniform shape** (measured 2026-08-29
+      against the published archive, via the embedded `type` vs `r_type`):
+      **`number(quantity)` in the YAML, `integer` in the archive — 30 columns**,
+      among them `SweepLength`, `LengthClass`, `NumberAtLength`, `Age`,
+      `SubsampledNumber`, `SubsampleWeight`, `SpeciesCategoryWeight`,
+      `BottomDepth`, `HaulDuration`, `Distance`. Nothing else disagrees.
+
+      The two earlier cases are gone: `Year` is INT32 now, not INT64, and
+      `DateofCalculation` is typed `date` in the YAML and stored as a real
+      parquet DATE. So this is one question, not a scattered set.
+
+      The split is defensible in principle — physical and semantic types answer
+      different questions — and the embedded dictionary now makes it *visible*
+      rather than silent, since every column carries `type`, `parquet_type` and
+      `r_type` side by side. What is still missing is a statement of which one
+      downstream should treat as authoritative. A documented answer may be
+      enough; neither pipeline necessarily changes.
+
+## ICES-side reporting and the known-issues registry
+
 - [ ] **File the `-9` overloading with ICES** — a new `systemic`
       `known_violations` entry plus an `articles/issues.qmd` section for the
-      `IMBUS_FISHMAP#29` batch. Worked example: `Tickler` (a real code)
-      against `Turbidity` (never recorded), indistinguishable by value or by
-      frequency and separable only by consulting a vocabulary.
-- [ ] Two smaller ICES-side items, both handled locally for now by
-      `op_wsdl_type_overrides()`: `Valid_Aphia` declared `string` while
-      holding numeric AphiaIDs, and `DateofCalculation` declared `string` by
-      LT's operation but `int` by HH/HL/CA. The latter is distinct from the
-      existing `dateofcalculation_cross_product_inconsistency` entry, which
-      is about *values* disagreeing between products, not types.
-- [ ] `.datras/retired/` (656M) can be deleted once the rebuilt data is
-      published — that is the last point where the old files are useful for a
-      before/after comparison.
+      `IMBUS_FISHMAP#29` batch. Worked example: `Tickler` (a documented real
+      code, 78% of HH rows) against `Turbidity` (never recorded, 99.6%),
+      indistinguishable by value or by frequency and separable only by
+      consulting a vocabulary.
 
-## Raised by obus, 2026-08-28 — resolved 2026-08-29
+- [ ] **Two smaller ICES-side items**, both handled locally for now by
+      `op_wsdl_type_overrides()`: `Valid_Aphia` declared `string` while holding
+      numeric AphiaIDs, and `DateofCalculation` declared `string` by LT's
+      operation but `int` by HH/HL/CA. The latter is distinct from the existing
+      `dateofcalculation_cross_product_inconsistency` entry, which is about
+      *values* disagreeing between products, not types.
 
-Found by running obus's parquet-vs-xml consistency check against real
-data (NS-IBTS 2022 Q1). Kept here for the reasoning; the items below are
-answered unless marked otherwise.
+- [ ] **Candidate registry entry: NS-IBTS 2022 Q1 HL is exactly 32767 rows
+      (2^15 − 1).** Both the live ICES XML response and the archive return that
+      identical count, while neighbouring quarters of the same survey run
+      44k–52k (2021 Q1: 51,151; 2023 Q1: 45,752). Scanned the whole HL archive:
+      it is the only one of 971 survey/year/quarter groups on that value, and
+      115 groups exceed it (max 54,712), so there is no global cap — which makes
+      a signed-16-bit truncation specific to that submission the likeliest
+      reading, though unproven. Worth a targeted check against ICES; if it holds
+      up it is a registry entry and an ICES-side report, not something to work
+      around.
 
-**Resolved.** The "two unreconciled type systems" question is settled by
-making the conversion itself an `R/` API: the archive and any live-XML
-consumer now call the *same four functions*, so the question of which type
-system wins no longer arises per-consumer — it is answered once, in
-`op_cast_wsdl_types()` (physical, from the WSDL) and `op_cast_to_spec()`
-(semantic, only where the wire cannot express it). The missing sentinel
-accessor is `op_sentinels()`. The `-9` truncation anomaly below is still
-open and still worth reporting to ICES.
+- [ ] **No accessor for the registry's `known_violations` section.**
+      `R/sentinels.R` reads the `sentinels:` half (`op_sentinels()`,
+      `op_sentinel_policy()`, `op_sentinel_audit()`), and `op_known_issues()`
+      returns the per-table slice embedded in each parquet footer — but nothing
+      reads `known_violations` from the shipped YAML directly. That is the gap
+      for any consumer working outside the archive: a `flag_known_issues()`-style
+      feature, or validating a submission before it reaches ICES.
 
-<details>
-<summary>Original write-up, kept for the evidence</summary>
+## Dictionary curation
 
+- [ ] **Re-verify the field prose against the archive whenever it is rebuilt.**
+      All ~100 statistics in the field `details` were recomputed on 2026-08-29
+      after being found stale against an older, smaller archive; they now
+      distinguish the submitted view (`-9` present) from the published one
+      (stripped to null). They will drift again on the next rebuild. The audit
+      that catches it: check every `A/B rows (P%)` figure for internal
+      consistency, and every denominator against the real row counts.
 
-- [ ] **Two type systems, unreconciled — which one is the public
-      contract?** opus produces two different, independently-maintained
-      answers to "what type is this field":
-        1. **WSDL physical types** (string/int/decimal), which
-           `data-raw/archive_00_wsdl_types.R` applies when building the
-           parquet archive — deliberately so, and documented as such:
-           "The curated spec (`inst/DATRAS-data-dict.yaml`) plays no
-           role here and is never loaded by this file or its callers."
-        2. **Curated semantic types** (`number(quantity)`,
-           `number(ordinal)`, `enum`) in the YAML, which
-           `op_field_spec()` reports.
-      Consumers hit both. obus types its live-XML path from (2) and
-      reads the archive built from (1), so the same column arrives as a
-      different R class depending on source: 7 mismatched columns in HL,
-      6 in CA. Measured, not inferred — physical parquet schema vs.
-      `op_field_spec()`:
-        - `SweepLength`/`LengthClass`/`SubsampleWeight`/
-          `SpeciesCategoryWeight`/`SubsampledNumber`/`NumberAtLength`/
-          `Age` — **INT32** in the archive (R integer), but
-          `number(quantity)` in the YAML (R numeric).
-        - `Year` — **INT64** in the archive, so R renders it numeric
-          (no native 64-bit int); `number(ordinal)` in the YAML → R
-          integer. Arguably INT64 is overkill for a year.
-        - `DateofCalculation` — INT32 carrying a parquet **DATE**
-          logical type (R `Date`), but `number(ordinal)` in the YAML.
-      The split is defensible in principle — physical vs. semantic
-      answer different questions — but nothing currently states which
-      one downstream packages should treat as authoritative, and the
-      WSDL reports a plain `int` for all of the above, so it doesn't
-      explain the `Year`/`DateofCalculation` choices on its own. A
-      decision here unblocks obus; a documented statement of the split
-      might be enough, without changing either pipeline.
+- [ ] **`contract.md` §4's AreaType guard cannot be authored as written.** It
+      says to filter CA to `AreaType == "H"` before joining to HH, but AreaType
+      is ICES `TS_AreaType` (`'0'` statistical rectangles, `'2'` NS roundfish
+      areas, `'13'` ICES divisions …) and has **no `'H'` code** — the filter
+      would match zero rows. The underlying concern is real (CA rows attributed
+      to an area rather than a haul are a coarser grain than HH), and CA's
+      `linkable_to_hh` definition now names that set correctly. Decide whether
+      §4 gets rewritten against the real code set, or retired.
 
-- [ ] **`DateofCalculation` is typed `number(ordinal)` but is a date.**
-      The archive already stores it as a real parquet DATE. opus's own
-      `op_datras_field_list()` docs record it as a field ICES documents
-      under no name at all (discrepancies #5 and #6), so there's no ICES
-      type to defer to — this is opus's call. `number(ordinal)` looks
-      like the wrong answer regardless of how the item above resolves.
+## imbus / ICES liaison (WP2 handoff)
 
-- [ ] **No R accessor for the known-issues registry.** opus ships
-      `inst/DATRAS-known-issues.yaml` (including the `sentinels:`
-      entries) but exports no function that reads it — confirmed by
-      grepping all of `R/`, zero references to the file. obus's
-      sentinel-to-`NA` work is blocked on this: obus's own `AGENTS.md`
-      forbids it from parsing opus's YAMLs directly ("reads opus's
-      shipped YAMLs through this one function and never parses them
-      itself"), so it needs an accessor here, the way `op_field_spec()`
-      was added for the data dict. Same blocker applies to any
-      downstream `flag_known_issues()`-style feature.
+- [ ] Post opus's confirmed issues (16, in `articles/issues.qmd`) to ICES's own
+      tracker, `ices-tools-dev/IMBUS_FISHMAP#29`. The venue question is settled
+      (see `DEVLOG.md`), but posting needs explicit go-ahead each time — it is a
+      public ICES-side ticket, not opus's own repo — and the format (one comment
+      per issue vs. a consolidated summary) is still an open choice.
+- [ ] Clarify opus's role vs. imbus's data governance work.
+- [ ] Establish a timeline for the ICES feedback loop (e.g. HaulValidity vocab
+      completion).
 
-- [ ] **Candidate known-issues entry: NS-IBTS 2022 Q1 HL is exactly
-      32767 rows (2^15 - 1).** Both the live ICES XML response and the
-      parquet archive return that identical count, while neighbouring
-      quarters of the same survey run 44k-52k (2021 Q1: 51151;
-      2023 Q1: 45752). Scanned the whole HL archive: it is the only one
-      of 971 survey/year/quarter groups on that value, and 115 groups
-      exceed it (max 54712), so there is no global cap — which makes a
-      signed-16-bit truncation specific to that submission the most
-      likely reading, though unproven. Worth a targeted check against
-      ICES; if it holds up it's a registry entry, and an ICES-side
-      report rather than anything to work around.
+## QC workflow
 
-</details>
+- [ ] Domain-expert review of borderline constraints (range calls, enum
+      membership).
+- [ ] Spot-check Quarto renders for accuracy.
+- [ ] Validate the enum audit results (`data-raw/enum_field_inventory.csv`).
 
 ## Forward: Tier 2 (FL, CPUEL, CPUEA, IDX)
 
-- [ ] Assess WSDL coverage (complete vs. gaps)
-- [ ] Decide: seed from WSDL or direct hand-author (depends on confidence in source)
-- [ ] Follow Tier 1 workflow if seeding (bootstrap + curate + audit)
-- [ ] Test parquet availability for validation data
+- [ ] Assess WSDL coverage (complete vs. gaps).
+- [ ] Decide: seed from WSDL, or hand-author directly — depends on confidence in
+      the source.
+- [ ] Follow the Tier 1 workflow if seeding (bootstrap → curate → audit).
+- [ ] Test parquet availability for validation data.
 
 ## Future: Tier 3 (obus contracts)
 
-- [ ] Hand-authored specs (no ICES source); deferred until Tier 1+2 stable
-- [ ] Coordinate with obus team on contract-specific constraints and enums
+- [ ] Hand-authored specs, no ICES source; deferred until Tier 1 + 2 are stable.
+- [ ] Coordinate with obus on contract-specific constraints and enums. The
+      `aphia`/`sex`/`age` layer in obus's `.dr_obus_rename` is the candidate
+      seed, and the `.id` composite key is already authored here as the
+      HL/CA/LT → HH relationships.

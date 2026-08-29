@@ -125,7 +125,7 @@ opus consolidates metadata from four ICES sources:
 2. **getDatrasFieldList API**
    - Source: `https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList`
    - Provides: Field name mappings (old → new), descriptions
-   - Authority: Secondary — derived from WSDL and internal DATRAS schema, and confirmed unreliable (6 confirmed errors: LT coverage gap, wrong LT renames, a phantom field, an unverifiable CA rename, missing entries, a data-duplication miss — filed with ICES, see `data-raw/ICES_ISSUE_REPORT.md`; full findings in `DEVLOG.md` 2026-08-06)
+   - Authority: Secondary — derived from WSDL and internal DATRAS schema, and confirmed unreliable (6 confirmed errors: LT coverage gap, wrong LT renames, a phantom field, an unverifiable CA rename, missing entries, a data-duplication miss — filed with ICES, see `articles/issues.qmd`; full findings in `DEVLOG.md` 2026-08-06)
    - Scope: DATRAS-specific (no other ICES products)
    - Note: DataFormat field can diverge from WSDL; opus sources types from WSDL directly
 

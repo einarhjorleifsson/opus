@@ -76,9 +76,11 @@ below and `DEVLOG.md`.
       files, and `enum_labels` carries Tickler's 32 and SpeciesCategory's 56
       codes — including the five `-9` labels that make the kept sentinels
       interpretable.
-- [ ] **Publish `catalog.duckdb`** — built at `.datras/to_https/catalog.duckdb`,
-      not yet uploaded (404 on the server). It belongs beside `raw/`, not
-      inside it.
+- [ ] **Publish `catalog.duckdb`** — built at
+      `.datras/to_https/raw/catalog.duckdb`, not yet uploaded. It sits *with*
+      the exchange tables it describes: it is built from the Tier 1
+      dictionary only, and downstream products may get their own catalog
+      rather than sharing this one.
 - [ ] **The old archive is still live at the server root and obus still
       reads it.** `…/datras/{T}.parquet` remains a different artifact from
       `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against 14,423,771,

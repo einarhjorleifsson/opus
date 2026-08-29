@@ -2,7 +2,7 @@
 #'
 #' Compiles both inst/DATRAS-data-dict.yaml (curated names) and
 #' inst/DATRAS-data-dict-legacy.yaml (legacy/ICES on-the-wire names) into one
-#' .datras/to_https/catalog.duckdb: a small, self-describing companion to
+#' .datras/to_https/raw/catalog.duckdb: a small, self-describing companion to
 #' the parquet files data-raw/archive_06_consolidate.R writes to the
 #' same directory. Consumers ATTACH this file (locally, or once manually
 #' copied to the https server, remotely) and get typed, documented,
@@ -38,10 +38,10 @@ suppressPackageStartupMessages({
 })
 
 BASE_URL <- "https://heima.hafro.is/~einarhj/datras"
-CATALOG_PATH <- ".datras/to_https/catalog.duckdb"
+CATALOG_PATH <- ".datras/to_https/raw/catalog.duckdb"
 RANGE_TYPES <- c("number(ordinal)", "number(quantity)", "date", "datetime")
 
-dir.create(".datras/to_https", showWarnings = FALSE, recursive = TRUE)
+dir.create(dirname(CATALOG_PATH), showWarnings = FALSE, recursive = TRUE)
 unlink(CATALOG_PATH)
 
 sql_escape <- function(x) gsub("'", "''", x, fixed = TRUE)

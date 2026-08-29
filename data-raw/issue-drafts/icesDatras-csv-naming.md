@@ -1,7 +1,8 @@
-# DRAFT — GitHub issue for ices-tools-prod/icesDatras
+# FILED — ices-tools-prod/icesDatras#64
 #
-# Not posted. Review and paste into
-# https://github.com/ices-tools-prod/icesDatras/issues/new
+# https://github.com/ices-tools-prod/icesDatras/issues/64
+# Opened 2026-08-29. Kept here as the source text and the evidence behind it;
+# the issue itself is the live record.
 #
 # ---------------------------------------------------------------------------
 

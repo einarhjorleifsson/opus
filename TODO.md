@@ -90,6 +90,19 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       same meaning, and `GearEx` uses both inside LT (19,296 empty vs 26,856
       `-9`). Nothing in ICES's documentation says which to expect where.
 
+- [ ] **Track the two filed icesDatras issues** —
+      [#63](https://github.com/ices-tools-prod/icesDatras/issues/63) (HH CSV has
+      a 72-field header over 70-field rows, so `DateofCalculation` is lost and
+      its values surface under `EDOM`) and
+      [#64](https://github.com/ices-tools-prod/icesDatras/issues/64) (`AphiaID`
+      and the WoRMS name are called four different things across HL and CA, and
+      `getDatrasFieldList()` covers none of them). Both were found while
+      evaluating `DATRASDownloadAPI.aspx` as a faster ingest route; source text
+      and evidence in `data-raw/issue-drafts/`. #63 has a verified local
+      workaround (`icesDatras-hh-workaround.R`) that `archive_02b` already uses,
+      so opus is unblocked either way — this is watch-and-close, not a
+      dependency.
+
 - [ ] **Two smaller ICES-side items**, both handled locally for now by
       `op_wsdl_type_overrides()`: `Valid_Aphia` declared `string` while holding
       numeric AphiaIDs, and `DateofCalculation` declared `string` by LT's

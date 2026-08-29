@@ -214,6 +214,16 @@ known_violations:
     implication: "Consistent with an independently-documented finding from a related internal downstream project for a different product (FL/FlexFile): getFlexFile() returns duplicate rows per haul differing only in DateofCalculation, confirmed reprocessing revisions rather than submission duplicates (739 of 53,859 distinct FL haul keys) -- that project's own finding, not independently re-verified by opus, cited here for corroboration only. Together these suggest DateofCalculation is a per-product reprocessing timestamp, not a single per-haul fact, but nothing in ICES's own documentation says so. Filed as data-raw/ICES_ISSUE_REPORT.md Issue 13."
     discovered: "2026-08-18, during the relationships/conflicts work -- corroborated same day against a related project's separate, independent FL-side finding"
 
+  - id: "absent_value_encoding_inconsistency"
+    severity: "C"
+    scope: "systemic"
+    field: "GearEx (both products); EEZ, LTREF, MSFDArea, NMArea, OSPARArea, PARAM (LT only)"
+    table: "HH, LT"
+    issue: "DATRAS encodes an absent value two different ways depending on the product, and for one field both ways inside the same product. HH, CA and HL always use the documented -9 'no information' sentinel; LT also returns an empty XML element for the same meaning."
+    extent: "Verified 2026-08-29 against the full local XML archive (.datras/xml/, 3,892 files, 19.3 GB). Empty elements appear in 207 of 973 LT files and in 0 of 973 files for each of HH, CA and HL. GearEx is the sharpest case because it exists in both products and uses both encodings: HH is 0 empty / 95,743 -9 / 54,474 real of 150,217 rows; LT is 19,296 empty / 26,856 -9 / 33,299 real of 79,451. The other six fields are empty-element-only in LT, with zero -9 values: NMArea 53,303; OSPARArea 14,498; MSFDArea 4,295; EEZ 162; LTREF 2; PARAM 2. Note the empty element is valid XML and semantically identical to <Tag></Tag> -- this is an encoding-consistency issue, not malformed output."
+    implication: "Nothing in ICES's own documentation says which encoding to expect where, and the -9 convention is documented as the ICES-wide answer (data-raw/build_field_description_snapshot.R), so a consumer reasonably coding to it will silently miss LT's empty elements -- or, if it parses XML by hand rather than with a real parser, mis-read them. opus is not affected in its output: both encodings reach the archive as null, so LT's null counts already equal empty + -9 (GearExceptions 19,296 + 26,856 = 46,152, matching the archive exactly). But they reach it by two different routes -- an empty element becomes null during parsing, while -9 becomes null via op_strip_sentinels() -- so op_sentinel_policy() describes only one of the two paths, and for the six empty-element-only LT fields the strip step it declares never fires. Candidate for the IMBUS_FISHMAP#29 batch alongside the -9 overloading entry."
+    discovered: "2026-08-29, while benchmarking XML parsers: a hand-written scanner that treated <NMArea /> as an opening tag produced 570 rows where LT has 423, which is how the encoding difference surfaced at all"
+
 # Processing directives
 processing:
   phase2:

@@ -31,6 +31,18 @@ presence in the vocabulary decides nothing and the label decides
 everything. An unrecognised label resolves to `keep`, never to `strip` --
 silently destroying a documented code is the one failure this whole
 mechanism exists to prevent.
+
+This policy covers the `-9` route to `NA`, which is not the only one.
+LT also returns an **empty XML element** for an absent value, where HH, CA
+and HL always send `-9` (known-issues registry:
+`absent_value_encoding_inconsistency`). An empty element becomes `NA` during
+parsing, before any of this runs, so for LT's `EEZ`, `LTREF`, `MSFDArea`,
+`NMArea`, `OSPARArea` and `PARAM` the `strip` action declared here never
+fires -- there is no `-9` left to strip. `GearEx` uses both encodings in LT,
+so only part of its absence is handled here. The published archive is
+unaffected either way: both routes end at `NA`, and LT's null counts equal
+empty + `-9` exactly. Reading this table as the complete account of how a
+column acquires `NA` would be wrong for LT.
 }
 \examples{
 p <- op_sentinel_policy("HH")

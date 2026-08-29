@@ -27,6 +27,19 @@ published file describing other files: nothing forced it to be rebuilt when
 the parquet was, and a consumer who downloaded one table alone got no
 dictionary. This reads the same content out of the four footers on demand, so
 it cannot describe a different vintage than the data it sits beside.
+
+Checked against the catalog it replaces (2026-08-29): `enum_labels` (869 rows)
+and the column comments (169) are identical. It differs in two places, in both
+cases by being more faithful to the dictionary:
+
+* `DateofCalculation`'s upper bound is `NA`, not the string `"Inf"`. The YAML
+  declares `.inf` -- a deliberately open bound, since the field is a live
+  ICES recalculation stamp -- and `export-spec` resolves that to null. The old
+  builder coerced it to `"Inf"`, which nothing can meaningfully compare a date
+  against.
+* 111 `field_constraints` rather than 97. `export-spec` expands `primary_key`
+  into `primary_key, unique, required`; the old builder's YAML walk recorded
+  only what was written literally.
 }
 \examples{
 \dontrun{

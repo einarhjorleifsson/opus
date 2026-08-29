@@ -83,6 +83,13 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       indistinguishable by value or by frequency and separable only by
       consulting a vocabulary.
 
+- [ ] **File the inconsistent encoding of absent values** — registry entry
+      `absent_value_encoding_inconsistency` (added 2026-08-29), for the same
+      `IMBUS_FISHMAP#29` batch as the `-9` overloading above. HH/CA/HL always
+      use the documented `-9`; LT also returns an empty XML element for the
+      same meaning, and `GearEx` uses both inside LT (19,296 empty vs 26,856
+      `-9`). Nothing in ICES's documentation says which to expect where.
+
 - [ ] **Two smaller ICES-side items**, both handled locally for now by
       `op_wsdl_type_overrides()`: `Valid_Aphia` declared `string` while holding
       numeric AphiaIDs, and `DateofCalculation` declared `string` by LT's

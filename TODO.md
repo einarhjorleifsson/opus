@@ -21,10 +21,6 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       names and on `.id`, and that decision is obus's. Until then the two
       archives coexist and obus consumes the older one.
 
-- [ ] **`.datras/retired/` (656M) can now be deleted.** It was kept for
-      before/after comparison against the rebuilt data; that data is published,
-      so the comparison window has closed.
-
 - [ ] **`archive_06_consolidate.R` still materialises the whole table in
       memory** (`arrow::open_dataset(part_dir) |> collect()`, 14.4M rows for
       HL) purely to write it out again. DuckDB's `COPY (SELECT * FROM
@@ -163,9 +159,19 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       `linkable_to_hh` definition now names that set correctly. Decide whether
       §4 gets rewritten against the real code set, or retired.
 
+- [ ] **Eleven citations of the dead path `data-raw/ICES_ISSUE_REPORT.md`
+      remain in shipped files.** That document became `articles/issues.qmd` on
+      2026-08-18; the "Issue N" numbering carried over, so only the path is
+      wrong. Nine are in `inst/DATRAS-known-issues.yaml`, one in each of
+      `inst/DATRAS-data-dict.yaml` and `inst/DATRAS-data-dict-legacy.yaml`.
+      AGENTS.md's was fixed on 2026-08-29; these were deliberately left, because
+      the known-issues file is embedded in the published parquet footers and
+      propagating the fix means rebuilding and re-uploading the archive. Worth
+      folding into the next rebuild rather than doing on its own.
+
 ## imbus / ICES liaison (WP2 handoff)
 
-- [ ] Post opus's confirmed issues (16, in `articles/issues.qmd`) to ICES's own
+- [ ] Post opus's confirmed issues (17, in `articles/issues.qmd`) to ICES's own
       tracker, `ices-tools-dev/IMBUS_FISHMAP#29`. The venue question is settled
       (see `DEVLOG.md`), but posting needs explicit go-ahead each time — it is a
       public ICES-side ticket, not opus's own repo — and the format (one comment

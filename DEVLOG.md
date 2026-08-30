@@ -1967,3 +1967,354 @@ every consumer already being DuckDB. Verified that `KV_METADATA` writes and
 `decode(value)` reads back byte-identically (29 KB test blob). Deferred to a
 fresh session rather than started at the end of a long one; the full
 rationale, caveats and open question are in TODO.md.
+
+---
+
+## 2026-08-29 (continued) -- the dictionary moves into the parquet footer; the sidecar catalog retired
+
+The previous entry recorded, as an omission rather than a decision,
+that the rebuild had dropped the embedded metadata the old archive
+carried. This restores it and goes further: each published
+`raw/{HH,HL,CA,LT}.parquet` now carries five `datras:` keys in its own
+footer -- `dict` (the table's slice of the dictionary as `data-dict
+export-spec` resolves it, plus per-column `legacy_name`,
+`parquet_type` and `r_type`), `provenance`, `sentinels`, `coverage`
+and `known_issues`. A detached file therefore carries its own field
+descriptions, its own legacy-name crosswalk, and the record of which
+sentinels were stripped from it. Over https a footer read costs one
+range request (~0.14s), not a download.
+
+`data-raw/archive_06_metadata.R` builds the payload;
+`archive_06_consolidate.R` writes it in the same call as the data, so
+no staged file exists without its dictionary. `R/archive.R` reads it:
+16 exported `op_*` functions, including `op_catalog()`, which rebuilds
+in memory everything the published `catalog.duckdb` served. Verified
+row-for-row against that file before it was removed -- `enum_labels`
+(869) and column comments (169) identical, differing only by resolving
+`.inf` to a null bound rather than the string `"Inf"`, and by
+expanding `primary_key` into its implied unique/required.
+`spec_04_build_catalog.R` is deleted, so there is no second yaml
+field-walk to keep in step.
+
+**The writer changed from arrow to nanoparquet**, with
+`write_arrow_metadata = FALSE`. arrow serializes custom metadata a
+second time inside `ARROW:schema` (~1.37x), and that key is arrow's
+own sidecar, which parquet does not require and DuckDB never reads.
+Round-trip verified identical to arrow's across all four tables --
+names, dimensions, column classes, data, 20.6M rows -- including
+`DateofCalculation`'s DATE logical type.
+
+Worth keeping in mind for any future schema work:
+`infer_parquet_schema()` is **not** a faithful predictor of
+`write_parquet()`. It reports DOUBLE for a Date column that is
+actually written as INT32/DATE. So `dm_written_schema()` learns the
+schema from a real write, and `dm_assert_schema()` re-checks every
+finished file against its own footer.
+
+**Two dictionary corrections, both found by cross-checking a claim
+against the data it describes.**
+
+*CA's `linkable_to_hh` filtered correctly only by accident.* It tested
+`HaulNumber != -9` on an archive where that field is sentinel policy
+`strip`, so no `-9` survives to be matched: the condition matched
+nothing it was written to match. Now `HaulNumber IS NOT NULL`, and
+reframed -- it names which rows a haul-level join reaches and is
+explicitly not a data-quality filter. The 305,276 rows it excludes
+hold 599,407 aged fish at area grain and must not be dropped.
+
+*Every statistic in the field prose was stale.* All of it had been
+measured against an older, smaller archive -- CA 5,865,076 rows
+against today's 5,968,027; HL 13,754,042 against 14,423,771; HH
+145,958 against 150,217; LT 75,310 against 79,451. All 100+ figures
+were recomputed against the published files and reframed to
+distinguish the submitted view (`-9` present) from the published one
+(stripped to null). An audit over all 71 well-formed figures now
+reports no inconsistent percentages and no denominator that is not a
+real row count. This will drift again on the next rebuild; the audit
+that catches it is in TODO.md.
+
+HL gains `count_at_length` and `total_number`, the `contract.md`
+DataType formula authored as definitions so the rule travels with the
+data in both R and SQL. `contract.md`'s AreaType guard was **not**
+authored: AreaType is ICES `TS_AreaType` (`'0'` rectangles, `'2'` NS
+roundfish areas, `'13'` ICES divisions) and has no `'H'` code, so
+`AreaType == "H"` would match zero rows. Logged in TODO.md as a
+decision about §4 rather than silently skipped.
+
+R CMD check: Status OK.
+
+---
+
+## 2026-08-29 (continued) -- TODO.md trimmed to open work; the type-system "open decision" retired; `.datras/retired/` deleted
+
+TODO.md had grown to 252 lines, roughly half of it completed items
+kept inline with their full rationale -- which is DEVLOG's job.
+Rewritten to 151 lines carrying only the 22 outstanding items, each
+one's substance preserved. Three entries were stale and were corrected
+rather than carried forward: `DateofCalculation` typed
+`number(ordinal)` (resolved -- the YAML types it `date` and the
+archive stores a real parquet DATE); "no R accessor for the
+known-issues registry" (overstated -- `R/sentinels.R` has read the
+`sentinels:` half all along, so it narrowed to the genuine gap, an
+accessor for `known_violations` from the shipped YAML); and "two type
+systems, unreconciled", re-measured rather than repeated, which
+collapsed the divergence to one uniform shape -- `number(quantity)` in
+the YAML against `integer` in the archive, 30 columns.
+
+**Then that last one was retired entirely, because the framing was
+wrong.** TODO.md had asked opus to decide which of two type systems is
+the public contract. There is no unreconciled split in this package,
+checked three independent ways:
+
+1. *The format already draws the line.* `site/spec.md`: types capture
+   data types "at a level that makes sense for analysis, which is
+   typically coarser than the logical types of the underlying data",
+   and a type should match *approximately* the underlying one. The
+   implementation enforces exactly that -- `parquet_element_type()`
+   collapses INT32, INT64, FLOAT and DOUBLE all to `number`, the
+   measure qualifier is never read from a file because it is a
+   semantic claim, and `validate_meta.rs` asserts
+   `types_compatible("number(quantity)", "number")`.
+2. *ICES sends integers.* All 31 fields where the YAML says
+   `number(quantity)` and the archive stores integer are declared
+   `int` by the WSDL, and a full scan of `.datras/xml/` -- 29 distinct
+   tags, 3,892 files, 19.8 GB -- found **0 decimal values in
+   100,280,647**. The archive's INT32 storage loses nothing.
+3. *opus never casts from a curated type.* `op_cast_wsdl_types()`
+   casts from WSDL physical types; `op_cast_to_spec()` filters to
+   `date`/`datetime` and touches nothing else.
+
+The single place a curated type is used as a casting rule is obus's
+`dr_settypes()` (`number(quantity)` -> `as.numeric()`), which
+manufactures a divergence the archive does not have. That is the whole
+of what obus reported, and the fix belongs there -- cast from the
+`r_type`/`parquet_type` each footer now carries, or from the WSDL.
+opus's remaining action is coordination only; the contract moved into
+AGENTS.md as a Key Fact, since it is settled design rather than
+outstanding work.
+
+Worth naming, because it is the reusable lesson: the answer was
+already visible in this repo and was not drawn on. `op_validate_meta()`
+had been clean on all four tables throughout, which *is* the statement
+that the archive conforms to the curated spec. An "open decision" was
+carried for weeks over a question the existing validation had already
+answered.
+
+AGENTS.md was also out of date on its own package: the export count
+said 34 and is 50, `R/archive.R` was undocumented, and the enum-label
+pointer still sent readers to the retired catalog's table. Added the
+archive-access group with all 16 functions, noting that each is a
+footer read, that the crosswalk needs no external list, and that
+`op_dict()` carries three type views deliberately.
+
+**`.datras/retired/` (656M) deleted.** It held the pre-2026-08-29
+archive, kept only for a before/after comparison against the rebuild;
+that window closed when the rebuilt archive was published. Checked
+before removing: nothing in `R/` or `data-raw/` reads it, and its own
+README recorded that everything in it was either regenerable from
+`.datras/xml/` or a stale copy of a git-tracked file.
+
+Removing it surfaced a documentation drift: AGENTS.md cited
+`data-raw/ICES_ISSUE_REPORT.md`, which became `articles/issues.qmd` on
+2026-08-18 -- the "Issue N" numbering carried over, so only the path
+was wrong. Eleven further citations of that dead path remain in
+current documents and were **not** fixed: nine in
+`inst/DATRAS-known-issues.yaml`, and one in each of the two data-dict
+yamls. (The commit message said ten; recounted 2026-08-30 as eleven.)
+They need their own pass, because the known-issues file is embedded in
+the published parquet footers and propagating a fix means a rebuild.
+Now tracked in TODO.md. DEVLOG's own references to the old path are
+left alone: this is a dated history, and the 2026-08-18 entry records
+the rename.
+
+---
+
+## 2026-08-29 (continued) -- DATRAS encodes "no value" two ways, and does not say which to expect where
+
+Found while benchmarking XML parsers, not by looking for it: a
+hand-written scanner that treated `<NMArea />` as an opening tag
+produced 570 rows where LT has 423. The parser bug was mine, not
+ICES's -- but chasing it surfaced a real encoding inconsistency.
+
+Verified against the full local XML archive (3,892 files, 19.3 GB):
+
+- Empty elements appear in **207 of 973 LT files**, and in **0 of 973**
+  for each of HH, CA and HL.
+- `GearEx` is the sharpest case, because it exists in both products
+  and uses both encodings: HH is 0 empty / 95,743 `-9` / 54,474 real
+  of 150,217 rows; LT is 19,296 empty / 26,856 `-9` / 33,299 real of
+  79,451.
+- Six further LT fields are empty-element-only, with zero `-9`:
+  `NMArea` 53,303, `OSPARArea` 14,498, `MSFDArea` 4,295, `EEZ` 162,
+  `LTREF` 2, `PARAM` 2.
+
+An empty element is valid XML and semantically identical to
+`<Tag></Tag>`, so this is an encoding-consistency issue, not malformed
+output. What makes it an ICES-side gap is that the `-9` convention is
+documented as the ICES-wide answer, LT does not follow it, and
+`GearEx` does not follow it consistently even within LT.
+
+opus's output is unaffected -- both encodings reach the archive as
+null, and LT's null counts equal empty + `-9` exactly
+(`GearExceptions` 19,296 + 26,856 = 46,152, matching the archive). But
+they arrive by **two different routes**: an empty element becomes null
+during parsing, `-9` via `op_strip_sentinels()`. So
+`op_sentinel_policy()` described only one of them, and for the six
+empty-element-only LT fields the strip action it declares never fires.
+Its roxygen now says so, because reading that table as the complete
+account of how a column acquires NA would be wrong for LT.
+
+Registry entry `absent_value_encoding_inconsistency`, queued in
+TODO.md for the `IMBUS_FISHMAP#29` batch alongside the `-9`
+overloading entry. Archive rebuilt so the entry travels in the HH and
+LT parquet footers. R CMD check: Status OK.
+
+---
+
+## 2026-08-29 (continued) -- the CSV download route: two icesDatras issues filed, a route built, and then paused
+
+The ASMX XML service serves roughly 1.5 MB/s, one survey/year/quarter
+per request, so a full archive pull runs to hours.
+`DATRASDownloadAPI.aspx` returns a **whole survey** -- all years, all
+quarters -- as one zipped CSV. Measured 2026-08-29: all of NS-IBTS
+(37,180 HH rows, 4,101,389 HL, 2,020,963 CA) in **86 seconds**,
+against 31.5s for a *single* CA survey/year/quarter by XML; roughly
+128x smaller on the wire for CA. That is the case for taking it
+seriously, and it is why the evaluation happened.
+
+**First finding: the HH CSV is ragged --
+[icesDatras#63](https://github.com/ices-tools-prod/icesDatras/issues/63).**
+A 72-field header over 70-field data rows. `icesDatras`'s
+`fread(fill = TRUE)` pads at the end, so the trailing
+`DateofCalculation` value binds to the 70th header name (`EDOM`), and
+`ReasonHaulDisruption` and `DateofCalculation` come back NA. Silent:
+correct row count, expected column names, no warning. Verified against
+the live API -- every one of the 37,180 NS-IBTS HH rows carries 70
+fields, and the same 72/70 split holds for DWS, IS-IDPS, NL-BSAS and
+SE-SOUND. HL and CA are internally consistent (30 fields in all
+4,101,389 HL rows, 36 in all 2,020,963 CA), so the defect is specific
+to the HH export. Both reproductions in the filed issue -- the R call
+and a curl/awk check needing no R -- were run verbatim before filing.
+
+**The workaround, and how the missing columns were identified.**
+`read_datras_csv_hh()` reads positionally and binds the trailing value
+to the *last* header name rather than the first unfilled one. Which
+two columns are absent was established empirically, by joining the CSV
+to opus's own XML-derived archive on the 8-field composite haul key:
+
+- All 10,379 NS-IBTS rows where CSV column 70 is `-9` have a NULL
+  `DateofCalculation` in the archive -- a perfect correspondence, and
+  one no other column would produce.
+- 20,267 of the 25,231 date-valued rows match the archive exactly. The
+  4,964 that differ all carry an **older** stamp in the CSV, which is
+  the already-filed `dateofcalculation_cross_product_inconsistency`: a
+  per-product reprocessing timestamp, not a per-haul fact. Not
+  evidence against the identification.
+- For DWS the match is 72 of 72.
+- Column 69 is uniformly `-9`, consistent with `SurveyIndexArea` being
+  unpopulated.
+
+The function refuses rather than guesses if the shape changes: it
+checks for 72/70 and that header positions 70-71 really are
+`EDOM`/`ReasonHaulDisruption`. A comment offering it upstream was
+drafted and its code run verbatim as a reader would paste it, then not
+posted -- the workaround stays because it is useful locally regardless.
+
+**Second finding:
+[icesDatras#64](https://github.com/ices-tools-prod/icesDatras/issues/64),
+filed 2026-08-29.** The CSV gives two concepts four names across HL
+and CA -- `ValidAphiaID`/`AphiaID` for the AphiaID, and
+`ScientificName_WoRMS`/`Species` for the WoRMS name -- and they reach
+the caller unchanged, because `getDatrasFieldList()` has no entry for
+any of them under either `FieldName` or `FieldNameOld`. So neither
+`applyDatrasNameSchema()` nor `applyDatrasTypeSchema()` can act on
+them, and `new_names = TRUE` silently leaves all four alone with no
+signal that it could not. The ASMX service uses `Valid_Aphia` in both
+tables, so this is a **regression against the older route**, not a
+long-standing quirk. `NumberAtLength` went into the issue as the
+covered counterpart: HL already sends the new name while CA sends
+legacy `CANoAtLngt`, so one concept arrives under two names in a
+single session -- same class of problem, but the field list covers
+that pair, so `new_names = TRUE` happens to fix it.
+
+**The ingest path.** `data-raw/archive_02b_download_csv.R` replaces
+archive_02 + archive_04 for the three record types served as CSV,
+writing to `.datras/parquet_csv/` so the XML-derived tree stays intact
+and the two can be compared; archive_06 gained `OPUS_PARQUET_ROOT` and
+`OPUS_STAGE_DIR` environment overrides (defaults unchanged) so either
+tree can be consolidated. Only the name mapping is new -- the four
+conversion steps are the existing `op_cast_wsdl_types` ->
+`op_rename_to_new` -> `op_strip_sentinels` -> `op_cast_to_spec` chain,
+reached by mapping the CSV's names back to legacy first. Verified
+end-to-end on DWS: the CSV-derived and XML-derived partitions came out
+**72 x 69 each, with identical column names, order, classes and no
+differing values in any column.**
+
+Not covered, still XML-only: **LT** (the endpoint serves HH/HL/CA
+only; `recordtype=LT` returns HTTP 200 with a 3-byte CSV -- a BOM --
+and the same for FL, Litter and LitterAssessmentOutput), and
+**CODS-Q4** (present in the XML service and in this archive, 2024 Q4
+and 2025 Q4, but the download API returns a valid header and zero rows
+for it; the other 28 surveys work, with byte-identical headers).
+
+Five CSV-only columns are dropped, with the evidence recorded inline
+because **the verdict differs per column**: HH's `SurveyIndexArea` is
+100% `-9` and its `EDOM`/`ReasonHaulDisruption` are absent from every
+row, so those three carry nothing -- but HL's `ScientificName_WoRMS`
+is populated in all 4,101,389 rows, CA's `Species` in all 2,020,963,
+and CA's `LiverWeight` holds 1,328 real measurements available by no
+other route. Dropping those three **is** data loss. Documenting them
+instead needs a decision on whether one dictionary can describe two
+archive shapes; it cannot, as archive_06 is written.
+
+**The decision: paused, and not because it fails.** The endpoint is in
+flux and, on the evidence gathered that day, a step backwards from the
+ASMX service rather than forwards. Its HH export is malformed and
+loses a column (#63). It names one concept four ways where the XML
+service is consistent, so moving to it *acquires* an inconsistency
+(#64). It serves no LT or FL and misses CODS-Q4. It ships no metadata
+whatsoever -- one file, always `DATRASDataTable.csv`, no schema, no
+provenance. Its type source, `getDatrasFieldList()`, is already
+recorded here as wrong about `Year` and `SpecCode` and has no entry
+for eight of the columns it serves. And it reports failure as HTTP 200
+with a valid-looking zip, which is why row counts are asserted per
+request.
+
+Building a second archive on a moving, lossier foundation would buy
+download speed at the cost of correctness that already holds. The
+script is kept rather than deleted -- it is working code and the
+investigation is worth having -- but marked clearly as not part of the
+pipeline, with the reasoning at the top so it is not re-litigated from
+scratch. Its guards will fail loudly if the endpoint's shape changes
+underneath it. Revisit when #63 and #64 close and LT is served.
+
+---
+
+## 2026-08-30 -- `getDatrasUnaggregated()` returns new names by default, and the option that would say so cannot
+
+A follow-up question about #64, worth recording because it is a trap
+for any consumer of that route and it is not what the option name
+suggests.
+
+The CSV inside the zip is already in the **new** vocabulary, almost
+throughout. Measured against opus's own crosswalk: HH 39/39 renamed
+fields arrive under their new names, HL 21/21, CA 19/20. The
+exceptions are the ones #64 is about -- `ValidAphiaID` (HL) and
+`AphiaID` (CA), where legacy and new are both `Valid_Aphia`, so the
+CSV spells it a third way -- plus CA's `CANoAtLngt`, the one surviving
+legacy name, and CA's `IndividualAge`, which *is* an ICES-documented
+new name but is paired in `getDatrasFieldList()` with old-name
+`AgeRings` rather than `Age`, which is why opus never adopted it.
+
+The consequence: `applyDatrasNameSchema()` maps `FieldNameOld ->
+FieldName` and never the reverse. So `new_names = FALSE` -- the
+default -- does not give legacy names on this route; the CSV's names
+pass straight through and the caller gets new ones. That is the
+opposite of `getHHdata()`/`getDATRAS()` off the ASMX service, where
+the same default yields legacy names. Setting `new_names = TRUE`
+changes exactly one column across the three tables (CA's `CANoAtLngt`
+-> `NumberAtLength`); the four Aphia/species columns stay unmapped,
+silently, which is #64.
+
+Nothing to change in opus: `archive_02b`'s explicit `CSV_FIXUP` map
+already handles all of it, and that route is paused anyway.

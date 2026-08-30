@@ -36,6 +36,28 @@ GROUPS <- list(
     fns = c("op_field_spec", "op_field_name_map", "op_legacy_field_name")
   ),
   list(
+    title = "Reading the published archive",
+    blurb = paste(
+      "The published archive is four parquet files that describe themselves.",
+      "These are the way in: resolve the root, query a table lazily, or take",
+      "the whole thing as SQL. Every call is a range request rather than a",
+      "download, and there is no sidecar catalog to keep in step with the data."
+    ),
+    fns = c("op_archive", "op_con", "op_catalog", "op_define", "op_rename")
+  ),
+  list(
+    title = "The metadata each file carries",
+    blurb = paste(
+      "Each file's footer holds its own dictionary, legacy-name crosswalk,",
+      "enum labels, sentinel policy, coverage and known issues. All of it is",
+      "read from the same file as the data, so it cannot describe a different",
+      "vintage of the archive than the one you loaded."
+    ),
+    fns = c("op_keys", "op_dict", "op_crosswalk", "op_enums", "op_definitions",
+            "op_relationships", "op_coverage", "op_surveys", "op_sentinel_meta",
+            "op_provenance", "op_known_issues")
+  ),
+  list(
     title = "Converting DATRAS XML to parquet",
     blurb = paste(
       "The four steps of the conversion, in the order they must run: physical",

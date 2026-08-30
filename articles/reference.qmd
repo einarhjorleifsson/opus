@@ -7,7 +7,7 @@ This page is generated from the package's own `man/*.Rd` files by `data-raw/buil
 Full documentation for any function is `?name` in an R session.
 :::
 
-opus exports 34 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
+opus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
 
 ## The specification
 
@@ -18,6 +18,36 @@ The dictionary as data. Downstream code should reach the yaml through these rath
 | `op_field_spec()` | Build a combined old-name / new-name / type spec from opus's own shipped YAMLs |
 | `op_field_name_map()` | Build field name mapping from data-dict YAML |
 | `op_legacy_field_name()` | Extract legacy field name from column details |
+
+## Reading the published archive
+
+The published archive is four parquet files that describe themselves. These are the way in: resolve the root, query a table lazily, or take the whole thing as SQL. Every call is a range request rather than a download, and there is no sidecar catalog to keep in step with the data.
+
+| Function | |
+|---|---|
+| `op_archive()` | Resolve the archive root |
+| `op_con()` | Connect to one raw exchange table |
+| `op_catalog()` | Build the SQL catalog from the files' own footers |
+| `op_define()` | Apply a named filter definition |
+| `op_rename()` | Rename between the legacy and current naming schemes |
+
+## The metadata each file carries
+
+Each file's footer holds its own dictionary, legacy-name crosswalk, enum labels, sentinel policy, coverage and known issues. All of it is read from the same file as the data, so it cannot describe a different vintage of the archive than the one you loaded.
+
+| Function | |
+|---|---|
+| `op_keys()` | List the metadata keys a file carries |
+| `op_dict()` | The data dictionary, one row per column |
+| `op_crosswalk()` | The legacy/current name crosswalk, read from the file itself |
+| `op_enums()` | Enum code/label pairs |
+| `op_definitions()` | Reusable definitions and their translations |
+| `op_relationships()` | Resolved join keys and column conflicts |
+| `op_coverage()` | What the archive actually covers |
+| `op_surveys()` | The survey list, without a live ICES call |
+| `op_sentinel_meta()` | The sentinel policy actually applied to this file |
+| `op_provenance()` | Who built this file, from what |
+| `op_known_issues()` | Known issues affecting this table |
 
 ## Converting DATRAS XML to parquet
 

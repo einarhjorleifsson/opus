@@ -149,6 +149,8 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       (stripped to null). They will drift again on the next rebuild. The audit
       that catches it: check every `A/B rows (P%)` figure for internal
       consistency, and every denominator against the real row counts.
+      `articles/archive.qmd` carries captured outputs from the same archive
+      (row counts, coverage, the CA worked example) and drifts with it.
 
 - [ ] **`contract.md` §4's AreaType guard cannot be authored as written.** It
       says to filter CA to `AreaType == "H"` before joining to HH, but AreaType

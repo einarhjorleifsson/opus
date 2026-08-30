@@ -1,0 +1,300 @@
+---
+title: "Reading the published archive"
+---
+
+opus publishes the four Tier-1 exchange tables as parquet at
+[`heima.hafro.is/~einarhj/datras/raw`](https://heima.hafro.is/~einarhj/datras/raw),
+converted from ICES's ASMX XML service. The files are not the interesting part
+— **each one carries its own dictionary in its footer**, so a file that has been
+copied, renamed or emailed still knows what its columns mean, what the legacy
+ICES name for each was, which sentinels were stripped from it, and which known
+ICES issues affect it.
+
+This page is how to read that. Everything below runs against the published
+files over https, with opus installed and nothing else set up.
+
+| Table | Rows | Columns | Footer metadata |
+|---|---:|---:|---:|
+| **HH** Haul information | 150,217 | 69 | 90 KB |
+| **HL** Length frequency | 14,423,771 | 29 | 65 KB |
+| **CA** Catch at age | 5,968,027 | 34 | 67 KB |
+| **LT** Litter assessment | 79,451 | 58 | 74 KB |
+
+::: {.callout-note appearance="simple"}
+Outputs on this page were captured from the published archive on 2026-08-30.
+The shapes are stable; the counts move whenever the archive is rebuilt.
+:::
+
+## Point at it
+
+```r
+library(opus)
+options(opus.archive = "https://heima.hafro.is/~einarhj/datras/raw")
+```
+
+That is the whole setup. Every accessor also takes `path =` if you would rather
+be explicit, and `op_archive()` falls back to a local staging directory when one
+exists, so the same code works against a local build and the published twin.
+
+**Nothing is downloaded.** Each metadata call is a parquet footer read: DuckDB
+issues one HTTP range request and fetches the footer, not the file. The first
+costs about 0.4 seconds and is cached for the session — reading every accessor
+on this page, for one table, takes under a second against an 84 MB file.
+
+## What a file says about itself
+
+```r
+op_keys("HH")
+#>                   key bytes
+#> 1     datras:coverage 15925
+#> 2         datras:dict 59654
+#> 3 datras:known_issues  8149
+#> 4   datras:provenance   432
+#> 5    datras:sentinels  6175
+```
+
+Five keys. `op_provenance()` answers "where did this file come from", which
+matters because the answer is checkable rather than assumed:
+
+```r
+t(op_provenance("HL"))
+#> n_rows        "14423771"
+#> n_cols        "29"
+#> source        "ICES DATRAS ASMX web service"
+#> built_utc     "2026-08-29T19:20:19Z"
+#> opus_version  "0.2.0"
+#> opus_git_sha  "00d9b7f"
+#> dict_sha256   "d74c9e38cca9e46af89acdd80f6171e0b4754f6f06d3a1a85d68422a49562f48"
+#> data_dict_cli "data-dict 0.0.3"
+#> writer        "nanoparquet 0.5.1"
+#> pipeline      "archive_02_download -> ... -> archive_06_consolidate"
+```
+
+The git sha and the dictionary's sha256 are both there, so a file can be tied
+to the exact code and the exact specification that produced it.
+
+## The dictionary
+
+```r
+op_dict("HH")[1:8, c("name", "legacy_name", "type", "parquet_type", "r_type", "units")]
+#>             name legacy_name             type parquet_type    r_type units
+#> 1   RecordHeader  RecordType             enum   BYTE_ARRAY character  <NA>
+#> 2         Survey      Survey           string   BYTE_ARRAY character  <NA>
+#> 3        Quarter     Quarter  number(ordinal)        INT32   integer  <NA>
+#> 4        Country     Country           string   BYTE_ARRAY character  <NA>
+#> 5       Platform        Ship           string   BYTE_ARRAY character  <NA>
+#> 6           Gear        Gear             enum   BYTE_ARRAY character  <NA>
+#> 7    SweepLength   SweepLngt number(quantity)        INT32   integer     m
+#> 8 GearExceptions      GearEx             enum   BYTE_ARRAY character  <NA>
+```
+
+69 columns × 13 attributes for HH, including `label`, `description`,
+`constraints` and the declared range.
+
+**Three type views per column, deliberately.** `type` is opus's curated
+*semantic* type, `parquet_type`/`logical_type` are what is physically stored,
+and `r_type` is what a reader actually gets back. They are allowed to disagree:
+`SweepLength` above is `number(quantity)` in the specification and INT32 on
+disk. That is not a defect — the specification's types are deliberately coarser
+than storage types — but a consumer that treats the curated `type` as a casting
+instruction will manufacture a divergence the data does not have. Cast from
+`r_type` or `parquet_type`; see [Approach](approach.qmd) for the reasoning.
+
+## Names
+
+DATRAS fields have two names — ICES's legacy on-the-wire names and the current
+ones. The archive is published under current names and carries the mapping:
+
+```r
+op_crosswalk("CA") |> head(5)
+#>     old_name     new_name
+#> 1 RecordType RecordHeader
+#> 2     Survey       Survey
+#> 3    Quarter      Quarter
+#> 4    Country      Country
+#> 5       Ship     Platform
+```
+
+No external list is involved: the crosswalk is read from the same file as the
+data, so it cannot describe a different vintage of the archive than the one you
+loaded. `op_crosswalk()` refuses to return a mapping that is not total and
+bijective, because a partial one is worse than none — an un-renamed column
+would pass through looking translated.
+
+`op_rename()` applies it in either direction, which is what you want when
+handing results to someone who works in ICES's wire vocabulary:
+
+```r
+library(dplyr)
+
+op_con("HH") |>
+  filter(Survey == "DWS", Year == 2009) |>
+  select(Survey, Year, StationName, HaulNumber, HaulValidity) |>
+  head(3) |> collect() |>
+  op_rename("HH", to = "legacy")
+#> # A tibble: 3 x 5
+#>   Survey  Year StNo  HaulNo HaulVal
+#> 1 DWS     2009 2          2 V
+#> 2 DWS     2009 4          4 V
+#> 3 DWS     2009 5          5 V
+```
+
+## Codes
+
+13 of HH's columns are enums, with 205 code/label pairs between them:
+
+```r
+op_enums("HH", "HaulValidity")
+#>         column code                                                     label
+#> 1 HaulValidity    A Additional valid stations not used for index calculations
+#> 2 HaulValidity    C                                    Calibrated (BITS only)
+#> 3 HaulValidity    I                                              Invalid haul
+#> 4 HaulValidity    M                        Pelagic Midwater Trawl (BITS only)
+#> 5 HaulValidity    N                                     No oxygen (BITS only)
+#> 6 HaulValidity    S                                             Standard haul
+#> 7 HaulValidity    V                                                 Valid haul
+```
+
+## Sentinels, and why the codes matter
+
+DATRAS uses `-9` for "not recorded". opus strips it to `NA` where it means
+absence — but not everywhere, and the file records which:
+
+```r
+s <- op_sentinel_meta("HH")
+attr(s, "sentinel")   #> "-9"
+attr(s, "meaning")    #> "Not recorded / not applicable"
+s[s$action != "strip", ]$field
+#> "DataType" "Tickler"
+```
+
+Two of HH's 69 columns keep their `-9`, because there it is a **documented real
+answer** rather than a missing value:
+
+```r
+op_enums("HH", "Tickler") |> head(3)   # 32 codes in all, -9 through 30
+#>    column code                   label
+#> 1 Tickler   -9 No ticklers are allowed
+#> 2 Tickler    0           Zero ticklers
+#> 3 Tickler    1             One tickler
+```
+
+This is the case worth remembering. `Tickler = -9` is indistinguishable from a
+missing value by inspection — same literal, similar frequency — and only the
+vocabulary shipped in the footer tells them apart. Blanket `-9 → NA` on this
+column destroys a real observation. The same overloading across other fields is
+one of opus's open reports to ICES; see [Issues found](issues.qmd).
+
+## What is known to be wrong with the table
+
+```r
+op_known_issues("CA")[, c("id", "severity", "field")]
+#>                                  id      severity          field
+#> 1    sentinel_replacement_data_loss opus-internal  all numeric columns
+#> 2        ca_haulno_unlinkable_to_hh             D               HaulNo
+#> 3           ca_haulno_tail_mismatch             D               HaulNo
+#> 4   icesvocab_key_resolution_hazard             C  HaulValidity, ...
+#> 5 datras_field_list_type_divergence             C       Year, SpecCode
+```
+
+The registry travels with the data, so a consumer does not need opus's yaml — or
+opus at all — to find out that the file it is holding has known caveats.
+
+## Rules that travel with the data
+
+The dictionary carries named definitions — filters, metrics, derived values —
+each rendered for both R and SQL, so the same rule can be applied eagerly or
+pushed down to the database:
+
+```r
+op_definitions("CA")
+#>             name   kind             expression                  r
+#> 1 linkable_to_hh filter HaulNumber IS NOT NULL !is.na(HaulNumber)
+#>                        sql
+#> 1 "HaulNumber" IS NOT NULL
+```
+
+`op_define()` applies one by name:
+
+```r
+op_con("CA") |>
+  filter(Survey == "NS-IBTS", Year == 2022, Quarter == 1) |>
+  op_define("CA", "linkable_to_hh") |>
+  summarise(n = n(), aged = sum(as.integer(!is.na(Age)), na.rm = TRUE)) |>
+  collect()
+#> # A tibble: 1 x 2
+#>       n  aged
+#> 1 45593 15055
+```
+
+Under a second over https: the predicate pushes down to parquet row-group
+statistics, so only the relevant row groups are fetched.
+
+`linkable_to_hh` is worth reading closely, because it names which CA rows a
+haul-level join reaches and is **not** a data-quality filter. The rows it
+excludes are attributed to an area rather than a haul; they are a coarser grain,
+not bad data, and dropping them silently loses real aged fish.
+
+## Coverage, and the joins
+
+```r
+op_surveys()             #> 29 survey acronyms, no live ICES call
+op_coverage("HH") |> head(3)
+#>   Survey Year Quarter
+#> 1   BITS 1991       1
+#> 2   BITS 1991       2
+#> 3   BITS 1991       3
+
+str(op_relationships("CA"), max.level = 2)
+#> $ :List of 5
+#>  ..$ left       : chr "CA"
+#>  ..$ right      : chr "HH"
+#>  ..$ by         : chr [1:8] "Survey" "Year" "Quarter" "Country" ...
+#>  ..$ cardinality: chr "many-to-one"
+#>  ..$ conflicts  : chr "RecordHeader"
+```
+
+The eight-field composite key is the documented way CA and HL reach HH, and
+`conflicts` names the column that collides on the join.
+
+## Or take the whole thing as SQL
+
+```r
+con <- op_catalog()
+
+DBI::dbGetQuery(con, "SELECT column_name, code, label FROM enum_labels
+                      WHERE table_name = 'HH' AND column_name = 'Tickler' LIMIT 3")
+#>   column_name code                   label
+#> 1     Tickler   -9 No ticklers are allowed
+#> 2     Tickler    0           Zero ticklers
+#> 3     Tickler    1             One tickler
+
+DBI::dbGetQuery(con, "SELECT COUNT(*) AS n FROM enum_labels")   #> 869
+DBI::dbDisconnect(con, shutdown = TRUE)
+```
+
+`op_catalog()` builds views over the four tables plus `enum_labels` and column
+comments, in memory, from the files' own footers — about a second for all four.
+There was once a published `catalog.duckdb` alongside the data; it was retired
+because a sidecar is one more artifact that can describe a different vintage
+than the data beside it. Reconstructing it from the footers cannot drift.
+
+The join that makes the sentinel work legible to someone who knows none of this:
+
+```sql
+SELECT h.Tickler, e.label, COUNT(*)
+FROM HH h LEFT JOIN enum_labels e
+  ON e.table_name = 'HH' AND e.column_name = 'Tickler' AND e.code = h.Tickler
+GROUP BY 1, 2
+```
+
+`-9 | No ticklers are allowed | 117290`.
+
+## Where to look next
+
+- [Function reference](reference.qmd) — every accessor above, plus the rest of
+  the package
+- [Approach](approach.qmd) — how the dictionary was built, and why the types are
+  what they are
+- [Data dictionary](dictionary.qmd) — the specification itself, rendered
+- [Issues found](issues.qmd) — the ICES-side gaps the registry records

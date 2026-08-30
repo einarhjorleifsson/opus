@@ -102,6 +102,10 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Data dictionary</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="./articles/archive.html"> 
+<span class="menu-text">Published archive</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link" href="./articles/reference.html"> 
 <span class="menu-text">Function reference</span></a>
   </li>  
@@ -169,11 +173,13 @@ ul.task-list li input[type="checkbox"] {
 <li><strong>LT</strong> (Litter Assessment) — a hybrid: some novel observations, some fields joined in from HH; not purely exchange data in the same sense as the other three</li>
 </ul>
 <p>The R package around these files is thin tooling only (validation, curation, no domain QC) — the yaml is the deliverable, independent of R or any other language. It feeds imbus WP2 (reference specification).</p>
+<p>opus also publishes those four tables as parquet, converted from ICES’s own XML service. Each file carries its own dictionary in its footer — field descriptions, the legacy-name crosswalk, enum labels, the sentinel policy applied to it and the known issues affecting it — so a detached file still describes itself, and reading any of that costs one range request rather than a download.</p>
 <section id="where-to-go-next" class="level2">
 <h2 class="anchored" data-anchor-id="where-to-go-next">Where to go next</h2>
 <ul>
 <li><strong><a href="./articles/approach.html">Approach</a></strong> — how the dictionaries were built: the sources consolidated, why some were rejected, how the reconciliation actually works</li>
 <li><strong><a href="./articles/dictionary.html">Data dictionary</a></strong> — the yaml itself, rendered as a browsable, dated snapshot</li>
+<li><strong><a href="./articles/archive.html">Published archive</a></strong> — how to read the four published parquet tables and the metadata each one carries, with worked examples</li>
 <li><strong><a href="./articles/reference.html">Function reference</a></strong> — the exported R functions, grouped by what they are for; generated from the package’s own documentation</li>
 <li><strong><a href="./articles/issues.html">Issues found</a></strong> — confirmed gaps and inconsistencies in ICES’s own DATRAS metadata services, reported upstream</li>
 <li><strong><a href="./articles/technical-notes.html">Technical notes</a></strong> — implementation-level decisions and discoveries, for anyone who wants more depth than Approach covers</li>

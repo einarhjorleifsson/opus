@@ -18,6 +18,13 @@ The R package around these files is thin tooling only (validation,
 curation, no domain QC) — the yaml is the deliverable, independent of R or
 any other language. It feeds imbus WP2 (reference specification).
 
+opus also publishes those four tables as parquet, converted from ICES's own XML
+service. Each file carries its own dictionary in its footer — field
+descriptions, the legacy-name crosswalk, enum labels, the sentinel policy
+applied to it and the known issues affecting it — so a detached file still
+describes itself, and reading any of that costs one range request rather than a
+download.
+
 ## Where to go next
 
 - **[Approach](articles/approach.qmd)** — how the dictionaries were built:
@@ -25,6 +32,9 @@ any other language. It feeds imbus WP2 (reference specification).
   actually works
 - **[Data dictionary](articles/dictionary.qmd)** — the yaml itself,
   rendered as a browsable, dated snapshot
+- **[Published archive](articles/archive.qmd)** — how to read the four
+  published parquet tables and the metadata each one carries, with worked
+  examples
 - **[Function reference](articles/reference.qmd)** — the exported R
   functions, grouped by what they are for; generated from the package's own
   documentation

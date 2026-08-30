@@ -102,6 +102,10 @@ ul.task-list li input[type="checkbox"] {
 <span class="menu-text">Data dictionary</span></a>
   </li>  
   <li class="nav-item">
+    <a class="nav-link" href="../articles/archive.html"> 
+<span class="menu-text">Published archive</span></a>
+  </li>  
+  <li class="nav-item">
     <a class="nav-link active" href="../articles/reference.html" aria-current="page"> 
 <span class="menu-text">Function reference</span></a>
   </li>  
@@ -137,6 +141,8 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#the-specification" id="toc-the-specification" class="nav-link active" data-scroll-target="#the-specification">The specification</a></li>
+  <li><a href="#reading-the-published-archive" id="toc-reading-the-published-archive" class="nav-link" data-scroll-target="#reading-the-published-archive">Reading the published archive</a></li>
+  <li><a href="#the-metadata-each-file-carries" id="toc-the-metadata-each-file-carries" class="nav-link" data-scroll-target="#the-metadata-each-file-carries">The metadata each file carries</a></li>
   <li><a href="#converting-datras-xml-to-parquet" id="toc-converting-datras-xml-to-parquet" class="nav-link" data-scroll-target="#converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</a></li>
   <li><a href="#sentinels" id="toc-sentinels" class="nav-link" data-scroll-target="#sentinels">Sentinels</a></li>
   <li><a href="#field-names" id="toc-field-names" class="nav-link" data-scroll-target="#field-names">Field names</a></li>
@@ -180,7 +186,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </div>
-<p>opus exports 34 functions. The yaml dictionaries are the deliverable; these are the tooling around them.</p>
+<p>opus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them.</p>
 <section id="the-specification" class="level2">
 <h2 class="anchored" data-anchor-id="the-specification">The specification</h2>
 <p>The dictionary as data. Downstream code should reach the yaml through these rather than parsing it, so there is one place where the shape of the specification is known.</p>
@@ -207,6 +213,102 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td><code>op_legacy_field_name()</code></td>
 <td>Extract legacy field name from column details</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="reading-the-published-archive" class="level2">
+<h2 class="anchored" data-anchor-id="reading-the-published-archive">Reading the published archive</h2>
+<p>The published archive is four parquet files that describe themselves. These are the way in: resolve the root, query a table lazily, or take the whole thing as SQL. Every call is a range request rather than a download, and there is no sidecar catalog to keep in step with the data.</p>
+<table class="caption-top table">
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_archive()</code></td>
+<td>Resolve the archive root</td>
+</tr>
+<tr class="even">
+<td><code>op_con()</code></td>
+<td>Connect to one raw exchange table</td>
+</tr>
+<tr class="odd">
+<td><code>op_catalog()</code></td>
+<td>Build the SQL catalog from the files’ own footers</td>
+</tr>
+<tr class="even">
+<td><code>op_define()</code></td>
+<td>Apply a named filter definition</td>
+</tr>
+<tr class="odd">
+<td><code>op_rename()</code></td>
+<td>Rename between the legacy and current naming schemes</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="the-metadata-each-file-carries" class="level2">
+<h2 class="anchored" data-anchor-id="the-metadata-each-file-carries">The metadata each file carries</h2>
+<p>Each file’s footer holds its own dictionary, legacy-name crosswalk, enum labels, sentinel policy, coverage and known issues. All of it is read from the same file as the data, so it cannot describe a different vintage of the archive than the one you loaded.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_keys()</code></td>
+<td>List the metadata keys a file carries</td>
+</tr>
+<tr class="even">
+<td><code>op_dict()</code></td>
+<td>The data dictionary, one row per column</td>
+</tr>
+<tr class="odd">
+<td><code>op_crosswalk()</code></td>
+<td>The legacy/current name crosswalk, read from the file itself</td>
+</tr>
+<tr class="even">
+<td><code>op_enums()</code></td>
+<td>Enum code/label pairs</td>
+</tr>
+<tr class="odd">
+<td><code>op_definitions()</code></td>
+<td>Reusable definitions and their translations</td>
+</tr>
+<tr class="even">
+<td><code>op_relationships()</code></td>
+<td>Resolved join keys and column conflicts</td>
+</tr>
+<tr class="odd">
+<td><code>op_coverage()</code></td>
+<td>What the archive actually covers</td>
+</tr>
+<tr class="even">
+<td><code>op_surveys()</code></td>
+<td>The survey list, without a live ICES call</td>
+</tr>
+<tr class="odd">
+<td><code>op_sentinel_meta()</code></td>
+<td>The sentinel policy actually applied to this file</td>
+</tr>
+<tr class="even">
+<td><code>op_provenance()</code></td>
+<td>Who built this file, from what</td>
+</tr>
+<tr class="odd">
+<td><code>op_known_issues()</code></td>
+<td>Known issues affecting this table</td>
 </tr>
 </tbody>
 </table>

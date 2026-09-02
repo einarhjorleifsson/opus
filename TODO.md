@@ -152,6 +152,30 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       `articles/archive.qmd` carries captured outputs from the same archive
       (row counts, coverage, the CA worked example) and drifts with it.
 
+- [ ] **`LengthClass`'s `label` says `(cm)`, and the field is mm about half the
+      time.** Both copies -- HL `inst/DATRAS-data-dict.yaml:1713` and CA
+      `:2289` -- carry `label: Length Class (cm)`, which contradicts the
+      `description` and `details` sitting directly above it: the unit varies by
+      the sibling `LengthCode` (`.`/`0` are mm, `1`/`2`/`5` are cm). Measured on
+      the published archive 2026-09-02: **HL 39.65% mm / 57.73% cm** (2.62%
+      sentinel or missing), **CA 48.23% mm / 51.77% cm**. So the label is wrong
+      for roughly half the rows in each table, and it is not inert -- `label`
+      lands in the archive catalog (`R/archive.R:145`) and is the fallback
+      column comment when a `description` is absent (`:397`). Only these two
+      labels and `Total Litter Weight (kg)` assert a unit at all; the fix is
+      probably to drop the parenthetical rather than to add a conditional the
+      label field cannot express. Found while obus was building its
+      length-weight cascade, which has to know the unit and the bin geometry to
+      predict weight at all.
+
+      The `description` itself is correct and needs no change: *"Lower length
+      boundary of the Length class. In cm or mm depending on the LngtCode. E.g.
+      10-11 cm=10"*, verbatim from ICES. Worth recording that this is the one
+      place the lower-boundary semantics is written down for downstream
+      consumers -- obus had been predicting weight from the bin's lower bound,
+      which under-estimates by 5.1% at 30 cm with 1 cm bins, until this was
+      checked against the dictionary.
+
 - [ ] **`contract.md` §4's AreaType guard cannot be authored as written.** It
       says to filter CA to `AreaType == "H"` before joining to HH, but AreaType
       is ICES `TS_AreaType` (`'0'` statistical rectangles, `'2'` NS roundfish

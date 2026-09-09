@@ -48,11 +48,25 @@ op_archive <- function(path = getOption("opus.archive", NULL)) {
   file.path(path, paste0(table, ".parquet"))
 }
 
+# `duckdb(shared_home = FALSE)`, NOT `dbConnect(..., shared_home = FALSE)`.
+# Passed to dbConnect the argument lands in `...` and silently does nothing,
+# leaving extensions in the user's shared ~/.duckdb. Positioned correctly it
+# uses a per-session temporary directory -- which then makes the explicit
+# INSTALL below load-bearing, because DuckDB autoloads only an *already
+# installed* extension (`autoinstall_known_extensions` is FALSE by default).
+# Without it a remote op_archive() fails with "Extension Autoloading Error".
+.op_connect <- function() {
+  con <- DBI::dbConnect(duckdb::duckdb(shared_home = FALSE))
+  try(DBI::dbExecute(con, "INSTALL httpfs"), silent = TRUE)
+  try(DBI::dbExecute(con, "LOAD httpfs"), silent = TRUE)
+  con
+}
+
 .op_db <- local({
   con <- NULL
   function() {
     if (is.null(con) || !DBI::dbIsValid(con)) {
-      con <<- DBI::dbConnect(duckdb::duckdb(), shared_home = FALSE)
+      con <<- .op_connect()
     }
     con
   }
@@ -370,7 +384,7 @@ op_known_issues <- function(table, path = op_archive()) {
 #' DBI::dbDisconnect(con, shutdown = TRUE)
 #' }
 op_catalog <- function(path = op_archive(), tables = OP_TABLES) {
-  con <- DBI::dbConnect(duckdb::duckdb(), shared_home = FALSE)
+  con <- .op_connect()
   esc <- function(x) gsub("'", "''", x, fixed = TRUE)
 
   DBI::dbExecute(con, "CREATE TABLE enum_labels (table_name VARCHAR, column_name VARCHAR,

@@ -12,14 +12,70 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
 
 ## Immediate
 
-- [ ] **The old archive is still live at the server root, and obus reads it.**
-      `…/datras/{T}.parquet` is a different artifact from
-      `…/datras/raw/{T}.parquet`: HL is 14,400,747 rows against 14,423,771,
-      30 columns against 29, and it carries obus's Tier-3 `aphia`/`sex` names
-      plus an `.id` column the current archive has no equivalent for. Switching
-      obus over is not just a URL change — it needs a decision on those Tier-3
-      names and on `.id`, and that decision is obus's. Until then the two
-      archives coexist and obus consumes the older one.
+- [ ] **Two stale files are still served at the server root.** *(Corrected
+      twice. 2026-09-02: this item used to end "and obus consumes the older
+      one." It does not — `opus::op_archive()` returns `…/datras/raw`.
+      **2026-09-09: the correction itself was wrong, and dangerously so.** It
+      claimed obus's `dr_con()` whitelist "has no `HL`/`CA`/`LT` entry at
+      all" and concluded "delete the four stale files". `obus/R/dr_con.R:32`
+      has `DR_TABLES <- c("HH", "HL", "CA", …)`. Root `HL.parquet` and
+      `CA.parquet` are **obus's own published record layer**, and deleting
+      them destroys 20.4M rows that `dr_con("HL")` and `dr_con("CA")` read.
+      Do not run the old recommendation.)*
+
+      Measured live 2026-09-09, root against `raw/`:
+
+      | root file | rows | cols | vs `raw/` | verdict |
+      |---|---:|---:|---|---|
+      | `HH.parquet` | 150,217 | 70 | raw + `.id` | **obus's, keep** |
+      | `HL.parquet` | 14,423,771 | 30 | raw + `.id` | **obus's, keep** |
+      | `CA.parquet` | 5,968,027 | 35 | raw + `.id` | **obus's, keep** |
+      | `LT.parquet` | 79,451 | 58 | `GearEx` for raw's `GearExceptions`, no `Depth` | stale, delete |
+      | `HL_standardised.parquet` | 15,483,270 | 19 | carries `aphia`/`type` | stale, delete |
+
+      So HH, HL and CA at the root are each exactly `raw + .id` — that is
+      obus's published contract, and its own `test-published-schema.R`
+      asserts it online. The 2026-09-02 note already carved out `HH` on
+      exactly those grounds; it simply failed to apply the same reasoning to
+      `HL` and `CA`, whose row counts had moved since (HL was 14,400,747
+      when that note was written and is 14,423,771 now — it was republished,
+      not abandoned).
+
+      Only two files are genuinely orphaned. Neither is produced by any
+      current build script and nothing in obus reads either — `DR_TABLES`
+      has no `LT` entry, so `dr_con_raw("LT")` reads `raw/LT.parquet`, the
+      live one. obus's own TODO carries the same list and the command:
+
+      ```
+      ssh einarhj@heima.hafro.is 'rm ~/public_html/datras/{HL_standardised,LT}.parquet'
+      ```
+
+      `CPUEL.parquet` at the root is **not** in this list — it is ICES's own
+      product, mirrored deliberately, and both obus's article and
+      datrasdoodle2's Appendix A read it.
+
+      The live problem is what a **reader** gets by guessing the obvious URL
+      for those two: a superseded file with older names, silently. That is
+      the decision `datrasdoodle2`'s Ch 3 ("Getting data") is blocked on —
+      the chapter is gated on this, not on writing. Delete the two, or move
+      them under a dated path, or document them as deliberate; any of the
+      three unblocks the chapter.
+
+- [ ] **One test file, fifty exports.** `tests/testthat/test_validation.R`
+      is the whole suite, against obus's 10 files and 209 tests. opus is
+      the spec authority for obus's builds *and* for every "what this field
+      is supposed to mean" sentence in `datrasdoodle2`, so a regression in
+      the dictionary, the enum tables or the registry propagates silently
+      into both and nothing fails. Assessed 2026-09-02 as the largest
+      structural fragility in the three-repo stack — and the least visible,
+      because opus is the part that currently feels most finished.
+
+      Cheapest first slice, if a full suite is too much at once: assert the
+      registry and dictionary *load* and satisfy their own schema, that
+      every `known_violations` id is unique, and that the accessors return
+      the documented shapes. `data-raw/validate_issue_registry_sync.R`
+      already does some of this outside the test suite — moving it inside
+      `R CMD check` costs little and catches the loudest failures.
 
 - [ ] **`archive_06_consolidate.R` still materialises the whole table in
       memory** (`arrow::open_dataset(part_dir) |> collect()`, 14.4M rows for
@@ -121,16 +177,238 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       `dateofcalculation_cross_product_inconsistency` entry, which is about
       *values* disagreeing between products, not types.
 
-- [ ] **Candidate registry entry: NS-IBTS 2022 Q1 HL is exactly 32767 rows
-      (2^15 − 1).** Both the live ICES XML response and the archive return that
-      identical count, while neighbouring quarters of the same survey run
-      44k–52k (2021 Q1: 51,151; 2023 Q1: 45,752). Scanned the whole HL archive:
-      it is the only one of 971 survey/year/quarter groups on that value, and
-      115 groups exceed it (max 54,712), so there is no global cap — which makes
-      a signed-16-bit truncation specific to that submission the likeliest
-      reading, though unproven. Worth a targeted check against ICES; if it holds
-      up it is a registry entry and an ICES-side report, not something to work
-      around.
+- [x] **WITHDRAWN — NS-IBTS 2022 Q1 HL's 32767 rows is a coincidence, not a
+      truncation. Do not report this to ICES.** obus investigated and resolved
+      it 2026-08-31 (see `obus/TODO.md`); independently re-verified here
+      2026-09-02 while writing `datrasdoodle2`'s HH chapter.
+
+      **The row count is exactly what the haul count predicts.** NS-IBTS Q1
+      2022 ran **249 hauls**, against 325–387 in every other year 2014–2026 —
+      a real drop in survey effort, concentrated in two countries (DE 67 → 10,
+      GB-SCT 61 → 15 between 2021 and 2022). Rows per haul is **131.6**, sitting
+      mid-range against neighbouring years (117.2–145.2). A truncated file would
+      leave HH untouched and rows-per-haul anomalously low; neither holds.
+
+      **The original reasoning contains a base-rate error worth remembering.**
+      "It is the only one of 971 survey/year/quarter groups sitting on exactly
+      that value" is not evidence — nearly every specific row count is hit at
+      most once, so uniqueness at a value carries no information. The question
+      that settles it is whether the count is anomalous *given the haul count*,
+      and it is not.
+
+      Original text kept for the record: both the live ICES XML response and the
+      archive return that identical count, while neighbouring quarters run
+      44k–52k (2021 Q1: 51,151; 2023 Q1: 45,752); 115 groups exceed it (max
+      54,712), so there is no global cap.
+
+      Filing this would have sent ICES a defect report for ordinary reduced
+      survey effort.
+
+- [ ] **Amend the filed `dateofcalculation_cross_product_inconsistency`
+      entry: a second product pair, HH vs CPUEL — and it is the stronger
+      evidence.** The entry currently rests on HH vs LT (30,364 hauls on both
+      sides, 63.21% disagreeing). The same behaviour reproduces against a
+      third product, measured 2026-09-02 on the published `HH` and the CPUEL
+      snapshot at `…/datras/CPUEL.parquet` (11,774,468 rows, 8 surveys):
+
+      **49,275 hauls carry a `DateofCalculation` on both sides; 22,538
+      (45.74%) disagree.** CPUEL is the later side in 17,678 and HH in 4,860,
+      so it runs both directions here too. Median gap when disagreeing 1,036
+      days; max 2,539 days (~7 years) — the same order as the LT-side max.
+      CPUEL is internally consistent: all 60,542 distinct `.id` values carry
+      exactly one date. (The only multi-date group is the null-`.id` bucket —
+      1,059,736 rows, 9.0% of CPUEL, carrying no haul key at all. Separate
+      issue, noted here only so the 60,542 is not misread.)
+
+      Per survey, share of shared hauls disagreeing: ROCKALL 364/364
+      (100%), SWC-IBTS 2,327/2,327 (100%), IE-IGFS 93.4%, SCOROC 87.1%,
+      EVHOE 73.3%, NS-IBTS 44.3%, BITS 25.2%, SCOWCGFS 14.2%.
+
+      **Why this pair is worth adding rather than merely corroborating.** The
+      LT evidence establishes that the dates differ. The CPUEL pair
+      establishes that the difference *carries no information about the
+      data*: ROCKALL and SWC-IBTS both disagree on 100% of hauls, with CPUEL
+      roughly three years later in each case, and their catch data agree
+      **99.6%** and **0.4%** respectively. Same date signature, opposite
+      outcome. So `DateofCalculation` cannot be used to rank two products by
+      freshness — which is the use a reader will most naturally reach for.
+
+      Not a download artifact on our side: ICES's exchange copy of SWC-IBTS
+      reports 2016-06-08, and a full re-download on 2026-08-26
+      (`logs/download_2026-08-26_195940.log`, 188 SWC-IBTS requests)
+      returned the same date, on an archive whose newest calculation
+      anywhere is 2026-08-24.
+
+      **Caveat, and it matters for filing:** CPUEL is Tier 2 and opus has
+      not curated it — its field names are the older style and were taken
+      as-is, and the join uses CPUEL's own `.id` column. Not verified
+      against ICES's production code. Safe as `extent` evidence for a
+      behaviour already filed; *not* safe as a standalone claim about
+      CPUEL's correctness.
+
+      Drafted amendment (needs a human to approve touching an entry already
+      filed as Issue 13):
+
+      - `table:` → `HH, LT, CPUEL`
+      - `extent:` append — *"The same behaviour reproduces against CPUEL
+        (Tier 2, uncurated): of 49,275 hauls carrying a date in both HH and
+        CPUEL, 22,538 (45.74%) disagree; CPUEL later in 17,678, HH later in
+        4,860; median gap when disagreeing 1,036 days, max 2,539. Two
+        surveys disagree on every shared haul (ROCKALL 364/364, SWC-IBTS
+        2,327/2,327). Verified 2026-09-02."*
+      - `implication:` append — *"The CPUEL pair additionally shows the gap
+        is not a freshness ordering: ROCKALL and SWC-IBTS share the same
+        100%-disagreement signature, with CPUEL ~3 years later in both
+        cases, yet their catch data agree 99.6% and 0.4% respectively."*
+
+      Found via `datrasdoodle2`'s CPUEL appendix, which had read the same
+      dates as a staleness ordering and concluded a fresh download would
+      close the SWC-IBTS gap. It does not; the appendix has been corrected.
+
+- [ ] **Candidate registry entry: `HaulDuration` violates its own declared
+      range in published data.** `inst/DATRAS-data-dict.yaml` declares HH
+      `HaulDuration` as `constraints: [required]` with `range_min: 1`,
+      `range_max: 120` (minutes). Measured on the published archive
+      2026-09-02, over 150,217 HH rows: **219 rows below 1** (including two
+      negatives, −514 and −238 minutes, both Can-Mar 2017), **178 above 120**
+      (max 1470), and **51 NULL** despite `required`.
+
+      The sub-1 tail is mostly self-declaring — the two negatives and 18 of
+      the zeros are already `HaulValidity == "I"`, and the remaining 199
+      zeros are all `HaulValidity == "N"` ("No oxygen", BITS), i.e. hauls
+      that were never fished. Those are arguably correct as submitted.
+
+      **The upper tail is not.** 167 of the 178 over-120 hauls are flagged
+      `HaulValidity == "V"`: NL-BSAS 156, BITS 4, DWS 3, NS-IDPS 3, EVHOE 1.
+      So one survey routinely submits, and marks valid, durations the format
+      says are out of range. Either the 1–120 bound is wrong (NL-BSAS
+      genuinely tows longer than the format anticipates) or the values are,
+      and nothing in the data settles which — it needs someone who knows the
+      survey. Worth a targeted check before it becomes either a registry
+      entry or a dictionary correction.
+
+      Distinct from the existing "re-verify the field prose" item below:
+      that is about stale `details` statistics, this is a declared
+      *constraint* contradicted by the data it describes. Found while
+      writing `datrasdoodle2`'s HH chapter.
+
+- [ ] **Candidate registry entry: `StationName` is a `required` `primary_key`
+      component that is NULL on 4.59% of HH.** Declared
+      `constraints: [primary_key, unique, required]`; measured 2026-09-02,
+      **6,899 of 150,217 HH rows have no `StationName`** — BTS 4,048,
+      NS-IBTS 1,543, BITS 979, SP-NORTH 325, NSSS 4. A required primary-key
+      component with nulls is an internal contradiction in the dictionary's
+      own terms, so one of the two sides is wrong.
+
+      Note the field is documented as *"Station number. National coding
+      system, not defined by ICES"* — which is a reason to doubt the
+      `required`/`primary_key` claim rather than the data. Nothing downstream
+      is blocked (obus's `dr_add_id()` skips NA fields when building `.id`,
+      and `.id` is still exactly unique over all 150,217 hauls, verified), so
+      this is a spec-accuracy question, not an outage. Found the same way.
+
+- [ ] **Candidate registry entry: HL's taxonomic scope expands over time, so
+      an absent row is not evidence of absence for non-fish taxa.** Found
+      while writing `datrasdoodle2`'s HL chapter, measured on NS-IBTS Q1
+      (321,750 `HL_summary` rows, all of which resolve against the species
+      lookup — zero unmatched aphia).
+
+      Distinct taxa reported per decade, split by group:
+
+      | decade | fish | arthropods | molluscs | echinoderms | other | total |
+      |---|---:|---:|---:|---:|---:|---:|
+      | 1960s | 97 | 0 | 0 | 0 | 0 | 97 |
+      | 1970s | 150 | 0 | 0 | 0 | 1 | 151 |
+      | 1980s | 145 | 1 | 2 | 0 | 1 | 149 |
+      | 1990s | 164 | 6 | 9 | 0 | 1 | 180 |
+      | 2000s | 168 | 15 | 32 | 0 | 0 | 215 |
+      | 2010s | 181 | 65 | 56 | **37** | 27 | 366 |
+      | 2020s | 163 | 60 | 70 | 14 | 47 | 354 |
+
+      Fish grow 1.4x from an already-broad base (93 taxa/year in 1984 to 126
+      in 2026, Spearman +0.90 — real, but gradual). Everything else starts at
+      nothing: molluscs 0 -> 70, arthropods 0 -> 65, and **no echinoderm is
+      recorded anywhere in the series before 2011**, after which 37 taxa
+      appear at once. NS-IBTS is a groundfish survey; the invertebrates were
+      in the net all along and only became reportable later.
+
+      **Why this belongs in the registry rather than in a consumer's head.**
+      The standard operation on this table is to complete haul x species and
+      set the missing combinations to zero — which is *required* for an
+      unbiased CPUE (dropping the absences inflates the mean by exactly
+      `1 / occupancy`). But applied across a period when a taxon was not
+      being recorded, that same step manufactures confident zeros, and it
+      manufactures them at the start of the series, which is the shape of a
+      textbook colonisation curve. Worked example: *Alloteuthis subulata*
+      goes from 0 of 2,877 hauls in the 1980s to 41.6% in the 2010s, which
+      is uninterpretable as ecology because cephalopod reporting went from 2
+      taxa to 40 over the same window.
+
+      Note the asymmetry, which is what makes the entry actionable rather
+      than merely discouraging: rising reporting effort can fabricate an
+      apparent increase but **cannot** fabricate a decline. So declines are
+      safe to read and increases are not, and the guidance can say exactly
+      that.
+
+      Suggested shape: `systemic` scope, field/table-level note on HL (and CA,
+      which is presumably the same story — **not checked**), with the
+      per-decade taxa counts as evidence and an explicit "safe for fish;
+      suspect for molluscs and arthropods before ~2000; meaningless for
+      echinoderms before 2011" for NS-IBTS. **Per-survey generality is not
+      established** — only NS-IBTS Q1 was measured, and the onset year will
+      differ by survey.
+
+- [ ] **Candidate registry entry: CA `Age` carries out-of-range values and a
+      sentinel sitting on its own range ceiling.** `Age` is declared
+      `number(quantity)` with `range_min: 0`, `range_max: 99`, and the sentinel
+      policy for it is `strip` ("no documented code for this sentinel").
+      Measured on the published archive 2026-09-02 over 5,968,027 CA rows
+      (3,918,845 with an age):
+
+      - **2,324 rows are below the declared floor** — `-1` on 2,322, plus a
+        single `-5` and a single `-95`. Only `-9` is stripped, so these
+        survive. They will drag down any unguarded `mean(Age)`.
+      - **54 rows are aged exactly 99**, which is the declared *maximum* and
+        therefore legal by the spec and stripped by nothing. The real tail
+        thins smoothly and stops at 57; a gap from 57 to 99 followed by a
+        spike precisely at the range ceiling is the signature of a sentinel
+        that `range_max: 99` has accidentally legitimised.
+
+      Worth deciding whether `range_max` should be lowered to something
+      biologically defensible (the observed real maximum is 57) so that 99
+      becomes a detectable violation, or whether 99 should join the sentinel
+      list for this field. Either way the sub-zero values are a
+      straightforward unstripped-sentinel violation. Found while writing
+      `datrasdoodle2`'s CA chapter.
+
+      Note in passing that `AgePlusGroup`'s `keep` policy is **correct and
+      should not be touched** — `-9` there is the documented real answer "no
+      plus group" (5,963,393 rows, against 4,634 `"+"`), and the registry's
+      own reason field says so. This was checked before being written up as a
+      leak; it is not one.
+
+- [ ] **Candidate registry entry: implausible waterbird records in DYFS.**
+      Four `Mergellus albellus` (smew, a freshwater diving duck) and one
+      `Calidris bairdii` (Baird's sandpiper, a Nearctic vagrant wader) in
+      `HL_summary`, all DYFS, 2021-2023. **One 2021 haul records
+      `n_totalnumber = 320` smew.** Three hundred and twenty diving ducks in
+      one beam-trawl tow is not a bycatch event. None of the five records
+      carries a weight, so nothing internal settles whether the number, the
+      species code, or the record itself is wrong.
+
+      DYFS is shallow coastal beam trawl, so a waterbird is at least
+      physically possible there — the seal and porpoise records elsewhere in
+      the archive (one each) look like genuine, if grim, bycatch. It is the
+      *count* that fails here, which is the point worth recording: a taxon
+      plausibility rule keyed only on "is this marine?" passes all five of
+      these, and would also wrongly flag the 1,900-odd legitimate algae
+      records (`Ulva` 945, `Rhodophyta` 775). A usable check has to combine
+      taxon, gear, place and **number**.
+
+      Historical note: `datrasdoodle` recorded mosquitoes (`Culex`) in NS-IBTS
+      in 2018. There is no `Insecta` anywhere in the archive today, so that
+      one has been resolved upstream at some point — evidence this class of
+      record does get cleaned, and worth reporting rather than working around.
 
 - [ ] **No accessor for the registry's `known_violations` section.**
       `R/sentinels.R` reads the `sentinels:` half (`op_sentinels()`,
@@ -221,10 +499,58 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
 - [ ] Follow the Tier 1 workflow if seeding (bootstrap → curate → audit).
 - [ ] Test parquet availability for validation data.
 
+## Metadata for downstream products (2026-09-04)
+
+obus publishes eight derived tables to `…/datras/` and **none of them carry
+any parquet key-value metadata** (measured 2026-09-04: all four `raw/*.parquet`
+carry the five `datras:*` blocks, all eight published files carry zero). The
+agreed split is that the *format and writer* are opus's, the *content for
+obus's own derived columns* is obus's, and the source `dict_sha256` must travel
+with every derived table. Full reasoning lives in `../obus/TODO.md`
+("Metadata on the derived tables"); the outstanding opus work is:
+
+- [ ] **Export a writer**, or at minimum the block schema, so a downstream
+      package can emit the same five-block footer. It must be expressible as
+      `COPY … (FORMAT PARQUET, KV_METADATA {…})` rather than assuming an
+      in-memory data frame and `nanoparquet`, because obus streams from DuckDB
+      and never materialises in R. *(Feasibility confirmed 2026-09-04: obus's
+      `duckdbfs::write_dataset()` forwards a multi-element `options` vector
+      straight into the `COPY` parens, verified on a lazy input with JSON
+      payloads and multiple keys. The one trap is that these are single-quoted
+      SQL literals, so any prose payload — `known_issues` especially — must go
+      through `DBI::dbQuoteString()`; a bare apostrophe is a parser error. If
+      opus exports a helper that assembles the clause, it should own that
+      escaping.)*
+- [ ] **Decide how the accessors reach a non-Tier-1 file.** `.op_path()` does
+      `match.arg(table, OP_TABLES)` with `OP_TABLES <- c("HH","HL","CA","LT")`
+      (`R/archive.R:14`, `:47`), so `op_dict("HL_length", path)` errors today
+      even if the file carried a dictionary — and `op_archive()` additionally
+      insists the directory be named `raw`. Either relax both, or add
+      path-based accessors alongside the table-name wrappers. Note
+      `op_describe_parquet()` and `op_inspect_parquet()` already take a
+      `parquet_path`, so the precedent exists.
+- [ ] **Decide which blocks are meaningful for a derived table.** `dict` and
+      `provenance` clearly are. `sentinels` arguably is not — obus scrubs
+      nothing, so the block would restate opus's policy rather than record an
+      action. `coverage` and `known_issues` need a call.
+- [ ] **Provenance contract:** a derived table's receipt must name the source
+      archive's `dict_sha256`, `opus_version` and `opus_git_sha`, so a
+      published product can be tied to the archive build it came from. This is
+      the item obus most needs — it has already been bitten by stale
+      published files that looked current.
+- [ ] Consider a `datras:grain` block, or a grain field in `dict`. obus
+      documents both catch tables' grain in prose that has twice been wrong;
+      machine-readable grain is testable.
+
 ## Future: Tier 3 (obus contracts)
 
 - [ ] Hand-authored specs, no ICES source; deferred until Tier 1 + 2 are stable.
 - [ ] Coordinate with obus on contract-specific constraints and enums. The
-      `aphia`/`sex`/`age` layer in obus's `.dr_obus_rename` is the candidate
-      seed, and the `.id` composite key is already authored here as the
-      HL/CA/LT → HH relationships.
+      `.id` composite key is already authored here as the HL/CA/LT → HH
+      relationships. *(Corrected 2026-09-04: this item used to name the
+      `aphia`/`sex`/`age` layer in obus's `.dr_obus_rename` as the candidate
+      seed. That layer no longer exists — obus dropped its own field names on
+      2026-09-01 and the derived tables now carry opus's names verbatim;
+      `.dr_obus_rename` greps to nothing in obus. The candidate seed is now
+      obus's genuinely new columns: `n_haul`, `n_hour`, `n_measured`,
+      `length_mm`, `length_cm`, `length_cm_mid`, `accuracy`, `w_haul`.)*

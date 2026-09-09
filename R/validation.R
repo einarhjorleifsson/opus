@@ -234,13 +234,22 @@ op_validate_full <- function(data_path, table,
 }
 
 #' @keywords internal
-.validate_via_dict <- function(subcommand, data_path, table, dict_path, cli_bin) {
-  cli_bin <- normalizePath(path.expand(cli_bin))
+# Build the dictionary the CLI should actually read.
+#
+# The CLI finds a table's data through the dictionary's own `source:` stanza,
+# not through an argument, so pointing it at a parquet means editing the
+# dictionary. Extracted 2026-09-09, when op_render_report() became the second
+# caller: the surgery below has real corners -- a table's block runs to the
+# next UNINDENTED line rather than to the next `- name:` (which is what makes
+# it work for the last table, whose block would otherwise swallow
+# `relationships:`/`glossary:`), and dropping a `source:` line without its
+# nested value lines yields invalid YAML -- so a second copy would drift.
+#
+# Returns the path to read, the directory to read it from, and whether that
+# path is a temporary file. It deliberately registers no on.exit(): the file
+# has to outlive this call, so unlinking is the CALLER's job.
+.op_dict_for <- function(data_path, table, dict_path) {
   dict_path <- normalizePath(path.expand(dict_path))
-
-  if (!file.exists(cli_bin)) {
-    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
-  }
 
   if (!file.exists(dict_path)) {
     stop("Dictionary not found at ", dict_path, call. = FALSE)
@@ -283,7 +292,6 @@ op_validate_full <- function(data_path, table,
     }
 
     tmp_dict <- tempfile(fileext = ".yaml")
-    on.exit(unlink(tmp_dict), add = TRUE)
 
     # Remove existing source if present, then inject new one. `source:`
     # itself is a 2-space-indented key, but its value (`    parquet: ...`)
@@ -312,16 +320,27 @@ op_validate_full <- function(data_path, table,
       if (end_idx < length(dict_lines)) dict_lines[(end_idx + 1):length(dict_lines)]
     )
     writeLines(source_lines, tmp_dict)
-    dict_to_use <- tmp_dict
-    run_dir <- tempdir()
+    return(list(dict_path = tmp_dict, run_dir = tempdir(), temp = TRUE))
   } else {
     # No data_path provided, must use existing source
     if (!has_source) {
       stop("No data_path provided and no source defined in dictionary for table '", table, "'", call. = FALSE)
     }
-    dict_to_use <- dict_path
-    run_dir <- dirname(dict_path)
+    return(list(dict_path = dict_path, run_dir = dirname(dict_path),
+                temp = FALSE))
   }
+
+}
+
+.validate_via_dict <- function(subcommand, data_path, table, dict_path, cli_bin) {
+  cli_bin <- normalizePath(path.expand(cli_bin))
+  if (!file.exists(cli_bin))
+    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
+
+  d <- .op_dict_for(data_path, table, dict_path)
+  dict_to_use <- d$dict_path
+  run_dir     <- d$run_dir
+  if (isTRUE(d$temp)) on.exit(unlink(dict_to_use), add = TRUE)
 
   # Run validation from the appropriate directory
   args <- c(subcommand, basename(dict_to_use), "--table", table, "--json")
@@ -783,7 +802,7 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 
 #' Render a data dictionary as a self-contained HTML page
 #'
-#' Thin wrapper around data-dict CLI's `render` command: one HTML file with
+#' Thin wrapper around data-dict CLI's `render-spec` command: one HTML file with
 #' a relationship diagram, a searchable index of tables and columns, and the
 #' glossary. Profiles each table's `source` data (row counts, histograms,
 #' missing values) when present.
@@ -901,6 +920,110 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     # was rendered. Reporting `--data-dir` here would be doubly wrong: the
     # CLI has no such flag, and the shipped dictionary alone renders
     # spec-only.
+    command     = paste(c(cli_bin, args), collapse = " ")
+  )
+}
+
+#' Validate a table and render the report as a self-contained HTML page
+#'
+#' Runs exactly the checks \code{\link{op_validate_data}} runs, and writes the
+#' run's report as one HTML file that works opened straight from disk. Wrapper
+#' around data-dict CLI's `render-report`, which arrived 2026-09-08
+#' (tidyverse/data-dict#245) when `render` was split into `render-spec` and
+#' this.
+#'
+#' \strong{Why this is more than a rendering of \code{op_validate_data()}.}
+#' The report names the rows that failed, and it names them by the
+#' dictionary's declared primary key rather than by row offset. For HH that
+#' key is `Survey`, `Year`, `Quarter`, `Country`, `Platform`, `Gear`,
+#' `StationName`, `HaulNumber` -- the same eight fields, in the same order,
+#' that obus pastes into its `.id`. So a failing row can be joined straight
+#' onto obus's published tables with no adapter:
+#'
+#' ```
+#' # keys the report emitted for HH's ThermoCline failures
+#' ids <- c("BITS:2022:4:PL:67BC:TVL:25010:7", "BITS:2022:4:PL:67BC:TVL:25011:8")
+#' obus::dr_con("HH") |> dplyr::filter(.id %in% ids) |> dplyr::collect()
+#' ```
+#'
+#' Verified 2026-09-09: both resolve, and both carry the lower-case
+#' `ThermoCline` value the dictionary's own `details` records as a submitter
+#' case slip -- on hauls HH marks `HaulValidity == "V"`, so a validity filter
+#' does not remove them. The dictionary says how many such rows exist; this
+#' says which.
+#'
+#' \strong{Exit status 1 is the normal case, not a failure.} It means the
+#' data has problems, which is why one usually runs this at all, and the page
+#' is still written. A run that could not be started writes nothing. That is
+#' why the return value has no `valid` field: `data_valid` is the data's
+#' verdict and `rendered` is this function's, and collapsing the two into one
+#' `valid` is exactly the conflation that made these wrappers hard to read.
+#'
+#' The CLI's `--live` mode is deliberately not exposed. It serves the page and
+#' blocks until interrupted, which does not fit a function that returns a
+#' value; run it from a shell when you want it.
+#'
+#' @param data_path Path to the parquet file to validate.
+#' @param table Table name as declared in the dictionary, e.g. `"HH"`.
+#' @param dict_path Path to data-dict.yaml or a directory containing one.
+#' @param output Where to write the page. `NULL` (default) writes to a
+#'   temporary file and opens it in a browser.
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
+#'
+#' @return A list with `data_valid` (did the data pass), `rendered` (was a
+#'   page written), `exit_status`, `output_path`, `raw_output` and the
+#'   `command` actually run.
+#'
+#' @seealso \code{\link{op_validate_data}} for the same checks as data,
+#'   \code{\link{op_validation_problems}} to flatten them, and
+#'   \code{\link{op_render_spec}} to render the dictionary instead.
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#'   op_render_report(".datras/to_https/raw/HH.parquet", "HH")
+#' }
+op_render_report <- function(data_path, table,
+                             dict_path = "inst/DATRAS-data-dict.yaml",
+                             output = NULL,
+                             cli_bin = .op_cli()) {
+  cli_bin <- normalizePath(path.expand(cli_bin))
+  if (!file.exists(cli_bin))
+    stop("data-dict CLI not found at ", cli_bin, call. = FALSE)
+
+  d <- .op_dict_for(data_path, table, dict_path)
+  if (isTRUE(d$temp)) on.exit(unlink(d$dict_path), add = TRUE)
+
+  open_in_browser <- is.null(output)
+  output <- if (open_in_browser) tempfile(fileext = ".html") else path.expand(output)
+
+  # Absolute, because the CLI is run from the dictionary's directory (which is
+  # tempdir() when a source was injected) and a relative -o would land there.
+  output <- file.path(normalizePath(dirname(output), mustWork = FALSE),
+                      basename(output))
+
+  args <- c("render-report", basename(d$dict_path), "--table", table,
+            "-o", output)
+
+  old_wd <- setwd(d$run_dir)
+  on.exit(setwd(old_wd), add = TRUE)
+
+  raw_output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
+  status <- attr(raw_output, "status") %||% 0L
+  rendered <- file.exists(output)
+
+  # On `rendered`, not on `status`: status 1 means the data has problems and
+  # the page was still written, which is the case worth looking at.
+  if (rendered && open_in_browser) utils::browseURL(output)
+
+  list(
+    data_valid  = (status == 0L),
+    rendered    = rendered,
+    exit_status = status,
+    output_path = output,
+    raw_output  = raw_output,
     command     = paste(c(cli_bin, args), collapse = " ")
   )
 }

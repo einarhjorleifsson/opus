@@ -36,7 +36,7 @@ release build; an explicit value is never overridden.}
 List: (valid = T/F, exit_status, output_path, raw_output, command)
 }
 \description{
-Thin wrapper around data-dict CLI's `render` command: one HTML file with
+Thin wrapper around data-dict CLI's `render-spec` command: one HTML file with
 a relationship diagram, a searchable index of tables and columns, and the
 glossary. Profiles each table's `source` data (row counts, histograms,
 missing values) when present.

@@ -201,3 +201,99 @@ test_that("op_validate_full() passes cli_bin by name, so it runs at all", {
                                 cli_bin = "/nonexistent/data-dict"),
                "data-dict CLI not found")
 })
+
+# --- .op_dict_for(): the source injection both render/validate paths share ---
+# Pure YAML surgery, so these need no CLI and no fixture and actually run.
+# Extracted 2026-09-09 when op_render_report() became its second caller; these
+# pin the three corners its comment names, none of which had a test.
+
+.dict_fixture <- function() {
+  p <- tempfile(fileext = ".yaml")
+  writeLines(c(
+    "$version: 0.1.0",
+    "name: test_dict",
+    "tables:",
+    "- name: A",
+    "  columns:",
+    "  - name: x",
+    "    type: number",
+    "- name: B",
+    "  source:",
+    "    parquet: /old/stale.parquet",
+    "  columns:",
+    "  - name: y",
+    "    type: string",
+    "- name: C",
+    "  columns:",
+    "  - name: z",
+    "    type: string",
+    "relationships:",
+    "- columns: [A.x, C.z]",
+    "glossary:",
+    "  thing: a definition"
+  ), p)
+  p
+}
+
+.tbl <- function(y, name) Filter(function(t) identical(t$name, name), y$tables)[[1]]
+
+test_that(".op_dict_for() injects a source and leaves the rest alone", {
+  dict <- .dict_fixture(); data <- tempfile(fileext = ".parquet"); file.create(data)
+  d <- .op_dict_for(data, "A", dict)
+  expect_true(d$temp)
+  y <- yaml::read_yaml(d$dict_path)
+
+  expect_identical(.tbl(y, "A")$source$parquet, normalizePath(data))
+  expect_identical(length(y$tables), 3L)
+  # B keeps its own source, C still has none
+  expect_identical(.tbl(y, "B")$source$parquet, "/old/stale.parquet")
+  expect_null(.tbl(y, "C")$source)
+  # columns survive the surgery
+  expect_identical(.tbl(y, "A")$columns[[1]]$name, "x")
+})
+
+test_that(".op_dict_for() attaches the source to the LAST table, not to glossary", {
+  # A table's block ends at the next UNINDENTED line, not the next `- name:`.
+  # The last table has no next `- name:`, so a naive scan runs its block to
+  # EOF -- and the injected `source:`, appended after that block, then lands
+  # two spaces under whatever top-level key came last. Measured on this
+  # fixture: the naive version leaves C with no source at all and puts it at
+  # `glossary$source`. Those two assertions are the discriminating ones; the
+  # rest confirm nothing else moved.
+  dict <- .dict_fixture(); data <- tempfile(fileext = ".parquet"); file.create(data)
+  y <- yaml::read_yaml(.op_dict_for(data, "C", dict)$dict_path)
+
+  expect_identical(.tbl(y, "C")$source$parquet, normalizePath(data))
+  expect_null(y$glossary$source)
+  expect_identical(y$glossary$thing, "a definition")
+  expect_false(is.null(y$relationships))
+})
+
+test_that(".op_dict_for() replaces an existing source without orphaning it", {
+  # `source:` is 2-space indented but its `parquet:` value is deeper. Dropping
+  # only the `source:` line leaves that value parented to nothing, which is a
+  # YAML parse error rather than a wrong answer.
+  dict <- .dict_fixture(); data <- tempfile(fileext = ".parquet"); file.create(data)
+  d <- .op_dict_for(data, "B", dict)
+  y <- expect_no_error(yaml::read_yaml(d$dict_path))
+
+  expect_identical(.tbl(y, "B")$source$parquet, normalizePath(data))
+  expect_identical(length(readLines(d$dict_path)[
+    grepl("^  source:", readLines(d$dict_path))]), 1L)   # not two
+  expect_false(any(grepl("stale.parquet", readLines(d$dict_path))))
+})
+
+test_that(".op_dict_for() uses the dictionary as-is when no data_path is given", {
+  dict <- .dict_fixture()
+  d <- .op_dict_for("", "B", dict)                    # B declares its own source
+  expect_false(d$temp)
+  expect_identical(d$dict_path, normalizePath(dict))
+  expect_identical(d$run_dir, dirname(normalizePath(dict)))
+
+  expect_error(.op_dict_for("", "A", dict), "no source defined")   # A does not
+})
+
+test_that(".op_dict_for() rejects a table the dictionary does not declare", {
+  dict <- .dict_fixture()
+  expect_error(.op_dict_for("", "NOPE", dict), "not found in dictionary")
+})

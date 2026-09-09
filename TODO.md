@@ -147,6 +147,86 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       elsewhere — but that is a decision about what this suite is for, not a
       task, so it waits for a human.
 
+      **The conformance half is answered by the next item, and it is not a
+      fixture at all.** A fixture is frozen by construction, so no fixture
+      can ever test the dictionary; only data the dictionary has not seen
+      can, and that arrives on every archive rebuild. So this item is only
+      ever about plumbing, which shrinks it considerably.
+
+- [ ] **The archive build validates the dictionary but never validates the
+      data against it — so nothing checks the spec on the one input that can
+      falsify it: new data.** Found 2026-09-09, from the question "on the
+      tautology, is the real test not e.g. new data?", which is the right
+      question and reframes the fixture item above.
+
+      **What runs today.** Spec-level validation is wired in:
+      `spec_02_curate_dict.R:1283` and `spec_03_translate_new_names.R:303`
+      call `op_validate_spec()`, and `archive_06_metadata.R` notes that
+      `export-spec` runs the same pass with the same `S##` diagnostics, so a
+      dictionary that would not validate never reaches a file. That part is
+      sound.
+
+      **What does not run.** `op_validate_meta()` and `op_validate_data()` —
+      the two that compare *data* against the dictionary — are invoked
+      nowhere in the pipeline. `archive_06_consolidate.R:143` only prints a
+      suggestion:
+
+      ```r
+      message("Verify with: opus::op_validate_meta('", OUT_DIR, "/HH.parquet', 'HH')")
+      ```
+
+      So every build asks the operator to check by hand and records nothing
+      about whether they did. Measured 2026-09-09 on the staged HH:
+      `meta_valid` TRUE, `data_valid` FALSE on 9 errors (8 x D01, a null in a
+      `required` field; 1 x D04, a value outside an allowed set). Every one
+      is a known ICES-side defect. The point is not that they exist — it is
+      that a tenth would appear in silence.
+
+      **Two things new data falsifies, needing different treatment.**
+
+      1. *Hard constraints* — the D01/D04 codes. Mechanical, already
+         implemented, simply never invoked on new data.
+      2. *The measured prose* — the dictionary's `details` fields carry hard
+         counts about the archive they describe. 614 lines contain a 3+ digit
+         number, e.g. "1,894,960 rows", and `ThermoCline`'s breakdown is
+         precise down to its 3 lower-case `y`s. Each is a claim a rebuild can
+         silently falsify. This is the existing "re-verify the field prose"
+         item, and it is the harder half: automating it means *generating*
+         those statistics rather than writing them.
+
+      **The shape of the fix is a ratchet, not a check.** An
+      `archive_07_validate.R` after consolidate, over all four tables:
+
+      ```r
+      for (tbl in OP_TABLES) {
+        f <- file.path(OUT_DIR, paste0(tbl, ".parquet"))
+        m <- op_validate_meta(f, tbl)
+        d <- op_validate_data(f, tbl)
+        # per-code counts, not just the verdict -- the verdict is FALSE either way
+        codes <- table(op_validation_problems(d)$code)
+        ...
+      }
+      # write logs/validation_<built_utc>.json, then DIFF the previous one
+      ```
+
+      The diff is the whole value: "9 errors, same codes as last build" is a
+      pass; "HH gained a D01 on `BottomDepth`" is a finding. Note
+      `op_validation_problems()` only became usable for this on 2026-09-09 —
+      before that it returned 0 rows against a report holding 20.
+
+      **It should reach the provenance block too.** The footer records
+      `dict_sha256`, `built_utc`, `opus_version`, `opus_git_sha`, `writer`
+      and `pipeline`, so a published file says which dictionary it matched
+      but not whether it *conformed*. A `validate-data` verdict there makes
+      each build self-reporting, and is the missing half of the metadata work
+      recorded at the end of this file.
+
+      **Two honest limits.** The diff fires only when the archive is
+      rebuilt, so it is exactly as frequent as downloads are — the newest log
+      is `logs/download_2026-08-26_195940.log`. And it reports that a number
+      moved, never whether the data or the spec is the thing that is wrong;
+      that judgement is what the known-issues registry exists to record.
+
 - [ ] **`archive_06_consolidate.R` still materialises the whole table in
       memory** (`arrow::open_dataset(part_dir) |> collect()`, 14.4M rows for
       HL) purely to write it out again. DuckDB's `COPY (SELECT * FROM

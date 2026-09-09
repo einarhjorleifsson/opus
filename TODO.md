@@ -77,6 +77,76 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       already does some of this outside the test suite — moving it inside
       `R CMD check` costs little and catches the loudest failures.
 
+      **Progress 2026-09-09.** The suite now asserts values rather than
+      shapes, and 41 assertions execute where 8 did. What it still does not
+      have is a fixture, and that is parked on a real question rather than on
+      effort — see the next item.
+
+- [ ] **Six tests still skip for want of a fixture, and the fix needs a
+      decision first: is this suite proving the wrappers work, or that the
+      archive conforms?** Parked 2026-09-09, deliberately.
+
+      **What it cost so far, measured not supposed.** `test_validation.R`
+      opens with `hh_path <- system.file("HH.parquet", package = "opus")`,
+      which returns `""`, so six tests carry
+      `skip_if_not(file.exists(hh_path))` and skip. That is not an oversight:
+      `a382b2c` (2026-07-31) added `inst/{HH,HL,CA,LT}.parquet` via Git LFS
+      and `57b34c0` (2026-08-18) deleted them for sound reasons — they had
+      drifted from real renames (CA `IndividualAge`/`Age`, LT
+      `GearEx`/`GearExceptions`) and the resampling script had never been
+      run. What that commit did not do was update the six dependent tests.
+
+      Three defects were sitting behind those skips, all found 2026-09-09:
+      `op_validate_full()` could never run at all (`cli_bin` passed
+      positionally into `op_validate_spec()`'s `json`);
+      `op_validation_problems()` returned 0 rows against a 20-problem report;
+      and `op_inspect_parquet()`'s test asserts a `result$output` field the
+      function does not return. The first two are fixed. **The third is
+      not, and it is independent of everything below** — that test is wrong
+      today and will fail the moment any fixture appears.
+
+      **The three candidate fixtures, and what each actually buys.**
+
+      | option | runs where | ships | can go stale |
+      |---|---|---|---|
+      | `inst/HH.parquet` (331 rows, 40.8 KB) | anywhere | 41 KB | yes — this is what bit `57b34c0` |
+      | point tests at `.datras/` | this machine only | nothing | no |
+      | synthetic, generated from `op_field_spec("HH")` | anywhere | nothing | no |
+
+      `.datras/` is both gitignored and Rbuildignored, so option 2 restores
+      today's skip on any fresh clone. Note there is no CI in this repo, so
+      the machine option 1 exists for does not currently exist.
+
+      Option 3 was measured and works: 69 columns, 1 row, 11.5 KB in a
+      tempfile, and it produces results identical to the real 331-row
+      subset — `op_validate_meta()` TRUE, `op_inspect_parquet()` 69 columns,
+      `op_validate_full()` TRUE/TRUE/FALSE. It must be generated *from* the
+      dictionary, never from a hand-written column list, or the test becomes
+      a second source of truth for DATRAS field names. (Generating data to
+      *satisfy* a declared `type` is legitimate; casting real data *from*
+      one is the thing Working Principle 1 forbids.)
+
+      **Why this is parked rather than done: half of it is a tautology.**
+
+      - Synthetic fixture + "does this function run and return its
+        documented shape" is **not** circular. It is plumbing, and it would
+        have caught all three defects above, none of which involved data
+        content.
+      - Synthetic fixture + `expect_true(meta_valid)` **is** circular. A
+        file built from the dictionary, checked against the dictionary,
+        always passes. That assertion looks like conformance evidence and is
+        not — which matters, because the current suite carries exactly that
+        assertion and it was previously described here as the guard against
+        fixture drift. On synthetic data it guards nothing.
+
+      So the two purposes want different fixtures, and conflating them is
+      what produced the original mess: `57b34c0` removed the real data and
+      left behind assertions only real data could satisfy. The likely answer
+      is both — a synthetic fixture for the plumbing, running everywhere,
+      and a separate conformance test against `.datras/` that skips honestly
+      elsewhere — but that is a decision about what this suite is for, not a
+      task, so it waits for a human.
+
 - [ ] **`archive_06_consolidate.R` still materialises the whole table in
       memory** (`arrow::open_dataset(part_dir) |> collect()`, 14.4M rows for
       HL) purely to write it out again. DuckDB's `COPY (SELECT * FROM

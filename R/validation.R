@@ -879,7 +879,11 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
     output <- path.expand(output)
   }
 
-  args <- c("render", render_path, "-o", output)
+  # `render-spec`, not `render`: the CLI split the subcommand in two on
+  # 2026-09-08 (tidyverse/data-dict#245) -- `render-spec` for a dictionary,
+  # `render-report` for a validation run -- with no alias for the old name.
+  # The argument shape is unchanged: path positional, `-o` for the output.
+  args <- c("render-spec", render_path, "-o", output)
   raw_output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
   status <- attr(raw_output, "status") %||% 0L
 

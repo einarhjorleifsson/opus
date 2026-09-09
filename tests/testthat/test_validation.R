@@ -51,14 +51,30 @@ test_that("op_validate_spec fails with missing dictionary", {
   )
 })
 
-test_that("op_inspect_parquet returns schema", {
+test_that("op_inspect_parquet returns the schema it documents", {
+  # This asserted `result$output` until 2026-09-09. There is no such field and
+  # never was one under `describe --json`; the assertion predates data-dict
+  # v0.0.3 (2026-08-04), when `types parquet` was removed and this function
+  # was switched over -- see the note on its own @return. The function and its
+  # roxygen were both correct; only the test was stale, and it could not say so
+  # because it skips on a fixture deleted in 57b34c0.
   skip_if_not(file.exists(hh_path), "HH.parquet not found")
 
   result <- op_inspect_parquet(hh_path)
   expect_type(result, "list")
-  expect_true("output" %in% names(result))
-  expect_true("command" %in% names(result))
-  expect_type(result$output, "character")
+  expect_identical(names(result), c("valid", "columns", "raw_output", "command"))
+  expect_true(result$valid)
+
+  # `columns` carries the analysis-level `type` AND the physical
+  # `parquet_type` side by side, which is the point of it: `Quarter` reads
+  # `number` against `INT32 / Integer(i32)`. The coarseness is by design, and
+  # the pairing is what lets a caller see both without casting from either.
+  expect_s3_class(result$columns, "data.frame")
+  expect_identical(names(result$columns), c("name", "type", "parquet_type"))
+  expect_gt(nrow(result$columns), 0L)
+
+  expect_type(result$raw_output, "character")
+  expect_type(result$command, "character")
 })
 
 test_that("op_inspect_parquet fails with missing file", {

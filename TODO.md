@@ -102,8 +102,13 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       `op_validation_problems()` returned 0 rows against a 20-problem report;
       and `op_inspect_parquet()`'s test asserts a `result$output` field the
       function does not return. The first two are fixed. **The third is
-      not, and it is independent of everything below** — that test is wrong
-      today and will fail the moment any fixture appears.
+      **fixed 2026-09-09**, independently of everything below: it now asserts
+      the contract the function's own `@return` already documented (`valid`,
+      `columns` with name/type/parquet_type, `raw_output`, `command`). The
+      function and its roxygen were both right all along; the assertion
+      predated data-dict v0.0.3, when `types parquet` gave way to
+      `describe --json`. It still skips, so the eight assertions were
+      verified by hand against the staged HH.
 
       **The three candidate fixtures, and what each actually buys.**
 

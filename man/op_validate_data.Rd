@@ -8,7 +8,7 @@ op_validate_data(
   data_path,
   table,
   dict_path = "inst/DATRAS-data-dict.yaml",
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
+  cli_bin = .op_cli()
 )
 }
 \arguments{
@@ -18,7 +18,9 @@ op_validate_data(
 
 \item{dict_path}{Path to dictionary YAML}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (valid = T/F, exit_status, result = JSON, raw_output, stderr)

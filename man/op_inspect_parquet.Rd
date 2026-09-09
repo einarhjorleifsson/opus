@@ -4,15 +4,14 @@
 \alias{op_inspect_parquet}
 \title{Inspect parquet file schema}
 \usage{
-op_inspect_parquet(
-  parquet_path,
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
-)
+op_inspect_parquet(parquet_path, cli_bin = .op_cli())
 }
 \arguments{
 \item{parquet_path}{Path to parquet file}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (valid = T/F, columns = data.frame with name/type/parquet_type,

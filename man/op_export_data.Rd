@@ -7,7 +7,7 @@
 op_export_data(
   dict_path = "inst/DATRAS-data-dict.yaml",
   pretty = FALSE,
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
+  cli_bin = .op_cli()
 )
 }
 \arguments{
@@ -16,7 +16,9 @@ op_export_data(
 
 \item{pretty}{Logical: pretty-print JSON? (default: FALSE for compact output)}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (valid = T/F, data = parsed JSON, raw_output = JSON text,

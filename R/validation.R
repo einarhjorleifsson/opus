@@ -19,14 +19,16 @@
 #'   newer CLI capability (not available when this function was first
 #'   written); `op_validate_meta()`/`op_validate_data()` have exposed the
 #'   equivalent structured report via their own `$result` all along.
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = TRUE/FALSE, exit_status, output = plain-text lines,
 #'   report = parsed JSON report when json=TRUE (NULL otherwise), command)
 #' @export
 op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
                              json = FALSE,
-                             cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                             cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
 
@@ -65,13 +67,15 @@ op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' It now uses `describe --json` since `types parquet` was removed.
 #'
 #' @param parquet_path Path to parquet file
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, columns = data.frame with name/type/parquet_type,
 #'   raw_output = JSON text, command)
 #' @export
 op_inspect_parquet <- function(parquet_path,
-                               cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                               cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   parquet_path <- path.expand(parquet_path)
 
@@ -121,13 +125,15 @@ op_inspect_parquet <- function(parquet_path,
 #' @param data_path Path to parquet file
 #' @param table Table name to validate
 #' @param dict_path Path to dictionary YAML
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, exit_status, result = JSON, raw_output, stderr)
 #' @export
 op_validate_meta <- function(data_path, table,
                              dict_path = "inst/DATRAS-data-dict.yaml",
-                             cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                             cli_bin = .op_cli()) {
   .validate_via_dict("validate-meta", data_path, table, dict_path, cli_bin)
 }
 
@@ -138,13 +144,15 @@ op_validate_meta <- function(data_path, table,
 #' @param data_path Path to parquet file
 #' @param table Table name to validate
 #' @param dict_path Path to dictionary YAML
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, exit_status, result = JSON, raw_output, stderr)
 #' @export
 op_validate_data <- function(data_path, table,
                              dict_path = "inst/DATRAS-data-dict.yaml",
-                             cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                             cli_bin = .op_cli()) {
   .validate_via_dict("validate-data", data_path, table, dict_path, cli_bin)
 }
 
@@ -155,14 +163,20 @@ op_validate_data <- function(data_path, table,
 #' @param data_path Path to parquet file
 #' @param table Table name to validate
 #' @param dict_path Path to dictionary YAML
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (spec_valid, meta_valid, data_valid, spec_output, meta_result, data_result)
 #' @export
 op_validate_full <- function(data_path, table,
                              dict_path = "inst/DATRAS-data-dict.yaml",
-                             cli_bin = "~/garbage/data-dict/target/release/data-dict") {
-  spec_check <- op_validate_spec(dict_path, cli_bin)
+                             cli_bin = .op_cli()) {
+  # NAMED, not positional: op_validate_spec()'s second parameter is `json`,
+  # so `op_validate_spec(dict_path, cli_bin)` bound a path to it and died in
+  # `if (json)`. This function could never run. Nothing caught it because the
+  # only test that calls it skips on a fixture deleted in 57b34c0.
+  spec_check <- op_validate_spec(dict_path, cli_bin = cli_bin)
   meta_check <- op_validate_meta(data_path, table, dict_path, cli_bin)
   data_check <- op_validate_data(data_path, table, dict_path, cli_bin)
 
@@ -177,8 +191,47 @@ op_validate_full <- function(data_path, table,
 }
 
 # ============================================================================
-# Internal helper
+# Internal helpers
 # ============================================================================
+
+# Where the data-dict CLI lives.
+#
+# opus shells out to `data-dict`, an external Rust binary
+# (github.com/tidyverse/data-dict). It is not an R package, so it cannot be
+# declared in DESCRIPTION and cannot be installed by pak -- every caller needs
+# some way to say where it is. Resolution order, first hit wins:
+#
+#   1. an explicit `cli_bin` argument (never overridden)
+#   2. $OPUS_DATA_DICT
+#   3. `data-dict` on $PATH
+#   4. the conventional local build, ~/garbage/data-dict/target/release
+#
+# (4) is a developer convenience and nothing more. Until 2026-09-09 it was the
+# hardcoded DEFAULT of all ten exported functions here, and was baked into
+# their generated man pages, so on any machine but one those ten errored out
+# of the box. Keeping it last means the local build still works without
+# configuration and no longer decides the contract.
+#
+# NOTE the binary carries no usable version signal: `--version` reported 0.0.3
+# both before and after a 13-commit upstream pull (checked 2026-09-09), so a
+# stale build is indistinguishable from a current one. Whatever ends up
+# recording validator provenance must record the CLI's git SHA, not `--version`.
+.op_cli <- function() {
+  p <- Sys.getenv("OPUS_DATA_DICT", "")
+  if (nzchar(p)) return(path.expand(p))
+
+  p <- unname(Sys.which("data-dict"))
+  if (nzchar(p)) return(p)
+
+  p <- path.expand("~/garbage/data-dict/target/release/data-dict")
+  if (file.exists(p)) return(p)
+
+  stop("data-dict CLI not found. opus shells out to the data-dict binary ",
+       "(https://github.com/tidyverse/data-dict), which is not an R package. ",
+       "Point opus at it with Sys.setenv(OPUS_DATA_DICT = \"/path/to/data-dict\"), ",
+       "put `data-dict` on PATH, or pass `cli_bin`. Searched: $OPUS_DATA_DICT, ",
+       "PATH, and ", p, ".", call. = FALSE)
+}
 
 #' @keywords internal
 .validate_via_dict <- function(subcommand, data_path, table, dict_path, cli_bin) {
@@ -430,20 +483,32 @@ op_flag_violations <- function(data_path, table,
 #' already decided by the CLI; this only makes it easier to work with from
 #' R (`table()`, `dplyr::filter()`, etc.) than a nested list.
 #'
-#' @param report Parsed report list (has a `problems` element), as returned
-#'   by `op_validate_spec(json = TRUE)$report`, `op_validate_meta()$result`,
-#'   or `op_validate_data()$result`.
+#' @param report A parsed report (has a `problems` element), or the whole
+#'   object a validate function returned -- `op_validate_spec(json = TRUE)`,
+#'   `op_validate_meta()` or `op_validate_data()`. The wrapper is unwrapped
+#'   for you: the three do not agree on where they put the report
+#'   (`$report` for spec, `$result` for meta and data), so requiring the
+#'   caller to know which is a trap. Anything carrying no `problems` at
+#'   either level is an error, not an empty result.
 #'
 #' @return Data frame with one row per problem: code, severity, kind, table,
 #'   columns (comma-joined), message, count, rows (comma-joined -- capped at
 #'   the first 5 by the CLI itself, see `op_flag_violations()`'s own docs
-#'   for when that cap matters), redacted. Empty (0-row) data frame if the
-#'   report has no problems, or `report`/`report$problems` is NULL.
+#'   for when that cap matters), redacted. Empty (0-row) data frame if
+#'   `report` is NULL or genuinely carries no problems. \strong{Errors} if
+#'   handed something that is not a report: a real report always has a
+#'   `problems` element, empty or not (verified 2026-09-09 -- even a valid
+#'   HH meta report lists its 11 `S31` unresolved-todo warnings), so
+#'   returning "no problems" for an unrecognised object would fabricate a
+#'   clean bill of health. That is how
+#'   `op_validation_problems(op_validate_data(...))` used to report 0 rows
+#'   against a report holding 20 problems.
 #'
 #' @examples
 #' \dontrun{
 #'   res <- op_validate_data("inst/CA.parquet", "CA")
-#'   op_validation_problems(res$result)
+#'   op_validation_problems(res)          # wrapper -- unwrapped for you
+#'   op_validation_problems(res$result)   # or the report itself
 #' }
 #'
 #' @export
@@ -451,9 +516,35 @@ op_validation_problems <- function(report) {
   cols <- c("code", "severity", "kind", "table", "columns", "message", "count", "rows", "redacted")
   empty <- as.data.frame(stats::setNames(lapply(cols, function(x) character(0)), cols))
 
-  if (is.null(report) || is.null(report$problems) || length(report$problems) == 0) {
-    return(empty)
+  if (is.null(report)) return(empty)
+  if (!is.list(report))
+    stop("`report` must be a parsed data-dict validation report (a list), ",
+         "not ", class(report)[1], ".", call. = FALSE)
+
+  # Accept the wrapper as well as the report. The three validate functions
+  # disagree on the slot -- `$report` for spec, `$result` for meta and data --
+  # so the obvious call matched neither and fell through to the empty frame.
+  if (is.null(report$problems)) {
+    for (slot in c("result", "report")) {
+      if (slot %in% names(report) && !is.null(report[[slot]]$problems)) {
+        report <- report[[slot]]
+        break
+      }
+    }
   }
+
+  if (is.null(report$problems)) {
+    if (all(c("meta_result", "data_result") %in% names(report)))
+      stop("`report` looks like op_validate_full()'s return, which carries ",
+           "two reports. Pass one of them: `$meta_result` or `$data_result`.",
+           call. = FALSE)
+    stop("`report` carries no `problems`, at the top level or under ",
+         "`$result`/`$report`, so it is not a validation report. Returning ",
+         "an empty frame here would read as 'no problems found'.",
+         call. = FALSE)
+  }
+
+  if (length(report$problems) == 0) return(empty)
 
   rows_list <- lapply(report$problems, function(p) {
     data.frame(
@@ -483,13 +574,15 @@ op_validation_problems <- function(report) {
 #' @param parquet_path Path to parquet file
 #' @param column Optional: summarize only this column (default: all)
 #' @param json Logical: return JSON output? (default: FALSE returns formatted text)
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (available = T/F, output = text/JSON, raw_output = lines, exit_status)
 #' @export
 op_describe_parquet <- function(parquet_path, column = NULL,
                                json = FALSE,
-                               cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                               cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   parquet_path <- path.expand(parquet_path)
 
@@ -538,14 +631,16 @@ op_describe_parquet <- function(parquet_path, column = NULL,
 #' @param parquet_paths Character vector: paths to parquet files to describe
 #' @param output Path to write output YAML (default: `"./data-dict.yaml"`)
 #'   Use `"-"` for stdout.
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (available = T/F, exit_status, output_path, skipped = files already in dict,
 #'   created = new tables, raw_output, stderr)
 #' @export
 op_draft_from_parquet <- function(parquet_paths,
                                  output = "./data-dict.yaml",
-                                 cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                                 cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   output <- path.expand(output)
 
@@ -590,14 +685,16 @@ op_draft_from_parquet <- function(parquet_paths,
 #' @param dict_path Path to data-dict.yaml or directory containing one
 #'   (default: `"inst/DATRAS-data-dict.yaml"`)
 #' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, spec = parsed JSON, raw_output = JSON text,
 #'   exit_status, command)
 #' @export
 op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
                           pretty = FALSE,
-                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                          cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
 
@@ -640,14 +737,16 @@ op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' @param dict_path Path to data-dict.yaml or directory containing one
 #'   (default: `"inst/DATRAS-data-dict.yaml"`)
 #' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, data = parsed JSON, raw_output = JSON text,
 #'   exit_status, command)
 #' @export
 op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
                           pretty = FALSE,
-                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                          cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
 
@@ -713,14 +812,16 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #'   `data-raw/spec_03_translate_new_names.R`'s own comment on
 #'   `rewrap_singleton_arrays()` for the round-trip bug that mechanism
 #'   would otherwise risk reintroducing.
-#' @param cli_bin Path to data-dict CLI binary
+#' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
+#'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+#'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, exit_status, output_path, raw_output, command)
 #' @export
 op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
                           output = NULL,
                           data_dir = NULL,
-                          cli_bin = "~/garbage/data-dict/target/release/data-dict") {
+                          cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
 

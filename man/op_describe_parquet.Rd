@@ -8,7 +8,7 @@ op_describe_parquet(
   parquet_path,
   column = NULL,
   json = FALSE,
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
+  cli_bin = .op_cli()
 )
 }
 \arguments{
@@ -18,7 +18,9 @@ op_describe_parquet(
 
 \item{json}{Logical: return JSON output? (default: FALSE returns formatted text)}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (available = T/F, output = text/JSON, raw_output = lines, exit_status)

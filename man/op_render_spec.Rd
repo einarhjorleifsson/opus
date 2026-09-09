@@ -8,7 +8,7 @@ op_render_spec(
   dict_path = "inst/DATRAS-data-dict.yaml",
   output = NULL,
   data_dir = NULL,
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
+  cli_bin = .op_cli()
 )
 }
 \arguments{
@@ -28,7 +28,9 @@ substitution on a temp copy of the YAML (not a `yaml::read_yaml()` /
 `rewrap_singleton_arrays()` for the round-trip bug that mechanism
 would otherwise risk reintroducing.}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (valid = T/F, exit_status, output_path, raw_output, command)

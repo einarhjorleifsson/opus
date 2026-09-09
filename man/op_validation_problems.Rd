@@ -7,16 +7,27 @@
 op_validation_problems(report)
 }
 \arguments{
-\item{report}{Parsed report list (has a `problems` element), as returned
-by `op_validate_spec(json = TRUE)$report`, `op_validate_meta()$result`,
-or `op_validate_data()$result`.}
+\item{report}{A parsed report (has a `problems` element), or the whole
+object a validate function returned -- `op_validate_spec(json = TRUE)`,
+`op_validate_meta()` or `op_validate_data()`. The wrapper is unwrapped
+for you: the three do not agree on where they put the report
+(`$report` for spec, `$result` for meta and data), so requiring the
+caller to know which is a trap. Anything carrying no `problems` at
+either level is an error, not an empty result.}
 }
 \value{
 Data frame with one row per problem: code, severity, kind, table,
   columns (comma-joined), message, count, rows (comma-joined -- capped at
   the first 5 by the CLI itself, see `op_flag_violations()`'s own docs
-  for when that cap matters), redacted. Empty (0-row) data frame if the
-  report has no problems, or `report`/`report$problems` is NULL.
+  for when that cap matters), redacted. Empty (0-row) data frame if
+  `report` is NULL or genuinely carries no problems. \strong{Errors} if
+  handed something that is not a report: a real report always has a
+  `problems` element, empty or not (verified 2026-09-09 -- even a valid
+  HH meta report lists its 11 `S31` unresolved-todo warnings), so
+  returning "no problems" for an unrecognised object would fabricate a
+  clean bill of health. That is how
+  `op_validation_problems(op_validate_data(...))` used to report 0 rows
+  against a report holding 20 problems.
 }
 \description{
 A pure reshaping helper: takes the already-parsed JSON report from
@@ -31,7 +42,8 @@ R (`table()`, `dplyr::filter()`, etc.) than a nested list.
 \examples{
 \dontrun{
   res <- op_validate_data("inst/CA.parquet", "CA")
-  op_validation_problems(res$result)
+  op_validation_problems(res)          # wrapper -- unwrapped for you
+  op_validation_problems(res$result)   # or the report itself
 }
 
 }

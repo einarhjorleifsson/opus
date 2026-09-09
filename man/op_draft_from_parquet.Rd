@@ -7,7 +7,7 @@
 op_draft_from_parquet(
   parquet_paths,
   output = "./data-dict.yaml",
-  cli_bin = "~/garbage/data-dict/target/release/data-dict"
+  cli_bin = .op_cli()
 )
 }
 \arguments{
@@ -16,7 +16,9 @@ op_draft_from_parquet(
 \item{output}{Path to write output YAML (default: `"./data-dict.yaml"`)
 Use `"-"` for stdout.}
 
-\item{cli_bin}{Path to data-dict CLI binary}
+\item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
+of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
+release build; an explicit value is never overridden.}
 }
 \value{
 List: (available = T/F, exit_status, output_path, skipped = files already in dict,

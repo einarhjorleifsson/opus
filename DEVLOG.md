@@ -2318,3 +2318,112 @@ silently, which is #64.
 
 Nothing to change in opus: `archive_02b`'s explicit `CSV_FIXUP` map
 already handles all of it, and that route is paused anyway.
+
+---
+
+## 2026-09-14 -- DuckDB can read the DATRAS formats natively; a silent icesDatras truncation found along the way
+
+An exploratory day (console only; no pipeline code changed) toward a
+possible `op_read_datras(source = c("xml","csv"), scope = c("archive","live"))`
+that would eliminate both the Python/`ElementTree` subprocess in
+`archive_04_parse_phase2.R` and any reliance on icesDatras's parsing.
+All measurements preserved in `data-raw/read_datras_benchmarks_2026-09-14.md`.
+
+**XML via DuckDB `webbed`** (community extension, formerly duckdb_xml).
+`read_xml()` with its default sampled type inference is **not safe** on
+this data: it inferred `SpecCodeType` INTEGER from early `W` values and
+errored on a later `U` (HL_NS-IBTS_1989_Q1, HL_NS-IBTS_2017_Q3) -- the
+same T/F-guessing class of failure the 2026-08-17 `colClasses` fix
+documents. Declaring every column a priori as VARCHAR via `columns=`,
+built from `op_datras_operation_types()` (the WSDL map opus already
+owns), both fixes this and is the dominant speed factor: the full HL
+tree (973 files, 13.56 GB, 14.42M rows) parses in 16-23 s warm-cache vs
+549 s for the Python route (~30x), and after the unchanged four-step
+`opus::` chain the result is value-identical to the reference parquet
+on 971 of 973 files (the other 2 are zero-record files both parsers
+agree on).
+
+**Two operational traps found, both about silence.**
+`read_xml()` parses a *truncated* XML file without error and returns a
+partial row count (a `curl -m 20` cut-off produced 18,508 of 47,663
+rows and briefly looked like an NS-IBTS 2020 Q1 "resubmission" -- it
+was not; the complete re-download is identical to the archive). Any
+reader built on this must verify completeness (closing root tag /
+record count) before parsing. And `read_csv(columns=)` requires the
+map to cover every field in the file, extras included, and must not be
+given `nullstr='-9'` -- that would re-introduce the blanket sentinel
+scrub the pipeline deliberately removed on 2026-08-16.
+
+**Live reads.** The ASMX endpoints are plain GETs (same URL shape
+`icesDatras::getDATRAS` builds); DuckDB's httpfs cannot fetch them
+directly (SSL certificate error), so a tempfile download step remains
+regardless. Speed test on HL/DWS (4 cells, 18 MB XML, 20,143 rows; all
+routes content-identical): archive read 0.24 s, CSV-live (one zip per
+survey) 1.36 s, XML-live (sequential per-cell GETs) 6.10 s, XML-live
+with 4 concurrent curls ~4.6 s. Parallelism does not close the gap:
+wire size (18 MB XML vs 2.7 MB zip for identical rows), not
+concurrency, is the bottleneck, and the server appears to throttle per
+connection. CSV-live is the right default for whole-survey pulls;
+XML-live remains necessary for LT (not served by the CSV API) and for
+single-cell queries.
+
+**Head-to-head vs icesDatras, live NS-IBTS HL** (4,101,389 rows; 48.7
+MB zip): end-to-end 19.8 s vs 23.8 s -- pure network jitter, since the
+download dominates and the parse steps are 1.13 s (`fread`) vs 1.38 s
+(DuckDB `read_csv`). The real difference is correctness, and it is a
+genuine bug: `getDatrasUnaggregated()` calls `formatDatras()` **without
+`record=`**, so `applyDatrasTypeSchema()` runs against the unfiltered
+`getDatrasFieldList()`, where `NumberAtLength` is `decimal` for HL but
+`int` for CA (legacy `CANoAtLngt`). The int coercion runs first and
+silently truncates every fractional HL value (9.85 -> 9). Verified the
+server is not at fault: the zips are byte-size-identical, and `fread` +
+`formatDatras(record="HL")` on the same file preserves all 189,106
+fractions. Scale across the HL archive (measured on the parquet
+partitions, which keep the fractions): 9 surveys affected; FR-WCGFS
+61.4% and SE-SOUND 51.2% of *all* rows fractional, FR-CGFS 24.5%,
+EVHOE 8.7%, BITS 5.7%, NS-IBTS ~5%. Issue drafted with concrete
+per-haul examples at
+`data-raw/issue-drafts/icesDatras-numberatlength-truncation.md`
+(companion to #63/#64; unlike them, this is icesDatras-side, not
+endpoint-side).
+
+**Side findings.** `getDatrasUnaggregated()`'s year/quarter arguments
+must be range *strings* ("1965:2030") -- vector inputs vectorize the
+URL through `paste0` and corrupt the zip (observed as an unzip
+failure). LiverWeight confirmed CSV-API-only, exhaustively: documented
+in `getDatrasFieldList()` and the field-description spreadsheet
+(decimal2), served by neither `getCAdata` nor `getCAdataSp` (34 fields,
+verified live), and absent from every file in `.datras/xml` (grep, 0
+hits) -- consistent with the 2026-08-29 archive_02b assessment.
+
+**Follow-up, same day: the NS-IBTS archive-vs-live-CSV row gap, and
+CA's `NumberAtLength` type.** Two threads left open above, now closed.
+
+The ~63k-row difference between the HL parquet archive (4,164,330) and
+the live CSV whole-survey pull (4,101,389) is not archive staleness in
+one direction; it decomposes into *both* endpoints disagreeing with
+each other, per cell:
+
+- **Recent quarters: the CSV extract lags.** 2026 Q1 (48,070 rows) is
+  absent from the CSV API entirely (its NS-IBTS range ends 2025), and
+  2025 Q3 is partial (34,296 served vs 47,288 in the archive).
+  Smaller lags at 2024 Q3 (+740), 2025 Q1 (+1,081), 2018 Q1 (+61).
+  Same failure class as CODS-Q4: the download product is a periodic
+  extract, not a live view.
+- **Old quarters: the CSV serves rows the XML service withholds.**
+  1985/86/87/91/92 Q1 each carry exactly 2 extra rows in the CSV --
+  the 10 anonymized records (blank Country/Platform, StNo/HaulNo=999,
+  DoC 2021/2024). Verified the endpoints see the same database
+  vintage: archive 1985 Q1 carries the same DateofCalculation
+  (2024-01-16) as the anonymized rows, and a fresh live XML pull of
+  that cell returns 45,054 records (archive's count), not 45,056.
+  So the XML service filters blank-Country rows out of its response
+  while the CSV export includes them. A two-endpoints-disagree fact;
+  known-issues registry candidate.
+
+And item 3 of the day's open questions: CA's `NumberAtLength` is safe
+under its `int` declaration as submitted -- 5,968,027 archive rows,
+zero fractional values (and exactly one NA). The int/decimal collision
+that corrupts HL does not currently corrupt anything in CA, though the
+same `record=` bug would destroy CA fractions the day any are
+submitted.

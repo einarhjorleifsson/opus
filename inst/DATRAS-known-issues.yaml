@@ -246,6 +246,16 @@ known_violations:
     implication: "Nothing in ICES's own documentation says which encoding to expect where, and the -9 convention is documented as the ICES-wide answer (data-raw/build_field_description_snapshot.R), so a consumer reasonably coding to it will silently miss LT's empty elements -- or, if it parses XML by hand rather than with a real parser, mis-read them. opus is not affected in its output: both encodings reach the archive as null, so LT's null counts already equal empty + -9 (GearExceptions 19,296 + 26,856 = 46,152, matching the archive exactly). But they reach it by two different routes -- an empty element becomes null during parsing, while -9 becomes null via op_strip_sentinels() -- so op_sentinel_policy() describes only one of the two paths, and for the six empty-element-only LT fields the strip step it declares never fires. Candidate for the IMBUS_FISHMAP#29 batch alongside the -9 overloading entry."
     discovered: "2026-08-29, while benchmarking XML parsers: a hand-written scanner that treated <NMArea /> as an opening tag produced 570 rows where LT has 423, which is how the encoding difference surfaced at all"
 
+  - id: "csv_xml_endpoint_rowset_divergence"
+    severity: "C"
+    scope: "systemic"
+    field: "(row sets, not a field)"
+    table: "HH, HL, CA (the three tables both endpoints serve)"
+    issue: "ICES's two distribution endpoints do not serve the same row set for the same survey/year/quarter. The ASMX XML service (getHLdata etc.) and the CSV download API (DATRASDownloadAPI.aspx, behind icesDatras::getDatrasUnaggregated) diverge in BOTH directions."
+    extent: "Verified 2026-09-14 on NS-IBTS HL, archive vs live whole-survey CSV pull (4,164,330 vs 4,101,389 rows, gap 62,941). Direction 1 -- the CSV extract lags recent submissions: 2026 Q1 (48,070 rows) absent from the CSV API entirely (its NS-IBTS range ends at 2025), 2025 Q3 partial (34,296 vs 47,288), smaller lags at 2024 Q3 (+740) and 2025 Q1 (+1,081). Same failure class as the already-documented CODS-Q4 absence: the download product is a periodic extract, not a live view. Direction 2 -- the CSV serves rows the XML service withholds: 1985/86/87/91/92 Q1 each carry exactly 2 extra rows in the CSV (10 total), the anonymized records (blank Country/Platform, StNo/HaulNo=999). Verified NOT a vintage difference: the archive's copy of 1985 Q1 carries the same DateofCalculation (2024-01-16) as the anonymized rows, and a fresh live XML pull of that cell returns 45,054 records (the archive's count), not the CSV's 45,056 -- same database, same reprocessing, different row sets per endpoint."
+    implication: "A consumer pulling 'the same data' from the two endpoints gets different data, in both directions, with no documentation saying so. opus's archive is XML-derived and therefore lacks the anonymized rows; nothing in the archive signals their absence. For consumers needing those rows (they are real, if anonymized, length-frequency records), only the CSV route sees them."
+    discovered: "2026-09-14, while benchmarking a DuckDB-based live reader against the archive (see DEVLOG.md 2026-09-14 and data-raw/read_datras_benchmarks_2026-09-14.md)"
+
 # Processing directives
 processing:
   phase2:

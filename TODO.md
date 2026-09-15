@@ -575,8 +575,38 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
 
 ## Dictionary curation
 
-- [ ] **Reconcile `spec_02_curate_dict.R` with the hand-maintained YAML before
-      the next curation round.** The script runs again (2026-09-15, legacy
+- [ ] **Residual 13 D01 columns after the required-vs-strip decision are true
+      nulls in `required` fields, not the collision.** Enumerated 2026-09-15
+      against the regenerated dictionary (no residual D01 column carries a
+      strip policy): `StationName` in all four tables (already a candidate
+      registry entry — required primary-key component, null on 4.59% of HH),
+      HH `HaulDuration` (51 nulls; covered by the HaulDuration range
+      candidate), CA `HaulNumber` (the known 305,276 unlinkable rows), CA
+      `LengthClass`/`NumberAtLength` (the 377,784-row block from the
+      2026-09-12 findings). Genuinely new and worth a targeted check: HH
+      `ShootLatitude`/`ShootLongitude` (required but null — check against
+      `DataType`; the parent-survey pattern made `HaulLatitude` 33.6% null
+      under C), HL `SpeciesCategory`, and LT `LTREF`/`PARAM`. Each is either
+      a registry candidate or a constraint that should soften to `todo`;
+      none is mechanical.
+
+- [x] **DONE 2026-09-15 — `spec_02_curate_dict.R` reconciled with the
+      hand-maintained YAML and the dictionaries regenerated under Policy B.**
+      All three batches landed: retypes (Quarter/Month → number(ordinal),
+      DateofCalculation → date), the ~100-figure statistics refresh, and the
+      13 forced `required` constraints — the last DECIDED against (the
+      required-vs-strip collision: the dictionary describes the published
+      archive, where those columns are null-heavy, so they carry a `todo`
+      recording ICES's Mandatory claim, not `required`; D01 findings dropped
+      26 → 13). The shipped YAMLs are generator output again; the Policy B
+      comment blocks are gone (removed by the regenerating write_yaml, as
+      designed). Accepted residuals, all documented in DEVLOG: Quarter's
+      details name CatIdentifier in both files, ranges render block-style,
+      citation paths now point at the post-reorg layout, two values maps
+      re-sorted, one CA em-dash byte difference. Full history in DEVLOG.md
+      (2026-09-15 entries). Original item below for the record.
+
+      The script runs again (2026-09-15, legacy
       parquet dependency replaced by `op_rename(to = "legacy")` over the
       published archive), but its baked-in corrections predate the 2026-08-29
       hand pass and silently revert it: the `Quarter`/`Month` retypes to
@@ -611,7 +641,10 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       2026-09-15:** the 13 hand-added `required` constraints are left as
       the known residual while the required-vs-strip question (ICES
       Mandatory vs observed null rates; the same collision as the 26 D01
-      validate-data findings) gets its own decision. **Policy B (2026-09-15): the generator is the
+      validate-data findings) gets its own decision. **UPDATE (later the
+      same day): decided AGAINST `required`** — the dictionary describes the
+      published archive, where those columns are null-heavy, so they carry a
+      `todo`; the hand edit was not ported. **Policy B (2026-09-15): the generator is the
       source of truth** — YAML changes arrive only via regeneration, and the
       hand edits since 2026-08-29 are porting debt, recorded as a comment
       block atop both shipped YAMLs (a regenerating `yaml::write_yaml()`
@@ -688,6 +721,21 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       completion).
 
 ## QC workflow
+
+- [ ] **Consolidate the four metadata sources into one queryable store.**
+      Idea (2026-09-15): a single `datras_sources.duckdb` bundling the
+      icesVocab codes snapshot, the field-description spreadsheet snapshot,
+      WSDL operation types, and getDatrasFieldList, each with snapshot-date
+      provenance — replacing the piecemeal `.datras/ices-schemas/` caches and
+      giving spec_02 and the `audit/` scripts one place to read "what did
+      source X say on date Y". Internal curation/audit tooling only, not a
+      shipped product. Considered and rejected the same day: flag-generated
+      dual YAMLs (ICES-literal vs. descriptive) — two shipped dictionaries
+      are two contracts, the ICES-literal one would mislead, and divergence
+      already lives annotated in one artifact (todo fields, details prose,
+      known-issues registry). If an ICES-literal view is ever needed for the
+      ICES dialogue, generate it on demand as a report, not as a shipped
+      dictionary.
 
 - [ ] Domain-expert review of borderline constraints (range calls, enum
       membership).

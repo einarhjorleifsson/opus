@@ -2569,3 +2569,56 @@ validate-data run. Left as the known residual pending that decision.
 
 Regenerated yamls again discarded (Policy B); only the two spec scripts
 carry the batch.
+
+## 2026-09-15 (evening, cont.) -- batch 3 DECIDED; reconciliation closed; Policy B fully live
+
+Einar decided the required-vs-strip question: **the dictionary describes
+the published archive, so `todo` wins over `required`** for
+Mandatory-but-null-heavy fields. Rationale recorded: opus's Tier 1
+dictionary is descriptive of what the archive contains; on the published
+(stripped) archive those columns genuinely are null-heavy, so `required`
+is simply false there; a permanently-failing constraint would make
+validate-data useless as a rebuild ratchet (the archive_07 proposal
+depends on "same codes as last build" being a meaningful pass); and
+nothing is lost, because the `todo` text already carries ICES's Mandatory
+claim and the measured null rate, and the submission-rule side of the
+story belongs to the known-issues registry and to WP3's pre-submission
+tooling, not to a constraint guaranteed false downstream.
+
+The 13 hand-added `required`s were therefore NOT ported -- the generator
+already emitted the `todo` form, so batch 3 was a decision, not code.
+Full regeneration then verified: key-by-key identical() against HEAD shows
+only the accepted residuals (Quarter's CatIdentifier naming, block-style
+ranges, post-reorg citation paths, two values-map sort orders, one CA
+em-dash byte difference, the 13 constraints/todo swaps, and the legacy
+yaml's refreshed statistics). Health gate re-run against the regenerated
+dictionary: op_validate_meta TRUE on all four tables; D01 findings dropped
+26 -> 13 (the remainder get `required` from other passes, e.g. the
+composite-key loop -- their own question, not part of this decision).
+
+Shipped the regenerated yamls (the first Policy-B-compliant regeneration):
+the comment blocks listing the porting debt are gone, removed by the
+regenerating yaml::write_yaml() exactly as designed.
+
+## 2026-09-15 (night) -- residual D01 columns traced; session close-out
+
+After the required-vs-strip decision, 13 D01 nulls_in_required columns
+remained. Checked whether any still carried a strip policy: none do, so the
+residuals are TRUE nulls in required fields, not the collision. Breakdown:
+StationName in all four tables (already a candidate registry entry), HH
+HaulDuration (51 nulls, covered by its range-violation candidate), CA
+HaulNumber (the known 305,276 unlinkable rows), CA LengthClass /
+NumberAtLength (the 377,784-row block from the 2026-09-12 findings), and
+four genuinely new ones worth targeted checks: HH ShootLatitude /
+ShootLongitude (check against DataType -- the parent-survey pattern made
+HaulLatitude 33.6% null under C), HL SpeciesCategory, LT LTREF / PARAM.
+Recorded as a TODO item; each is a registry candidate or a constraint that
+should soften to todo, none mechanical.
+
+Also parked: the consolidated datras_sources.duckdb idea (one queryable,
+provenance-stamped store of icesVocab codes, the field-description
+spreadsheet, WSDL types, and getDatrasFieldList) as internal audit
+tooling. Rejected: flag-generated dual YAMLs (ICES-literal vs descriptive)
+-- two shipped dictionaries are two contracts, divergence already lives
+annotated in one artifact, and an ICES-literal view, if ever needed, is an
+on-demand report rather than a parallel dictionary.

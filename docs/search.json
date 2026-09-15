@@ -354,7 +354,7 @@
     "href": "articles/reference.html",
     "title": "Function reference",
     "section": "",
-    "text": "This page is generated from the package’s own man/*.Rd files by data-raw/build_reference.R, so it cannot drift from the roxygen. Full documentation for any function is ?name in an R session.\nopus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them."
+    "text": "This page is generated from the package’s own man/*.Rd files by data-raw/audit/build_reference.R, so it cannot drift from the roxygen. Full documentation for any function is ?name in an R session.\nopus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them."
   },
   {
     "objectID": "articles/reference.html#the-specification",

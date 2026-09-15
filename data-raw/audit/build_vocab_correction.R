@@ -45,7 +45,7 @@
 
 source("R/vocab.R")
 source("R/field_names.R")
-source("data-raw/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_field_audit.R
+source("data-raw/audit/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_field_audit.R
 
 y <- yaml::read_yaml("inst/DATRAS-data-dict-legacy.yaml")
 types <- op_vocab_get_types()

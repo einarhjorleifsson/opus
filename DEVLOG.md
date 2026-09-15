@@ -2427,3 +2427,75 @@ zero fractional values (and exactly one NA). The int/decimal collision
 that corrupts HL does not currently corrupt anything in CA, though the
 same `record=` bug would destroy CA fractions the day any are
 submitted.
+
+---
+
+## 2026-09-15 -- data-raw/ grouped into subdirectories
+
+data-raw/ had grown to 36 top-level entries mixing two pipelines, on-demand
+audits, and generated assets. Moved (plain `mv`, nothing staged) into
+`spec/` (dictionary pipeline, 01-03), `archive/` (download/parse/consolidate,
+01-06), `audit/` (build_*, validate_*, vocab_fit_helper -- run on demand, no
+numbers), and `assets/` (generated qmd, audit CSVs, benchmark outputs).
+`seed/`, `issue-drafts/`, `mock/`, `retired/` unchanged. A global numeric
+prefix across data-raw/ was considered and rejected: the two pipelines are
+independent and the audits have no execution order, so a single sequence
+would assert a flow that does not exist; ordering stays encoded within each
+pipeline's existing 0N prefixes.
+
+Basenames deliberately unchanged: the shipped yaml's `details` prose cites
+script paths (94 citations, 65 of them build_field_description_snapshot.R)
+and those propagate into the published parquet footers, so renaming
+basenames would have manufactured dead citations for no gain. The generator
+strings in spec/*.R were updated to the new audit/ paths. The shipped
+yamls' own stale citations were first fixed by direct sed, then that sed
+was REVERTED the same day when Policy B was chosen (below): under
+generator-is-source-of-truth, citation fixes flow through the reconciled
+regeneration, not through hand edits. Footer copies catch up at the next
+archive rebuild, alongside the already-deferred ICES_ISSUE_REPORT.md path
+fix.
+
+**spec_02_curate_dict.R resurrected the same day.** Its 2026-08-29
+retirement note said it "will not run as-is" (it read
+`.datras/{TABLE}_legacy.parquet`, long gone). With more yaml curation ahead,
+the dead dependency was replaced by reading the published current-named
+parquet and viewing it under legacy names via `op_rename(to = "legacy")` --
+the crosswalk comes from the file's own footer, so it cannot describe a
+different vintage than the data. Both spec_02 and spec_03 now run clean.
+**But the regenerated yaml exposed that the generator lags three weeks of
+deliberate hand curation** (95 diff hunks): the Quarter/Month retypes to
+number(ordinal), DateofCalculation as `date`, archive statistics refreshed
+against the 150,217-row build, and 13 hand-added `required` constraints all
+predate no generator string and were silently reverted. The regenerated
+yamls were therefore discarded (`git checkout inst/`).
+
+**Policy B chosen the same day: the generator is the source of truth.**
+The maintenance rule is again "never edit the yaml by hand; regenerate via
+spec_02 -> spec_03", and the hand edits made since the 2026-08-29
+retirement are debt to be ported into spec_02's corrections. That debt is
+recorded as a comment block atop both shipped yamls (comments do not
+survive yaml::write_yaml(); the first reconciled regeneration removes the
+block, which is its point), as a TODO item, and here. Reconciling the
+generator's baked-in corrections with the hand-maintained yaml is the
+first task of the next curation round, accepting only when `git diff
+inst/` shows the date plus intended changes. The README's "never edit
+.yaml by hand" line, stale since the retirement, was rewritten to state
+Policy B.
+
+All source() and write.csv() paths in moved scripts updated
+(archive_01_download_config, archive_03_catalog, archive_06_metadata,
+vocab_fit_helper, the two audit CSVs); every moved script re-parsed after
+the move. AGENTS.md, R/ roxygen pointers, articles/issues.qmd,
+articles/reference.qmd and articles/technical-notes.qmd live references
+updated; DEVLOG/PLAN/html renderings left as historical record.
+
+Two side-effects worth recording:
+
+- build_reference.R gained a `tier` tag per group ("core" vs "maintainer")
+  so the 50 exports render under two top-level headings instead of reading
+  as 50 peers -- the actual fix for the "package feels big" perception,
+  since R/ itself is 8 files / ~3000 lines.
+- Found and fixed a latent bug in build_reference.R while testing:
+  `on.exit(close(con))` at top level fires per-expression under source()
+  and closed the output connection before writeLines() ran; it had only
+  ever worked under Rscript. Now an explicit close().

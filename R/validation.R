@@ -828,7 +828,7 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #'   its original declared source unchanged. Implemented as a text
 #'   substitution on a temp copy of the YAML (not a `yaml::read_yaml()` /
 #'   `write_yaml()` round-trip), deliberately -- see
-#'   `data-raw/spec_03_translate_new_names.R`'s own comment on
+#'   `data-raw/spec/spec_03_translate_new_names.R`'s own comment on
 #'   `rewrap_singleton_arrays()` for the round-trip bug that mechanism
 #'   would otherwise risk reintroducing.
 #' @param cli_bin Path to the data-dict CLI binary. Defaults to the first

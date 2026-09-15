@@ -34,7 +34,7 @@
 #'
 #' Usage: Rscript data-raw/build_field_description_snapshot.R
 
-source("data-raw/archive_01_download_config.R")
+source("data-raw/archive/archive_01_download_config.R")
 
 FIELD_DESC_URL <- "https://www.ices.dk/data/Documents/DATRAS/DATRAS_Field_descriptions_and_example_file_December2025.xlsx"
 

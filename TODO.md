@@ -575,6 +575,26 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
 
 ## Dictionary curation
 
+- [ ] **Reconcile `spec_02_curate_dict.R` with the hand-maintained YAML before
+      the next curation round.** The script runs again (2026-09-15, legacy
+      parquet dependency replaced by `op_rename(to = "legacy")` over the
+      published archive), but its baked-in corrections predate the 2026-08-29
+      hand pass and silently revert it: the `Quarter`/`Month` retypes to
+      `number(ordinal)`, `DateofCalculation` as `date`, archive statistics
+      refreshed against the 150,217-row build, and 13 hand-added `required`
+      constraints (95 diff hunks total when re-run 2026-09-15; the regenerated
+      YAMLs were discarded). **Policy B (2026-09-15): the generator is the
+      source of truth** — YAML changes arrive only via regeneration, and the
+      hand edits since 2026-08-29 are porting debt, recorded as a comment
+      block atop both shipped YAMLs (a regenerating `yaml::write_yaml()`
+      drops comments, so the block disappears exactly when the debt is
+      paid). Port each deliberate hand edit into the generator's corrections,
+      re-running until `git diff inst/` shows only the date plus intended
+      changes — including the script-path citations, which stay stale in the
+      shipped YAML until then (the direct sed fix was considered and
+      reverted the same day, as a Policy B violation). Until then, `spec_02`
+      output must not be shipped blindly.
+
 - [ ] **Re-verify the field prose against the archive whenever it is rebuilt.**
       All ~100 statistics in the field `details` were recomputed on 2026-08-29
       after being found stale against an older, smaller archive; they now

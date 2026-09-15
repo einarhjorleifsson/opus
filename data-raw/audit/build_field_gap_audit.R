@@ -194,7 +194,7 @@ for (ti in seq_along(legacy_dict$tables)) {
 out <- do.call(rbind, rows)
 out <- out[order(out$table, out$legacy_field), ]
 
-write.csv(out, "data-raw/DATRAS-field-gap-audit.csv", row.names = FALSE)
+write.csv(out, "data-raw/assets/DATRAS-field-gap-audit.csv", row.names = FALSE)
 
 flagged <- out[out$sentinel_no_vocab & !out$already_in_known_issues, ]
 conflicts <- out[!is.na(out$spreadsheet_conflict), ]
@@ -202,7 +202,7 @@ conflicts_new <- conflicts[!conflicts$already_in_known_issues & !conflicts$alrea
 conflicts_known <- conflicts[conflicts$already_in_known_issues | conflicts$already_in_issue_report, ]
 
 message("")
-message("Wrote data-raw/DATRAS-field-gap-audit.csv (", nrow(out), " fields)")
+message("Wrote data-raw/assets/DATRAS-field-gap-audit.csv (", nrow(out), " fields)")
 message("")
 message("=== sentinel present, zero external vocab, NOT already documented anywhere in opus's own spec or known-issues.yaml (", nrow(flagged), ") ===")
 if (nrow(flagged) > 0) {

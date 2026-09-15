@@ -140,17 +140,23 @@ ul.task-list li input[type="checkbox"] {
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#the-specification" id="toc-the-specification" class="nav-link active" data-scroll-target="#the-specification">The specification</a></li>
+  <li><a href="#core-consuming-the-archive-and-the-specification" id="toc-core-consuming-the-archive-and-the-specification" class="nav-link active" data-scroll-target="#core-consuming-the-archive-and-the-specification">Core – consuming the archive and the specification</a>
+  <ul class="collapse">
+  <li><a href="#the-specification" id="toc-the-specification" class="nav-link" data-scroll-target="#the-specification">The specification</a></li>
   <li><a href="#reading-the-published-archive" id="toc-reading-the-published-archive" class="nav-link" data-scroll-target="#reading-the-published-archive">Reading the published archive</a></li>
   <li><a href="#the-metadata-each-file-carries" id="toc-the-metadata-each-file-carries" class="nav-link" data-scroll-target="#the-metadata-each-file-carries">The metadata each file carries</a></li>
-  <li><a href="#converting-datras-xml-to-parquet" id="toc-converting-datras-xml-to-parquet" class="nav-link" data-scroll-target="#converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</a></li>
   <li><a href="#sentinels" id="toc-sentinels" class="nav-link" data-scroll-target="#sentinels">Sentinels</a></li>
+  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
+  </ul></li>
+  <li><a href="#maintainer-tooling-building-and-auditing-both" id="toc-maintainer-tooling-building-and-auditing-both" class="nav-link" data-scroll-target="#maintainer-tooling-building-and-auditing-both">Maintainer tooling – building and auditing both</a>
+  <ul class="collapse">
+  <li><a href="#converting-datras-xml-to-parquet" id="toc-converting-datras-xml-to-parquet" class="nav-link" data-scroll-target="#converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</a></li>
   <li><a href="#field-names" id="toc-field-names" class="nav-link" data-scroll-target="#field-names">Field names</a></li>
   <li><a href="#reading-the-datras-web-service" id="toc-reading-the-datras-web-service" class="nav-link" data-scroll-target="#reading-the-datras-web-service">Reading the DATRAS web service</a></li>
-  <li><a href="#validation" id="toc-validation" class="nav-link" data-scroll-target="#validation">Validation</a></li>
   <li><a href="#ices-vocabularies" id="toc-ices-vocabularies" class="nav-link" data-scroll-target="#ices-vocabularies">ICES vocabularies</a></li>
   <li><a href="#parquet-and-export" id="toc-parquet-and-export" class="nav-link" data-scroll-target="#parquet-and-export">Parquet and export</a></li>
   <li><a href="#where-to-look-next" id="toc-where-to-look-next" class="nav-link" data-scroll-target="#where-to-look-next">Where to look next</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -182,11 +188,13 @@ ul.task-list li input[type="checkbox"] {
 <i class="callout-icon"></i>
 </div>
 <div class="callout-body-container">
-<p>This page is generated from the package’s own <code>man/*.Rd</code> files by <code>data-raw/build_reference.R</code>, so it cannot drift from the roxygen. Full documentation for any function is <code>?name</code> in an R session.</p>
+<p>This page is generated from the package’s own <code>man/*.Rd</code> files by <code>data-raw/audit/build_reference.R</code>, so it cannot drift from the roxygen. Full documentation for any function is <code>?name</code> in an R session.</p>
 </div>
 </div>
 </div>
 <p>opus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them.</p>
+<section id="core-consuming-the-archive-and-the-specification" class="level1">
+<h1>Core – consuming the archive and the specification</h1>
 <section id="the-specification" class="level2">
 <h2 class="anchored" data-anchor-id="the-specification">The specification</h2>
 <p>The dictionary as data. Downstream code should reach the yaml through these rather than parsing it, so there is one place where the shape of the specification is known.</p>
@@ -313,6 +321,81 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </section>
+<section id="sentinels" class="level2">
+<h2 class="anchored" data-anchor-id="sentinels">Sentinels</h2>
+<p>DATRAS overloads <code>-9</code>: in most fields it means “not recorded”, in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_sentinels()</code></td>
+<td>Read the sentinel registry</td>
+</tr>
+<tr class="even">
+<td><code>op_sentinel_policy()</code></td>
+<td>Resolve, per column, whether a sentinel means absence</td>
+</tr>
+<tr class="odd">
+<td><code>op_sentinel_audit()</code></td>
+<td>Count sentinel values per column in a parquet file</td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="validation" class="level2">
+<h2 class="anchored" data-anchor-id="validation">Validation</h2>
+<p>Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance – they are what makes editing a large yaml by hand safe.</p>
+<table class="caption-top table">
+<colgroup>
+<col style="width: 50%">
+<col style="width: 50%">
+</colgroup>
+<thead>
+<tr class="header">
+<th>Function</th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><code>op_validate_spec()</code></td>
+<td>Validate opus specs against real DATRAS data</td>
+</tr>
+<tr class="even">
+<td><code>op_validate_meta()</code></td>
+<td>Validate dataset metadata against dictionary</td>
+</tr>
+<tr class="odd">
+<td><code>op_validate_data()</code></td>
+<td>Validate dataset values against dictionary constraints</td>
+</tr>
+<tr class="even">
+<td><code>op_validate_full()</code></td>
+<td>Run full validation suite</td>
+</tr>
+<tr class="odd">
+<td><code>op_validation_problems()</code></td>
+<td>Flatten a data-dict validation report’s problems into a data frame</td>
+</tr>
+<tr class="even">
+<td><code>op_flag_violations()</code></td>
+<td>Flag rows with violations against dictionary constraints</td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="maintainer-tooling-building-and-auditing-both" class="level1">
+<h1>Maintainer tooling – building and auditing both</h1>
 <section id="converting-datras-xml-to-parquet" class="level2">
 <h2 class="anchored" data-anchor-id="converting-datras-xml-to-parquet">Converting DATRAS XML to parquet</h2>
 <p>The four steps of the conversion, in the order they must run: physical types, then names, then sentinels, then the semantic types the wire cannot express. A consumer calling these on its own live fetch gets a result identical to the published archive rather than a near-miss.</p>
@@ -347,36 +430,6 @@ ul.task-list li input[type="checkbox"] {
 <tr class="odd">
 <td><code>op_wsdl_type_overrides()</code></td>
 <td>The documented WSDL type overrides</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="sentinels" class="level2">
-<h2 class="anchored" data-anchor-id="sentinels">Sentinels</h2>
-<p>DATRAS overloads <code>-9</code>: in most fields it means “not recorded”, in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Function</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>op_sentinels()</code></td>
-<td>Read the sentinel registry</td>
-</tr>
-<tr class="even">
-<td><code>op_sentinel_policy()</code></td>
-<td>Resolve, per column, whether a sentinel means absence</td>
-</tr>
-<tr class="odd">
-<td><code>op_sentinel_audit()</code></td>
-<td>Count sentinel values per column in a parquet file</td>
 </tr>
 </tbody>
 </table>
@@ -433,48 +486,6 @@ ul.task-list li input[type="checkbox"] {
 <tr class="even">
 <td><code>op_datras_operation_types()</code></td>
 <td>Fetch the field names and types a DATRAS operation actually returns</td>
-</tr>
-</tbody>
-</table>
-</section>
-<section id="validation" class="level2">
-<h2 class="anchored" data-anchor-id="validation">Validation</h2>
-<p>Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance – they are what makes editing a large yaml by hand safe.</p>
-<table class="caption-top table">
-<colgroup>
-<col style="width: 50%">
-<col style="width: 50%">
-</colgroup>
-<thead>
-<tr class="header">
-<th>Function</th>
-<th></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td><code>op_validate_spec()</code></td>
-<td>Validate opus specs against real DATRAS data</td>
-</tr>
-<tr class="even">
-<td><code>op_validate_meta()</code></td>
-<td>Validate dataset metadata against dictionary</td>
-</tr>
-<tr class="odd">
-<td><code>op_validate_data()</code></td>
-<td>Validate dataset values against dictionary constraints</td>
-</tr>
-<tr class="even">
-<td><code>op_validate_full()</code></td>
-<td>Run full validation suite</td>
-</tr>
-<tr class="odd">
-<td><code>op_validation_problems()</code></td>
-<td>Flatten a data-dict validation report’s problems into a data frame</td>
-</tr>
-<tr class="even">
-<td><code>op_flag_violations()</code></td>
-<td>Flag rows with violations against dictionary constraints</td>
 </tr>
 </tbody>
 </table>
@@ -571,6 +582,7 @@ ul.task-list li input[type="checkbox"] {
 </ul>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->

@@ -105,14 +105,14 @@ table_section <- function(tbl, level = 2) {
 #'
 #' @param yaml_path Path to a data-dict.yaml document (e.g. under `inst/`).
 #' @param qmd_path Output path for the generated .qmd. Defaults to
-#'   `data-raw/<basename of yaml_path>.qmd`.
+#'   `data-raw/assets/<basename of yaml_path>.qmd`.
 #' @return `qmd_path`, invisibly.
 data_dict_to_qmd <- function(yaml_path, qmd_path = NULL) {
   dict <- read_yaml(yaml_path)
 
   if (is.null(qmd_path)) {
     base <- tools::file_path_sans_ext(basename(yaml_path))
-    qmd_path <- file.path("data-raw", paste0(base, ".qmd"))
+    qmd_path <- file.path("data-raw", "assets", paste0(base, ".qmd"))
   }
 
   title <- dict$label %||% dict$name %||% basename(yaml_path)

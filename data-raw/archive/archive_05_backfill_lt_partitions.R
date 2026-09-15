@@ -63,7 +63,7 @@ suppressPackageStartupMessages({
   library(arrow)
 })
 
-source("data-raw/archive_01_download_config.R")
+source("data-raw/archive/archive_01_download_config.R")
 library(opus)
 
 DATRAS_PARQUET_DIR <- file.path(WORKSPACE, "parquet")

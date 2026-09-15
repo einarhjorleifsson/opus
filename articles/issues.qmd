@@ -160,7 +160,7 @@ data?" records whether that guess happens to fit the real archive's values in bo
 directions (no real value uncovered, no vocab code unused) -- that's
 corroborating evidence for the guess, not proof ICES intended this key for
 this field. The full table (`inst/DATRAS-vocab-correction.csv`, generated
-by `data-raw/build_vocab_correction.R`) carries this explicitly as its own
+by `data-raw/audit/build_vocab_correction.R`) carries this explicitly as its own
 `resolution_basis` column on every row, rather than letting a good data fit
 read as more authoritative than it is.
 

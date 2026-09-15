@@ -13,8 +13,8 @@ suppressPackageStartupMessages({
   library(dplyr)
 })
 
-source("data-raw/archive_01_download_config.R")
-source("data-raw/archive_03_catalog.R")  # Direct ICES API (no icesDatras dependency)
+source("data-raw/archive/archive_01_download_config.R")
+source("data-raw/archive/archive_03_catalog.R")  # Direct ICES API (no icesDatras dependency)
 
 # ---- Helper: fetch raw XML from URL using curl ----
 fetch_datras_raw_xml <- function(url) {

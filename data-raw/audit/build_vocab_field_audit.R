@@ -51,7 +51,7 @@
 #' Usage: Rscript data-raw/build_vocab_field_audit.R
 
 source("R/vocab.R")
-source("data-raw/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_correction.R
+source("data-raw/audit/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_correction.R
 
 y <- yaml::read_yaml("inst/DATRAS-data-dict-legacy.yaml")
 types <- op_vocab_get_types()
@@ -126,9 +126,9 @@ for (tbl in y$tables) {
 out <- do.call(rbind, rows)
 out <- out[order(out$table, out$legacy_field), ]
 
-write.csv(out, "data-raw/DATRAS-vocab-field-audit.csv", row.names = FALSE)
+write.csv(out, "data-raw/assets/DATRAS-vocab-field-audit.csv", row.names = FALSE)
 
-message("Wrote data-raw/DATRAS-vocab-field-audit.csv (", nrow(out), " fields)")
+message("Wrote data-raw/assets/DATRAS-vocab-field-audit.csv (", nrow(out), " fields)")
 message("  Stage 1 -- zero name-match candidates:        ", sum(out$vocab_candidates_found == 0))
 message("  Stage 1 -- candidate(s) found:                 ", sum(out$vocab_candidates_found > 0))
 message("    of which ambiguous (TS_/AC_-style collision): ", sum(out$ambiguous))

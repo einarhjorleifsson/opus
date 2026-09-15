@@ -152,7 +152,7 @@ op_datras_field_list <- function(tables = c("HH", "HL", "CA", "LT")) {
 #'
 #' Thin wrapper around [op_datras_field_list()] for callers that need a
 #' clean, collision-free 1:1 `old_name` -> `new_name` map to actually rename
-#' columns with (`data-raw/spec_03_translate_new_names.R`,
+#' columns with (`data-raw/spec/spec_03_translate_new_names.R`,
 #' `data-raw/archive_06_split_legacy_new.R`) -- as opposed to
 #' [op_datras_field_list()]'s own broader, diagnostic purpose (reporting
 #' every candidate rename along with its confidence tier, for auditing).
@@ -320,7 +320,7 @@ op_field_name_map <- function(dict, table_name = NULL) {
 #' Pairs `inst/DATRAS-data-dict-legacy.yaml` (ICES's real, on-the-wire field
 #' names) against `inst/DATRAS-data-dict.yaml` (opus's own curated current
 #' names) POSITIONALLY, per table -- safe because
-#' `data-raw/spec_03_translate_new_names.R` builds the latter from the
+#' `data-raw/spec/spec_03_translate_new_names.R` builds the latter from the
 #' former as a pure, order-preserving rename (only `name` ever changes;
 #' column count and order are guaranteed identical). Unlike
 #' [op_datras_rename_crosswalk()], this reads only the two YAML files opus

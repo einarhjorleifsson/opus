@@ -14,7 +14,7 @@
 # seed's own restructure (see spec_01_seed_dict.R's header for why). This
 # script's own output is now `inst/DATRAS-data-dict-legacy.yaml`; the
 # curated/new-named version opus actually ships is produced from it by
-# data-raw/spec_03_translate_new_names.R, a pure rename, nothing else.
+# data-raw/spec/spec_03_translate_new_names.R, a pure rename, nothing else.
 #
 # Each correction is a stand-in for a future DATRAS-known-issues.yaml row --
 # that registry doesn't exist yet (filing/tracking issues formally is a
@@ -23,12 +23,15 @@
 # cleanly once the registry exists instead of needing renaming.
 
 
-# RETIRED (2026-08-29). The yaml dictionaries are maintained by hand from
-# here on; this seeding/curation pipeline is history, not a rebuild path.
-# It is kept for provenance and will not run as-is: it reads
-# .datras/{TABLE}_legacy.parquet, which no longer exists (opus publishes
-# current names only, staged at .datras/to_https/raw/{TABLE}.parquet; the
-# old legacy-named copies were moved to .datras/retired/ the same day).
+# RETIRED 2026-08-29, RESURRECTED 2026-09-15. The retirement was premature:
+# with more yaml curation ahead, this script is the rebuild path again. The
+# one dead dependency was .datras/{TABLE}_legacy.parquet (legacy-named
+# copies, removed when opus switched to publishing current names only,
+# staged at .datras/to_https/raw/{TABLE}.parquet). The null-rate check below
+# now reads the published current-named parquet and views it under legacy
+# names via op_rename(to = "legacy") -- the crosswalk comes from the file's
+# own footer, so the rename cannot describe a different vintage than the
+# data. Curation remains keyed by legacy names throughout.
 
 library(yaml)
 library(purrr)
@@ -226,7 +229,7 @@ curated <- reduce(corrections, apply_correction, .init = seed)
 # GeneticSamplingFlag is `field = "GenSamp"` here, matching what these
 # `details` notes actually verified against (the real archive column is
 # called GenSamp; "GeneticSamplingFlag" is opus's own curated name, applied
-# only at translate time by data-raw/spec_03_translate_new_names.R). This
+# only at translate time by data-raw/spec/spec_03_translate_new_names.R). This
 # also means the field key here now directly matches what a reader would
 # see querying the real archive, no legacy/new cross-reference needed to
 # confirm which column a `details` note is actually about.
@@ -376,7 +379,7 @@ field_specs <- list(
   # confirmed byte-identical real values.
   list(table = "HH", field = "Depth", type = "number(quantity)", units = "m", range = c(1L, 3098L)),
   list(table = "LT", field = "BottomDepth", type = "number(quantity)", units = "m", range = c(1, 3098),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): 139 of 75,310 rows (0.18%), 0 true nulls."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): 139 of 75,310 rows (0.18%), 0 true nulls."),
 
   # ---- DateofCalculation, all four tables --------------------------------
   # Recurs everywhere but does NOT go in shared_field_specs below: its own
@@ -462,7 +465,7 @@ field_specs <- list(
   # (describing "what was observed" as if it were "the full valid domain").
   list(table = "CA", field = "AreaType",
        examples = list("0", "13", "2", "12", "6"),
-       details = "Field's own description ('Age sampling aggregation level') doesn't explain what the codes themselves mean, but icesVocab's TS_AreaType resolves them: '0'=ICES Statistical Rectangles, '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish North Areas, '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec_01_seed_dict.R) for a usable `values` map -- and the true domain genuinely is wider than what's observed here (17 of 27 codes appear in this archive). Of 5,865,076 rows, -9 is present and substantial (1,968,019 rows, 33.55%), 0 true nulls."),
+       details = "Field's own description ('Age sampling aggregation level') doesn't explain what the codes themselves mean, but icesVocab's TS_AreaType resolves them: '0'=ICES Statistical Rectangles, '2'=Standard NS Roundfish Areas, '6'=EVHOE areas, '12'=Spanish North Areas, '13'=ICES Divisions. Not retyped enum because TS_AreaType has 27 official codes total, over the seed's own VOCAB_CODE_LIMIT (20, data-raw/spec/spec_01_seed_dict.R) for a usable `values` map -- and the true domain genuinely is wider than what's observed here (17 of 27 codes appear in this archive). Of 5,865,076 rows, -9 is present and substantial (1,968,019 rows, 33.55%), 0 true nulls."),
   list(table = "CA", field = "AreaCode",
        examples = list("VIa", "38G3", "43G1", "37G1", "44G0"),
        details = "Field's own description says coding is 'according to AreaType' (its sibling field) -- meaning depends on that field's own value, same pattern as LngtClass/LngtCode. Codes mix ICES-area style (VIIg) and rectangle-like style (38G3). Of 5,865,076 rows, -9 is present and dominant (1,891,107 rows, 32.24%), not a null. No icesVocab entry exists for this field under any name."),
@@ -701,40 +704,40 @@ shared_field_specs <- list(
   list(field = "HaulLong", type = "number(quantity)", units = "decimal degrees", range = c(-67.6762, 45.8753),
        details = "Same -9-as-missing caveat as ShootLong above (0 degrees, the Prime Meridian, is a genuine North Sea value here and is kept)."),
   list(field = "Netopening", type = "number(quantity)", units = "m", range = c(0, 76),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 75,609/145,958 rows (51.80%), LT 24,717/75,310 rows (32.82%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
   list(field = "Tickler", type = "enum", values = get_vocab_enum_values("TS_Tickler"),
        details = "icesVocab's TS_Tickler resolves this as a controlled tickler-chain count code list (32 active codes: 0-30, plus a '-9'/'no ticklers allowed' sentinel) -- not an open numeric quantity. Against the real archive: HH shows 10 distinct values (-9, 0, 1, 4, 5, 8, 10, 20, 21, 27) and LT 4 (-9, 0, 5, 8, a subset of HH's own); -9 is the dominant value in both (78% of HH, 41% of LT), not absent -- zero gaps against the vocab's 32 codes, either direction. Live WSDL (getHHdata) declares this field int, not string -- an accepted, permanent M01 divergence between the WSDL-driven archive and this curated enum spec (see Valid_Aphia's own note for the general pattern), not a bug to fix by changing either side."),
   list(field = "Distance", type = "number(quantity)", units = "m", range = c(0L, 59995L),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in either table."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 23,929/145,958 rows (16.39%), LT 996/75,310 rows (1.32%), 0 true nulls in either table."),
   list(field = "Warplngt", type = "number(quantity)", units = "m", range = c(0L, 4065L),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in either table."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 53,727/145,958 rows (36.81%), LT 759/75,310 rows (1.01%), 0 true nulls in either table."),
   list(field = "Warpdia", type = "number(quantity)", units = "mm", range = c(16L, 30L),
-       details = "A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart from it with no comparable support and are treated as data-entry errors, excluded here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls in either table -- the modal value in both tables, not the exception (already excluded by the range above, [16,30])."),
+       details = "A dense, well-populated cluster runs 16-21mm and 27-30mm; isolated single-occurrence values below (1mm x2, 5mm x10, 12mm) and above (39, 56, 85, 88mm) sit apart from it with no comparable support and are treated as data-entry errors, excluded here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 85,420/145,958 rows (58.52%), LT 28,755/75,310 rows (38.18%), 0 true nulls in either table -- the modal value in both tables, not the exception (already excluded by the range above, [16,30])."),
   list(field = "WarpDen", type = "number(quantity)", units = "kg/m", range = c(0L, 26L),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 140,298/145,958 rows (96.12%), LT 45,440/75,310 rows (60.34%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
   list(field = "DoorSurface", type = "number(quantity)", units = "m2", range = c(0, 20.2),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls in either table."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 78,096/145,958 rows (53.51%), LT 27,021/75,310 rows (35.88%), 0 true nulls in either table."),
   list(field = "DoorWgt", type = "number(quantity)", units = "kg", range = c(0L, 1720L),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls in either table."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 77,794/145,958 rows (53.30%), LT 26,904/75,310 rows (35.72%), 0 true nulls in either table."),
   list(field = "DoorSpread", type = "number(quantity)", units = "m", range = c(1, 250),
-       details = "0m (9 rows) is excluded as a placeholder -- a rigged, towing trawl cannot have zero door spread. Three single-occurrence values (762, 767, 778m) sit far above everything else in the archive (next highest is 250m) and are treated as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows, likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table -- already excluded by the range above."),
+       details = "0m (9 rows) is excluded as a placeholder -- a rigged, towing trawl cannot have zero door spread. Three single-occurrence values (762, 767, 778m) sit far above everything else in the archive (next highest is 250m) and are treated as data-entry errors, excluded; a real, well-populated value at 3.6m (1128 rows, likely a fixed beam-trawl spread) is kept. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 83,779/145,958 rows (57.40%), LT 25,658/75,310 rows (34.07%), 0 true nulls in either table -- already excluded by the range above."),
   list(field = "WingSpread", type = "number(quantity)", units = "m", range = c(4, 50),
-       details = "0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value with real support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls in either table -- already excluded by the range above."),
+       details = "0m (9 rows), 1.8m and 2m (1 row each) are excluded as below any value with real support -- a well-populated cluster starts at 4m (1074 rows, likely a fixed beam-trawl spread). 142m (1 row) sits far above the next-highest real value (50m) and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 102,696/145,958 rows (70.36%), LT 31,038/75,310 rows (41.21%), 0 true nulls in either table -- already excluded by the range above."),
   list(field = "TowDir", type = "number(quantity)", units = "degrees", range = c(0L, 360L),
-       details = "999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker, the same pattern confirmed for WindDir below. A further cluster -- 450 deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg). Both groups are outside the documented 0-360 domain and excluded here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls in either table -- already excluded by the range above.",
+       details = "999 (3 rows) reads as an undocumented out-of-domain 'not recorded' marker, the same pattern confirmed for WindDir below. A further cluster -- 450 deg (62 rows), 520(5), 460(5), 540(3), 510, 564, 702 (1 each) -- divided by 10 becomes ordinary bearings (45.0, 52.0, 46.0, 54.0, 51.0, 56.4, 70.2 deg). Both groups are outside the documented 0-360 domain and excluded here. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 50,625/145,958 rows (34.68%), LT 2,384/75,310 rows (3.17%), 0 true nulls in either table -- already excluded by the range above.",
        todo = "Confirm the divide-by-10 cluster (450/520/460/540/510/564/702) is a genuine data-entry pattern by correlating with Country/Survey -- same class of check already confirmed for SwellHeight via its WindSpeed co-parameter."),
   list(field = "GroundSpeed", type = "number(quantity)", units = "knots", range = c(0, 10),
-       details = "Ceiling is a domain judgment (real trawling ground speed), not an observed cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded by the range above."),
+       details = "Ceiling is a domain judgment (real trawling ground speed), not an observed cluster boundary -- observed values run 10.8 up to a 99.9 marker with no clean gap, all excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 56,805/145,958 rows (38.92%), LT 10,224/75,310 rows (13.58%), 0 true nulls in either table -- already excluded by the range above."),
   list(field = "SpeedWater", type = "number(quantity)", units = "knots", range = c(0, 22),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 131,220/145,958 rows (89.90%), LT 41,502/75,310 rows (55.11%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
   list(field = "WindDir", type = "number(quantity)", units = "degrees", range = c(-1L, 360L),
-       details = "-1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO present and is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls in either table -- already excluded by the range above (unlike -1, which the range explicitly keeps)."),
+       details = "-1 is documented ('varying direction'). 999 (57 rows) reads as an undocumented out-of-domain 'not recorded' marker; a handful of further single-occurrence values just above 360 (711, 504, 420, 365, 361) are also excluded. -9 is ALSO present and is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 40,431/145,958 rows (27.70%), LT 5,111/75,310 rows (6.79%), 0 true nulls in either table -- already excluded by the range above (unlike -1, which the range explicitly keeps)."),
   list(field = "WindSpeed", type = "number(quantity)", units = "m/s", range = c(0L, 28L),
        details = "Ceiling follows the Beaufort 10 upper bound (28.4 m/s, storm force) -- no vessel would be actively trawling above this. Excluding the -9 sentinel: HH 1,407 of 106,109 real measurements (1.33%) exceed it, up to a max of 342 m/s; LT 1,149 of 64,985 (1.77%), up to 77 m/s. Both tail off smoothly, consistent with a real distribution below and noise above."),
   list(field = "SwellDir", type = "number(quantity)", units = "degrees", range = c(0L, 360L),
-       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
+       details = "-9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 120,204/145,958 rows (82.35%), LT 28,459/75,310 rows (37.79%), 0 true nulls in either table -- the modal value in both tables, not the exception."),
   list(field = "CodendMesh", type = "number(quantity)", units = "mm", range = c(9L, 100L),
-       details = "0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/build_field_description_snapshot.R): HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls in either table -- the modal value in both tables, already excluded by the range above."),
+       details = "0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls in either table -- the modal value in both tables, already excluded by the range above."),
   list(field = "ThermoCline",
        details = "145,958 rows: 144,726 carry the -9 sentinel, 1,062 are 'Y', 167 are 'N'. 3 rows carry a lowercase 'y' instead of 'Y' -- a real submitter case slip, not a separate value."),
   list(field = "Quarter",
@@ -758,14 +761,14 @@ shared_field_specs <- list(
 
   # ---- icesVocab full-match annotations (2026-08-18) -----------------------
   # 37 fields found with a verified `data_fit == "full"` candidate in
-  # data-raw/DATRAS-vocab-field-audit.csv / inst/DATRAS-vocab-correction.csv
+  # data-raw/assets/DATRAS-vocab-field-audit.csv / inst/DATRAS-vocab-correction.csv
   # (Issue 8/9's own audit) whose `details:` never actually said so -- the
   # user caught this by hand for StandardSpeciesCode (asking whether it was
   # documented in icesVocab or "the infamous excel file"), which turned out
   # to be one of 37, not a one-off. Every code count and real-archive
   # coverage figure below is freshly re-verified against live
   # op_vocab_get_codes() and .datras/{TABLE}_legacy.parquet as of this date,
-  # not copied from the audit CSVs -- see data-raw/validate_vocab_annotations_sync.R
+  # not copied from the audit CSVs -- see data-raw/audit/validate_vocab_annotations_sync.R
   # for the permanent check that prevents this class of gap recurring
   # silently. AC_-prefixed alternatives are never cited as the resolving key
   # (Issue 8: AC_ is never once correct for a DATRAS field), only noted where
@@ -920,17 +923,17 @@ table_specs <- list(
   list(table = "HH",
        label = "Haul Information",
        description = "Each row is one haul (trawl deployment). Contains haul-level metadata: geography, timing, gear deployment, environmental conditions, and performance flags.",
-       origin = "data-raw/spec_02_curate_dict.R",
+       origin = "data-raw/spec/spec_02_curate_dict.R",
        details = "Grain: each row represents one discrete haul deployment (one trawl operation). Population: all hauls submitted to ICES DATRAS within the covered survey/region/timeframe. Join key: HL, CA, and LT tables reference haul-level data via a composite identifier constructed from eight fields: Survey, Year, Quarter, Country, {Platform or Ship}, Gear, {StationName or StNo}, and HaulNumber. The naming convention differs by era: newer submissions use Platform/StationName/HaulNumber (new style); older submissions use Ship/StNo/HaulNo (old style). Note: HaulNumber alone is NOT a valid join key and must be paired with all seven other fields -- but even the full composite key doesn't recover everything: 288,581 CA rows (4.92%) carry a -9 sentinel (not a null) in HaulNumber/HaulNo and match no HH haul on any subset of the 8 fields. See DATRAS-known-issues.yaml (ca_haulno_unlinkable_to_hh) and obus::dr_add_id for the composite ID construction logic."),
   list(table = "HL",
        label = "Length Frequency Distribution",
        description = "Each row is a length class within a haul's catch. Contains the count of fish in each length bin, without individual-level age/sex data; the length-aggregated summary layer of Tier 1.",
-       origin = "data-raw/spec_02_curate_dict.R",
+       origin = "data-raw/spec/spec_02_curate_dict.R",
        details = "Grain: each row is a (haul, species, length class) combination with a count of fish in that length bin. Population: length-frequency summaries for all species caught in surveyed hauls, aggregated by length class. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA (not HL) has a verified HaulNumber/HaulNo linkage gap -- 4.92% of CA rows carry a -9 sentinel and match no HH haul even via the full composite key (see HH table details). The full 8-field composite key is required for correct joins regardless."),
   list(table = "CA",
        label = "Age Composition (Individual)",
        description = "Each row is one aged fish specimen from a haul. Contains individual-level biological measurements (length, weight, age, sex, maturity) on a subsample of the catch; linked to HH via the composite haul identifier.",
-       origin = "data-raw/spec_02_curate_dict.R",
+       origin = "data-raw/spec/spec_02_curate_dict.R",
        details = "Grain: each row is one biological specimen (a single aged fish) from a haul. Population: individual organisms sampled and measured from hauls within covered surveys, not the full catch — a subsample. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note (see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh): HaulNumber/HaulNo contains 0 true nulls -- 288,581 rows (4.92% of 5,865,076) instead carry a -9 sentinel, which violates the column's declared range ([0, 82483]; a D04_range violation, confirmed via op_flag_violations()), not the required constraint (D01 never fires here). These rows match no HH haul on the full 8-field composite key, or on the 7 non-HaulNumber fields alone -- not a join-key problem, but genuinely orphaned CA records. A separate, much smaller residual (700 rows, 0.01%) with a plausible HaulNumber also fails to match HH.",
        todo = "Diagnose the 700-row (0.01%) HaulNumber tail-mismatch residual (known-issues.yaml: ca_haulno_tail_mismatch) -- distinct from the -9 sentinel issue above, cause not yet found.",
        definitions = list(
@@ -943,7 +946,7 @@ table_specs <- list(
   list(table = "LT",
        label = "Litter Assessment",
        description = "Each row is one litter observation from a haul. Contains types and counts of marine debris (plastics, fishing gear, natural/organic material) recorded during the catch review; a separate thematic addition to the HH/HL/CA exchange.",
-       origin = "data-raw/spec_02_curate_dict.R",
+       origin = "data-raw/spec/spec_02_curate_dict.R",
        details = "Grain: each row is one litter assessment/observation recorded during a haul's catch review. Population: litter records from hauls in covered surveys; a thematic addition to the HH/HL/CA core exchange tables with a separate collection protocol and scope. Linked to HH via the composite haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo + HaulNumber). Note: CA has a verified HaulNumber/HaulNo linkage gap via a -9 sentinel (see CA table details); LT's own HaulNumber has no equivalent gap -- zero nulls and zero -9 values. The full 8-field composite key is required for correct joins regardless: 2,026 of 75,310 LT rows (2.7%) don't match any HH haul on it, but for an unrelated, diagnosed reason (known-issues.yaml: lt_bts_2025_q1_orphaned) -- HH's own submission is genuinely missing for that survey/year/quarter, not an LT-side data-quality problem.")
 )
 
@@ -995,7 +998,7 @@ for (spec in col_labels) {
 # not meaningful without them (matching what these columns already had
 # before this step, for Year/HaulNo; the other six had no constraint
 # declared at all until now). Legacy names throughout, matching this
-# script's own keying convention; data-raw/spec_03_translate_new_names.R
+# script's own keying convention; data-raw/spec/spec_03_translate_new_names.R
 # translates the relationships' join expressions to new names the same way
 # it already translates every column's `name`.
 composite_key_fields <- c("Survey", "Year", "Quarter", "Country", "Ship", "Gear", "StNo", "HaulNo")
@@ -1036,7 +1039,12 @@ for (f in composite_key_fields) {
   for (tname in names(sheet_names)) {
     sheet <- suppressMessages(readxl::read_excel(excel_file, sheet = sheet_names[[tname]]))
     mandatory_fields <- sheet$Field[which(sheet$Mandatory == "Yes")]
-    pq <- arrow::read_parquet(sprintf(".datras/%s_legacy.parquet", tname))
+    # Published archive is current-named; view it under legacy names (this
+    # block keys curated names -> crosswalk -> legacy columns).
+    pq <- op_rename(
+      arrow::read_parquet(sprintf(".datras/to_https/raw/%s.parquet", tname)),
+      tname, to = "legacy", path = ".datras/to_https/raw"
+    )
 
     for (curated_name in mandatory_fields) {
       xw_row <- crosswalk[crosswalk$table_name == tname & crosswalk$new_name == curated_name, ]
@@ -1056,7 +1064,7 @@ for (f in composite_key_fields) {
       } else {
         curated <- apply_col_update(curated, tname, legacy_name, list(
           todo = sprintf(
-            "ICES's field-description spreadsheet marks this Mandatory, but %.1f%% of %s's real archive rows are null -- a genuine gap between documented and actual submission behavior, not yet added as `required` pending review (see data-raw/build_field_gap_audit.R).",
+            "ICES's field-description spreadsheet marks this Mandatory, but %.1f%% of %s's real archive rows are null -- a genuine gap between documented and actual submission behavior, not yet added as `required` pending review (see data-raw/audit/build_field_gap_audit.R).",
             100 * null_rate, tname
           )
         ))
@@ -1146,12 +1154,12 @@ curated <- list(
     "Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),",
     "CA (age), LT (litter). Curated from",
     "data-raw/seed/DATRAS-exchange-dict-seed.yaml -- see",
-    "data-raw/spec_02_curate_dict.R for the corrections and field-spec",
+    "data-raw/spec/spec_02_curate_dict.R for the corrections and field-spec",
     "fills applied and why. Keyed by ICES's own legacy (real, on-the-wire)",
-    "field names -- see data-raw/spec_03_translate_new_names.R for the",
+    "field names -- see data-raw/spec/spec_03_translate_new_names.R for the",
     "curated/new-named version this package actually ships."
   ),
-  origin = "data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R",
+  origin = "data-raw/spec/spec_01_seed_dict.R -> data-raw/spec/spec_02_curate_dict.R",
   version = list(date = as.character(Sys.Date())),
   tables = curated$tables,
   relationships = relationships,
@@ -1299,5 +1307,5 @@ message(
   "keyed by ICES's own legacy field names). ",
   "Post-processed to quote number-looking string examples for data-dict spec compliance.",
   "\n✓ Validated against data-dict spec.",
-  "\nRun data-raw/spec_03_translate_new_names.R next to produce the curated/new-named inst/DATRAS-data-dict.yaml."
+  "\nRun data-raw/spec/spec_03_translate_new_names.R next to produce the curated/new-named inst/DATRAS-data-dict.yaml."
 )

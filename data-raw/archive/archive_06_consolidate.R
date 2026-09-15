@@ -51,7 +51,7 @@ suppressPackageStartupMessages({
   library(opus)
 })
 
-source("data-raw/archive_06_metadata.R")
+source("data-raw/archive/archive_06_metadata.R")
 
 args <- commandArgs(trailingOnly = TRUE)
 TABLES <- if (length(args) > 0) args else c("HH", "HL", "CA", "LT")

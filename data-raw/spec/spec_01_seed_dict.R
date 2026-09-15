@@ -13,7 +13,7 @@
 # doesn't provide -- resolving that here would reintroduce exactly the
 # seed-time correction the seed-vs-curate split (Working principles, rule
 # 11) exists to avoid. That inference now happens once, at translate time
-# (data-raw/spec_03_translate_new_names.R), via op_datras_field_list() --
+# (data-raw/spec/spec_03_translate_new_names.R), via op_datras_field_list() --
 # not duplicated here. (2) icesVocab's own domain keys are legacy-name-shaped
 # (TS_HaulVal, not TS_HaulValidity) -- keying the seed by legacy name means
 # every downstream vocab lookup (this script's own `values` step 3 below,
@@ -110,7 +110,7 @@ crawled <-
 # caught at seed time rather than surfacing downstream. The AUTHORITATIVE
 # new-name resolution (including LT's cross-table inference, which this
 # service doesn't cover) happens once, independently, in
-# data-raw/spec_03_translate_new_names.R via op_datras_field_list() -- not
+# data-raw/spec/spec_03_translate_new_names.R via op_datras_field_list() -- not
 # by consuming this column.
 #
 # Still an ICES source (ICES's own field-list web service), just not the
@@ -159,7 +159,7 @@ crawled <-
 # HH/HL/CA), so the seed correctly leaves LT's own FieldName side column at
 # its unrenamed, warts-and-all value; resolving that via cross-table
 # inference is op_datras_field_list()'s job at translate time
-# (data-raw/spec_03_translate_new_names.R), not this seed's (see AGENTS.md's
+# (data-raw/spec/spec_03_translate_new_names.R), not this seed's (see AGENTS.md's
 # seed-vs-curate split -- asserting the fix here would violate the seed's
 # own "report ICES's sources literally, unfixed" design).
 anchors <- list(
@@ -245,7 +245,7 @@ seed <-
     # Not shipped in inst/*.yaml (data-dict.yaml has no alias concept -- see
     # AGENTS.md); kept here only as a reference/sanity-check side column
     # (see step 2's comment above) -- the authoritative new-name resolution
-    # happens independently in data-raw/spec_03_translate_new_names.R.
+    # happens independently in data-raw/spec/spec_03_translate_new_names.R.
     field_name_new = FieldName
   )
 
@@ -295,7 +295,7 @@ draft <- list(
     "getDatrasFieldList() + icesVocab -- no local/curated content; blank",
     "where ICES currently publishes nothing. Not yet curated -- see AGENTS.md.",
     "Keyed by ICES's own legacy (real, on-the-wire) field names -- see",
-    "data-raw/spec_03_translate_new_names.R for the curated/new-named version."
+    "data-raw/spec/spec_03_translate_new_names.R for the curated/new-named version."
   ),
   tables = tables
 )

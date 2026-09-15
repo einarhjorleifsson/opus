@@ -3,11 +3,13 @@ title: "Function reference"
 ---
 
 ::: {.callout-note appearance="simple"}
-This page is generated from the package's own `man/*.Rd` files by `data-raw/build_reference.R`, so it cannot drift from the roxygen.
+This page is generated from the package's own `man/*.Rd` files by `data-raw/audit/build_reference.R`, so it cannot drift from the roxygen.
 Full documentation for any function is `?name` in an R session.
 :::
 
 opus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
+
+# Core -- consuming the archive and the specification
 
 ## The specification
 
@@ -49,6 +51,31 @@ Each file's footer holds its own dictionary, legacy-name crosswalk, enum labels,
 | `op_provenance()` | Who built this file, from what |
 | `op_known_issues()` | Known issues affecting this table |
 
+## Sentinels
+
+DATRAS overloads `-9`: in most fields it means "not recorded", in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.
+
+| Function | |
+|---|---|
+| `op_sentinels()` | Read the sentinel registry |
+| `op_sentinel_policy()` | Resolve, per column, whether a sentinel means absence |
+| `op_sentinel_audit()` | Count sentinel values per column in a parquet file |
+
+## Validation
+
+Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance -- they are what makes editing a large yaml by hand safe.
+
+| Function | |
+|---|---|
+| `op_validate_spec()` | Validate opus specs against real DATRAS data |
+| `op_validate_meta()` | Validate dataset metadata against dictionary |
+| `op_validate_data()` | Validate dataset values against dictionary constraints |
+| `op_validate_full()` | Run full validation suite |
+| `op_validation_problems()` | Flatten a data-dict validation report's problems into a data frame |
+| `op_flag_violations()` | Flag rows with violations against dictionary constraints |
+
+# Maintainer tooling -- building and auditing both
+
 ## Converting DATRAS XML to parquet
 
 The four steps of the conversion, in the order they must run: physical types, then names, then sentinels, then the semantic types the wire cannot express. A consumer calling these on its own live fetch gets a result identical to the published archive rather than a near-miss.
@@ -60,16 +87,6 @@ The four steps of the conversion, in the order they must run: physical types, th
 | `op_strip_sentinels()` | Replace sentinels with NA, where they mean absence |
 | `op_cast_to_spec()` | Realise the semantic types the wire format cannot express |
 | `op_wsdl_type_overrides()` | The documented WSDL type overrides |
-
-## Sentinels
-
-DATRAS overloads `-9`: in most fields it means "not recorded", in a few it is a documented answer. These read the registry, resolve it to a per-column verdict, and measure the result against real data.
-
-| Function | |
-|---|---|
-| `op_sentinels()` | Read the sentinel registry |
-| `op_sentinel_policy()` | Resolve, per column, whether a sentinel means absence |
-| `op_sentinel_audit()` | Count sentinel values per column in a parquet file |
 
 ## Field names
 
@@ -89,19 +106,6 @@ Primary-source readers. Everything that needs to know what ICES really sends goe
 |---|---|
 | `op_datras_operations()` | List the DATRAS web service's currently exposed operations |
 | `op_datras_operation_types()` | Fetch the field names and types a DATRAS operation actually returns |
-
-## Validation
-
-Is the dictionary well-formed, and does it still describe the data? These matter more than usual under hand-maintenance -- they are what makes editing a large yaml by hand safe.
-
-| Function | |
-|---|---|
-| `op_validate_spec()` | Validate opus specs against real DATRAS data |
-| `op_validate_meta()` | Validate dataset metadata against dictionary |
-| `op_validate_data()` | Validate dataset values against dictionary constraints |
-| `op_validate_full()` | Run full validation suite |
-| `op_validation_problems()` | Flatten a data-dict validation report's problems into a data frame |
-| `op_flag_violations()` | Flag rows with violations against dictionary constraints |
 
 ## ICES vocabularies
 

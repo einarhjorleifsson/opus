@@ -17,16 +17,21 @@
 #' miscellaneous bucket. Adding an export therefore forces a decision about
 #' where it belongs.
 #'
-#' Usage: Rscript data-raw/build_reference.R
+#' Usage: Rscript data-raw/audit/build_reference.R
 
 `%||%` <- function(a, b) if (is.null(a)) b else a
 
 OUT <- "articles/reference.qmd"
 
 # Order here is the order on the page: what a reader meets first should be
-# what they most likely came for.
+# what they most likely came for. Each group is also tagged `tier`: "core"
+# groups are what someone consuming the archive or the yaml reaches for;
+# "maintainer" groups are curation and build tooling -- present and
+# documented, but not the first thing a data consumer needs. The tier
+# split is what keeps 50 exports from reading as 50 peers.
 GROUPS <- list(
   list(
+    tier = "core",
     title = "The specification",
     blurb = paste(
       "The dictionary as data. Downstream code should reach the yaml through",
@@ -36,6 +41,7 @@ GROUPS <- list(
     fns = c("op_field_spec", "op_field_name_map", "op_legacy_field_name")
   ),
   list(
+    tier = "core",
     title = "Reading the published archive",
     blurb = paste(
       "The published archive is four parquet files that describe themselves.",
@@ -46,6 +52,7 @@ GROUPS <- list(
     fns = c("op_archive", "op_con", "op_catalog", "op_define", "op_rename")
   ),
   list(
+    tier = "core",
     title = "The metadata each file carries",
     blurb = paste(
       "Each file's footer holds its own dictionary, legacy-name crosswalk,",
@@ -58,6 +65,7 @@ GROUPS <- list(
             "op_provenance", "op_known_issues")
   ),
   list(
+    tier = "maintainer",
     title = "Converting DATRAS XML to parquet",
     blurb = paste(
       "The four steps of the conversion, in the order they must run: physical",
@@ -69,6 +77,7 @@ GROUPS <- list(
             "op_cast_to_spec", "op_wsdl_type_overrides")
   ),
   list(
+    tier = "core",
     title = "Sentinels",
     blurb = paste(
       "DATRAS overloads `-9`: in most fields it means \"not recorded\", in a",
@@ -78,6 +87,7 @@ GROUPS <- list(
     fns = c("op_sentinels", "op_sentinel_policy", "op_sentinel_audit")
   ),
   list(
+    tier = "maintainer",
     title = "Field names",
     blurb = paste(
       "ICES is renaming DATRAS fields one table at a time. These separate what",
@@ -88,6 +98,7 @@ GROUPS <- list(
             "op_datras_rename_crosswalk")
   ),
   list(
+    tier = "maintainer",
     title = "Reading the DATRAS web service",
     blurb = paste(
       "Primary-source readers. Everything that needs to know what ICES really",
@@ -96,6 +107,7 @@ GROUPS <- list(
     fns = c("op_datras_operations", "op_datras_operation_types")
   ),
   list(
+    tier = "core",
     title = "Validation",
     blurb = paste(
       "Is the dictionary well-formed, and does it still describe the data?",
@@ -106,6 +118,7 @@ GROUPS <- list(
             "op_validate_full", "op_validation_problems", "op_flag_violations")
   ),
   list(
+    tier = "maintainer",
     title = "ICES vocabularies",
     blurb = paste(
       "Code semantics from icesVocab. Keys are tied to each field's *legacy*",
@@ -116,6 +129,7 @@ GROUPS <- list(
             "op_vocab_first_usable")
   ),
   list(
+    tier = "maintainer",
     title = "Parquet and export",
     blurb = "Inspecting real data, and rendering the dictionary for other tools.",
     fns = c("op_inspect_parquet", "op_describe_parquet", "op_draft_from_parquet",
@@ -170,7 +184,7 @@ lines <- c(
   "",
   "::: {.callout-note appearance=\"simple\"}",
   paste("This page is generated from the package's own `man/*.Rd` files by",
-        "`data-raw/build_reference.R`, so it cannot drift from the roxygen."),
+        "`data-raw/audit/build_reference.R`, so it cannot drift from the roxygen."),
   "Full documentation for any function is `?name` in an R session.",
   ":::",
   "",
@@ -179,7 +193,13 @@ lines <- c(
   ""
 )
 
-for (g in GROUPS) {
+tier_headings <- c(
+  core = "# Core -- consuming the archive and the specification",
+  maintainer = "# Maintainer tooling -- building and auditing both"
+)
+for (tier in names(tier_headings)) {
+  lines <- c(lines, tier_headings[[tier]], "")
+  for (g in Filter(function(g) identical(g$tier, tier), GROUPS)) {
   lines <- c(lines, paste("##", g$title), "", g$blurb, "",
              "| Function | |", "|---|---|")
   for (fn in g$fns) {
@@ -191,6 +211,7 @@ for (g in GROUPS) {
     lines <- c(lines, sprintf("| `%s()` | %s |", fn, what))
   }
   lines <- c(lines, "")
+  }
 }
 
 lines <- c(lines,
@@ -200,8 +221,10 @@ lines <- c(lines,
   paste("- [Technical notes](technical-notes.qmd) has the code-level detail."),
   "")
 
+# No on.exit() here: at top level under source() it fires per-expression and
+# closes the connection before writeLines() runs.
 con <- file(OUT, open = "w", encoding = "UTF-8")
-on.exit(close(con), add = TRUE)
 writeLines(lines, con, useBytes = FALSE)
+close(con)
 message("Wrote ", OUT, ": ", length(exports), " functions in ",
         length(GROUPS), " groups")

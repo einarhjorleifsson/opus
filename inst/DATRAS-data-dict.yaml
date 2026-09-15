@@ -1,3 +1,22 @@
+# ----------------------------------------------------------------------
+# MAINTENANCE POLICY (2026-09-15): this file is regenerated only via
+# data-raw/spec/spec_02_curate_dict.R -> spec_03_translate_new_names.R
+# (Policy B: the generator is the source of truth). The hand edits listed
+# below were made from 2026-08-29 onward while the generator was retired
+# and are PENDING PORT into spec_02_curate_dict.R -- do not ship spec_02
+# output until `git diff` against this file shows only the date plus
+# intended changes (TODO.md, Dictionary curation):
+#   - Quarter/Month retyped enum -> number(ordinal)
+#   - DateofCalculation retyped -> date
+#   - archive statistics refreshed against the 150,217-row build
+#   - 13 hand-added `required` constraints
+#   - script-path citations still point at the pre-2026-09-15 flat
+#     data-raw/ layout; they update through the regeneration above,
+#     together with the 7 data-raw/ICES_ISSUE_REPORT.md paths
+#     (a separate, already-deferred TODO item).
+# YAML comments do not survive yaml::write_yaml(); this block is removed
+# by the first successful reconciled regeneration, which is its point.
+# ----------------------------------------------------------------------
 $version: 0.1.0
 $learn_more: http://data-dict.tidyverse.org/
 name: datras_exchange

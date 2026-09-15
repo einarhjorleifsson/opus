@@ -1,7 +1,7 @@
 #' Read the raw DATRAS archive and the dictionary embedded in it
 #'
 #' The archive is the four Tier-1 exchange tables (HH, HL, CA, LT) staged by
-#' `data-raw/archive_06_consolidate.R`, each carrying its own dictionary in its
+#' `data-raw/archive/archive_06_consolidate.R`, each carrying its own dictionary in its
 #' parquet footer under five `datras:` keys. These functions read those keys.
 #'
 #' Everything here is a footer read: DuckDB fetches only the parquet footer, so

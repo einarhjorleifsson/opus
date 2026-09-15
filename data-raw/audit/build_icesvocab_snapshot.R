@@ -26,7 +26,7 @@
 #'
 #' Usage: Rscript data-raw/build_icesvocab_snapshot.R
 
-source("data-raw/archive_01_download_config.R")
+source("data-raw/archive/archive_01_download_config.R")
 source("R/vocab.R")
 
 log_msg("Fetching icesVocab code-type list...")

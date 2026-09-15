@@ -21,7 +21,7 @@
 # column too; see that function's own docs, or Issue 6 in
 # data-raw/ICES_ISSUE_REPORT.md).
 #
-# Usage: Rscript data-raw/spec_03_translate_new_names.R
+# Usage: Rscript data-raw/spec/spec_03_translate_new_names.R
 
 library(yaml)
 library(purrr)
@@ -208,14 +208,14 @@ translated$description <- paste(
   "Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),",
   "CA (age), LT (litter). Translated from",
   "inst/DATRAS-data-dict-legacy.yaml -- see",
-  "data-raw/spec_03_translate_new_names.R. A pure rename: every",
+  "data-raw/spec/spec_03_translate_new_names.R. A pure rename: every",
   "type/units/range/examples/details/constraints/label value is carried",
   "over unchanged from the legacy version; only column names (opus's own",
   "curated names, in place of ICES's legacy on-the-wire names) differ."
 )
 translated$origin <- paste(
-  "data-raw/spec_01_seed_dict.R -> data-raw/spec_02_curate_dict.R",
-  "-> data-raw/spec_03_translate_new_names.R"
+  "data-raw/spec/spec_01_seed_dict.R -> data-raw/spec/spec_02_curate_dict.R",
+  "-> data-raw/spec/spec_03_translate_new_names.R"
 )
 translated$version <- list(date = as.character(Sys.Date()))
 

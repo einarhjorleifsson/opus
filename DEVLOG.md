@@ -2499,3 +2499,38 @@ Two side-effects worth recording:
   `on.exit(close(con))` at top level fires per-expression under source()
   and closed the output connection before writeLines() ran; it had only
   ever worked under Rscript. Now an explicit close().
+
+---
+
+## 2026-09-15 (evening) -- spec_02 reconciliation, batch 1: the retypes
+
+First batch of the generator-vs-hand-curation reconciliation (the TODO item
+parked this morning): Quarter/Month (enum -> number(ordinal)) and
+DateofCalculation (number(ordinal) -> date), ported from the hand-maintained
+yaml into spec_02_curate_dict.R's corrections.
+
+Mechanics: apply_col_update()'s existing `values = NULL` explicit-removal
+branch (added for exactly this kind of case) drops the old TS_Quarter /
+TS_Month values maps; the two vocab-annotation entries that supplied them
+were removed, their coverage facts folded into the retype details. The
+canonical details text is the fuller main-yaml wording ("resolving a
+standing M01"), with CatIdentifier kept in the legacy context; the legacy
+yaml's shorter "mirroring the same change..." text is superseded in both
+files. DateofCalculation needed only type + string date bounds
+("2012-04-19"/"2015-11-27", upper .inf) -- its generator details already
+matched the hand text verbatim.
+
+Verified by field-level semantic comparison of HEAD vs regenerated output:
+all types/ranges/values identical, Month details identical, main-yaml
+Quarter differs only in naming CatIdentifier instead of SpeciesCategory
+(spec_03 carries details verbatim; accepted -- legacy names in details
+prose are already the convention, e.g. the "Legacy field name:"
+annotations). Ranges render block-style rather than the hand-written [1, 4]
+flow style; that flow style existed only on these six hand-edited entries
+and block style matches every other range in the generated file.
+
+The regenerated yamls were again discarded (git checkout inst/): the
+statistics and required-constraint batches are still unreconciled, and
+under Policy B the shipped yaml does not change until the whole
+reconciliation passes. Remaining: archive statistics refresh (145,958 ->
+150,217 era) and the 13 hand-added `required` constraints.

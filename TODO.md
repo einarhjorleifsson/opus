@@ -583,7 +583,20 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       `number(ordinal)`, `DateofCalculation` as `date`, archive statistics
       refreshed against the 150,217-row build, and 13 hand-added `required`
       constraints (95 diff hunks total when re-run 2026-09-15; the regenerated
-      YAMLs were discarded). **Policy B (2026-09-15): the generator is the
+      YAMLs were discarded). **Progress 2026-09-15: the retype batch is
+      ported** — `Quarter`/`Month` → `number(ordinal)` and
+      `DateofCalculation` → `date` now regenerate exactly (verified by
+      field-level comparison against HEAD: every type/range/values identical;
+      Month's details identical; Quarter's main-YAML details differ only in
+      naming `CatIdentifier` instead of `SpeciesCategory`, accepted as
+      consistent with the pure-rename invariant — spec_03 carries details
+      verbatim and legacy names in prose are already conventional). Two
+      cosmetic acceptances: ranges render block-style (`- 1` / `- 4`) rather
+      than the hand-written `[1, 4]` flow style, matching every other range
+      in the generated file; the legacy YAML's shorter "mirroring…" retype
+      text is superseded by the fuller main-YAML wording in both files.
+      Remaining batches: the refreshed archive statistics and the 13
+      hand-added `required` constraints. **Policy B (2026-09-15): the generator is the
       source of truth** — YAML changes arrive only via regeneration, and the
       hand edits since 2026-08-29 are porting debt, recorded as a comment
       block atop both shipped YAMLs (a regenerating `yaml::write_yaml()`

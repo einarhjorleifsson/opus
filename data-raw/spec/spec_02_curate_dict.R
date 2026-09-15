@@ -393,13 +393,13 @@ field_specs <- list(
   # data providers submit), so any fixed max would go stale immediately.
   # Unrenamed on every table (legacy name == curated name), so this key is
   # unchanged by the 2026-08-09 restructure.
-  list(table = "HH", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
+  list(table = "HH", field = "DateofCalculation", type = "date", range = list("2012-04-19", Inf),
        details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (11,574 rows, 7.93% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
-  list(table = "HL", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
+  list(table = "HL", field = "DateofCalculation", type = "date", range = list("2012-04-19", Inf),
        details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (1,050,496 rows, 7.64% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
-  list(table = "CA", field = "DateofCalculation", type = "number(ordinal)", range = list(20120419L, Inf),
+  list(table = "CA", field = "DateofCalculation", type = "date", range = list("2012-04-19", Inf),
        details = "8-digit YYYYMMDD stamp, digit order (month before day) verified consistent across all four Tier 1 tables. Upper bound deliberately left open: a live, continuously-advancing ICES Datacenter 'last recalculated' stamp, not submitted by data providers, so a fixed max would go stale immediately. Lower bound is this table's own verified minimum -- NOT forced identical across tables the way SweepLngt/HaulNo/Year are, since a genuine table-specific difference is plausible here (confirmed: LT's own minimum is years later). A -9 sentinel (337,562 rows, 5.76% of non-null; already excluded by the lower bound above) reads as the standard DATRAS 'not recorded' convention for this server-computed field -- not yet (re)calculated for this record."),
-  list(table = "LT", field = "DateofCalculation", type = "number(ordinal)", range = list(20151127L, Inf),
+  list(table = "LT", field = "DateofCalculation", type = "date", range = list("2015-11-27", Inf),
        details = "Same open-upper-bound, ICES-Datacenter-inserted basis as HH/HL/CA's DateofCalculation, but this table's OWN verified minimum (2015-11-27) is genuinely years later than theirs (2012-04-19) -- consistent with LT/litter reporting being a newer addition to DATRAS than the main haul/length/age exchange."),
 
   # ---- HL (remaining fields) ----------------------------------------------
@@ -740,8 +740,15 @@ shared_field_specs <- list(
        details = "0mm (202 rows) excluded as a placeholder -- a codend by definition has some mesh size. 250mm (1 row) sits far above the next-highest real value (100mm, 644 rows) and is treated as a data-entry error, excluded. -9 is the ICES-wide sanctioned 'no information' convention (data-raw/audit/build_field_description_snapshot.R): HH 104,918/145,958 rows (71.88%), LT 22,672/75,310 rows (30.11%), 0 true nulls in either table -- the modal value in both tables, already excluded by the range above."),
   list(field = "ThermoCline",
        details = "145,958 rows: 144,726 carry the -9 sentinel, 1,062 are 'Y', 167 are 'N'. 3 rows carry a lowercase 'y' instead of 'Y' -- a real submitter case slip, not a separate value."),
-  list(field = "Quarter",
-       details = "Live WSDL (getHHdata and getCAdata) declares this field int, not string. An accepted, permanent M01 divergence between the WSDL-driven archive (which stays int, per archive_00_wsdl_types.R's own WSDL-only design) and this curated enum spec (whose values must be quoted strings per the data-dict spec's own S24 rule) -- the same class of divergence already accepted for Valid_Aphia (number(id) vs WSDL's own 'character') and Tickler/CatIdentifier above (enum vs WSDL's own 'int'), not a bug to fix by changing either side."),
+  # Quarter/Month retyped enum -> number(ordinal) 2026-08-29 (a hand edit at
+  # the time, ported into the generator 2026-09-15): the WSDL declares them
+  # int, the archive stores int, and an enum's underlying data must be
+  # string-like (data-dict validation.md, "Enum membership"). Their values:
+  # maps restated the number itself, so dropping them loses nothing --
+  # unlike Tickler and CatIdentifier, whose code labels are load-bearing and
+  # which stay enums stored as strings.
+  list(field = "Quarter", type = "number(ordinal)", range = c(1L, 4L), values = NULL,
+       details = "Retyped from enum to number(ordinal) 2026-08-29, resolving a standing M01: the live WSDL declares this int, the archive stores it int, and an enum's underlying data must be string-like (data-dict validation.md, \"Enum membership\"). The former values: map ('1' -> '1. quarter') carried nothing the number itself does not, so no information is lost -- unlike Tickler and CatIdentifier, whose code labels are load-bearing and which therefore stay enums stored as strings. icesVocab's TS_Quarter also resolves this field (a bare 'Quarter' key is separately registered too, redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table."),
 
   # ---- Confirmed shared (WSDL-verified 2026-08-07), needing no correction --
   # DoorType/Month/HaulVal/DataType/Rigging/SwellHeight: HH's and LT's
@@ -751,8 +758,8 @@ shared_field_specs <- list(
   # added here until add_shared_field_descriptions() (below) needed a
   # complete shared-field list to reproduce HH's description onto LT.
   list(field = "DoorType"),
-  list(field = "Month",
-       details = "Live WSDL (getHHdata) declares this field int, not string -- the same accepted, permanent M01 divergence as Quarter above (curated enum vs WSDL's own 'int'), not a bug to fix by changing either side."),
+  list(field = "Month", type = "number(ordinal)", range = c(1L, 12L), values = NULL,
+       details = "Retyped from enum to number(ordinal) 2026-08-29, for the same reason as Quarter above: the live WSDL declares this int, the archive stores it int, and an enum's underlying data must be string-like. The former values: map ('1' -> January) is a calendar convention, not DATRAS-specific knowledge, so dropping it loses nothing. icesVocab's TS_Month also resolves this field (a bare 'Month' key is separately registered too, redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT 11 of 12; 0 real values fall outside the vocab in either table."),
   list(field = "HaulVal"),
   list(field = "DataType", values = get_vocab_enum_values("TS_DataType"),
        details = "icesVocab's TS_DataType gives -9 its own specific meaning: 'Invalid hauls' -- not a generic missing-value placeholder like most of this field's sibling enums (part of a full sweep of every enum field with -9 as a declared code; see articles/technical-notes.qmd). Low prevalence in both tables that carry it (HH: 39/145,958 rows, 0.03%; LT: 20/75,310, 0.03%)."),
@@ -795,8 +802,9 @@ shared_field_specs <- list(
        details = "icesVocab's TS_MaturityScale resolves this as a controlled 11-code maturity-scale-identifier list. Against the real CA archive: 5 of 11 codes in use, 0 real values outside the vocab."),
   list(field = "OtGrading", values = get_vocab_enum_values("TS_OtGrading"),
        details = "icesVocab's TS_OtGrading resolves this as a controlled 5-code otolith-grading list. Against the real CA archive: all 5 codes in use, a clean bidirectional match."),
-  list(field = "Quarter", values = get_vocab_enum_values("TS_Quarter"),
-       details = "icesVocab's TS_Quarter also resolves this field (a bare 'Quarter' key is separately registered too, redundant with TS_Quarter). Against the real archive: CA, HH, and HL each use all 4 codes; LT uses 3 of 4. 0 real values fall outside the vocab in any table."),
+  # Quarter's TS_Quarter values: map was removed with the 2026-08-29 retype
+  # to number(ordinal) above -- its vocab-fit facts are folded into that
+  # entry's details.
   list(field = "SpecCodeType", values = get_vocab_enum_values("TS_SpecCodeType"),
        details = "icesVocab's TS_SpecCodeType resolves this as a controlled 2-code species-code-type list. Against the real archive: both CA and HL use both codes, a clean bidirectional match."),
   list(field = "BySpecRecCode", values = get_vocab_enum_values("TS_BySpecRecCode"),
@@ -805,8 +813,8 @@ shared_field_specs <- list(
        details = "icesVocab's TS_DayNight resolves this as a controlled 2-code list. Against the real HH archive: both codes in use, a clean bidirectional match."),
   list(field = "HaulVal", values = get_vocab_enum_values("TS_HaulVal"),
        details = "icesVocab's TS_HaulVal resolves this as a controlled 7-code haul-validity list. Against the real archive: HH uses 6 of 7 codes, LT 4 of 7; 0 real values fall outside the vocab in either table."),
-  list(field = "Month", values = get_vocab_enum_values("TS_Month"),
-       details = "icesVocab's TS_Month also resolves this field (a bare 'Month' key is separately registered too, redundant with TS_Month). Against the real archive: HH uses all 12 codes, LT 11 of 12; 0 real values fall outside the vocab in either table."),
+  # Month's TS_Month values: map was removed with the 2026-08-29 retype to
+  # number(ordinal) above, same reasoning as Quarter.
   list(field = "PelSampType", values = get_vocab_enum_values("TS_PelSampType"),
        details = "icesVocab's TS_PelSampType resolves this as a controlled 4-code pelagic-sampling-type list. Against the real HH archive: only 1 of the 4 codes is actually in use, but that one value is a valid code, not an outside value."),
   list(field = "Rigging", values = get_vocab_enum_values("TS_Rigging"),

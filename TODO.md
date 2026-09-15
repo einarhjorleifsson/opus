@@ -595,8 +595,23 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       than the hand-written `[1, 4]` flow style, matching every other range
       in the generated file; the legacy YAML's shorter "mirroring…" retype
       text is superseded by the fuller main-YAML wording in both files.
-      Remaining batches: the refreshed archive statistics and the 13
-      hand-added `required` constraints. **Policy B (2026-09-15): the generator is the
+      **Progress 2026-09-15 (evening): the statistics batch is ported** —
+      all refreshed field-level details (~55 fields, including the LT-only
+      litter fields), the four table-level details tails, and the HL/CA
+      `definitions` expressions now regenerate exactly; verified by
+      key-by-key `identical()` comparison of regenerated main vs HEAD, with
+      only accepted residuals remaining (Quarter's CatIdentifier naming, a
+      CA em-dash byte artifact, citation paths, values-map sort order, and
+      the 13 `constraints`/`todo` fields). One spec_03 bug fixed en route
+      (`translate_definition_expr()` subscripted a named vector directly,
+      erroring on multi-word exprs like `HaulNo IS NOT NULL`). The legacy
+      YAML's stale 145,958-era statistics are superseded by the refreshed
+      numbers in both files (the 2026-08-29 hand refresh had been applied
+      to the main YAML only). **Remaining batch — deferred by decision
+      2026-09-15:** the 13 hand-added `required` constraints are left as
+      the known residual while the required-vs-strip question (ICES
+      Mandatory vs observed null rates; the same collision as the 26 D01
+      validate-data findings) gets its own decision. **Policy B (2026-09-15): the generator is the
       source of truth** — YAML changes arrive only via regeneration, and the
       hand edits since 2026-08-29 are porting debt, recorded as a comment
       block atop both shipped YAMLs (a regenerating `yaml::write_yaml()`

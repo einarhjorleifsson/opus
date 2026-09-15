@@ -183,8 +183,7 @@ translate_definition_expr <- function(expr, rename_map) {
   m <- gregexpr(identifier_pattern, expr, perl = TRUE)
   tokens <- regmatches(expr, m)[[1]]
   regmatches(expr, m)[[1]] <- vapply(tokens, function(tok) {
-    new_col <- rename_map[[tok]]
-    if (is.null(new_col)) tok else new_col
+    if (tok %in% names(rename_map)) rename_map[[tok]] else tok
   }, character(1))
   expr
 }

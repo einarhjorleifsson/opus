@@ -2534,3 +2534,38 @@ statistics and required-constraint batches are still unreconciled, and
 under Policy B the shipped yaml does not change until the whole
 reconciliation passes. Remaining: archive statistics refresh (145,958 ->
 150,217 era) and the 13 hand-added `required` constraints.
+
+## 2026-09-15 (evening, cont.) -- spec_02 reconciliation, batch 2: statistics
+
+Ported the 2026-08-29 hand statistics refresh into the generator. Scope
+turned out larger than the morning's estimate: the refresh had touched
+~100 statistics and had been applied to the main yaml ONLY -- the legacy
+yaml was never refreshed, which masked the scope (legacy-vs-legacy
+comparisons showed both sides stale, hence identical). Verification is
+therefore always regenerated-main vs HEAD-main; the legacy yaml's
+staleness is fixed by the same port as a side effect.
+
+~55 field-level details strings, four table-level details tails, and the
+HL/CA `definitions` expressions ported. Two latent problems surfaced:
+
+- spec_03's `translate_definition_expr()` subscripted a named character
+  vector directly (`rename_map[[tok]]`), erroring on any token not in the
+  map (IS/NOT/NULL/SUM in the new multi-word exprs). Fixed with a
+  membership check.
+- The generator's LT SwellHeight mechanism text carried a hand-written
+  55,113 that matched nothing; HEAD says 38,100. Corrected to HEAD's.
+
+Verification (key-by-key identical() on parsed yaml, regenerated main vs
+HEAD main): only accepted residuals remain -- Quarter's CatIdentifier
+naming, a CA table-details em-dash byte artifact, citation-path updates,
+values-map sort order, and the 13 constraints/todo fields.
+
+Batch 3 (the 13 hand-added `required` constraints) is DEFERRED by Einar's
+decision the same day: it is not mechanics but the open required-vs-strip
+question -- the hand edit declares ICES's Mandatory rule, the generator
+demotes Mandatory fields with >0.5% real nulls to a `todo`, and the two
+sides are exactly the 26-collision D01 finding from the 2026-09-12
+validate-data run. Left as the known residual pending that decision.
+
+Regenerated yamls again discarded (Policy B); only the two spec scripts
+carry the batch.

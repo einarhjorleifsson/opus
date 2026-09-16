@@ -250,7 +250,7 @@ op_legacy_field_name <- function(details) {
 #' data-dict YAML. Useful for building equivalence tables, validating
 #' coverage, or generating documentation.
 #'
-#' @param dict List: parsed DATRAS-data-dict.yaml (from `yaml::read_yaml()`)
+#' @param dict List: parsed DATRAS-imbus.yaml (from `yaml::read_yaml()`)
 #' @param table_name Character: optional filter to one table (HH, HL, CA, LT)
 #'
 #' @return Data frame with columns:
@@ -263,7 +263,7 @@ op_legacy_field_name <- function(details) {
 #'
 #' @examples
 #' \dontrun{
-#'   dict <- yaml::read_yaml("inst/DATRAS-data-dict.yaml")
+#'   dict <- yaml::read_yaml("inst/DATRAS-imbus.yaml")
 #'   mapping <- op_field_name_map(dict)
 #'
 #'   # All HH table field renames
@@ -315,17 +315,14 @@ op_field_name_map <- function(dict, table_name = NULL) {
   }
 }
 
-#' Build a combined old-name / new-name / type spec from opus's own shipped YAMLs
+#' Build a combined old-name / new-name / type spec from opus's shipped dictionary
 #'
-#' Pairs `inst/DATRAS-data-dict-legacy.yaml` (ICES's real, on-the-wire field
-#' names) against `inst/DATRAS-data-dict.yaml` (opus's own curated current
-#' names) POSITIONALLY, per table -- safe because
-#' `data-raw/spec/spec_03_translate_new_names.R` builds the latter from the
-#' former as a pure, order-preserving rename (only `name` ever changes;
-#' column count and order are guaranteed identical). Unlike
-#' [op_datras_rename_crosswalk()], this reads only the two YAML files opus
-#' already ships -- no live ICES web-service calls -- so it's cheap enough
-#' to call on every use, not just at opus's own build time.
+#' Reads `inst/DATRAS-imbus.yaml` (opus's curated, archive-grounded
+#' dictionary, keyed by current field names) and pairs each column with its
+#' legacy (ICES on-the-wire) name, which [op_translate_dict_names()] stamps
+#' into the column's `details` as `Legacy field name: {old}.` at build time.
+#' Reads only the one YAML file opus ships -- no live ICES web-service calls,
+#' no second dictionary file -- so it's cheap enough to call on every use.
 #'
 #' @param table_name Character scalar: restrict to one RecordHeader (`"HH"`,
 #'   `"HL"`, `"CA"`, `"LT"`). `NULL` (default) returns all four.
@@ -345,35 +342,31 @@ op_field_name_map <- function(dict, table_name = NULL) {
 #'
 #' @export
 op_field_spec <- function(table_name = NULL) {
-  legacy <- yaml::read_yaml(system.file("DATRAS-data-dict-legacy.yaml", package = "opus"))
-  current <- yaml::read_yaml(system.file("DATRAS-data-dict.yaml", package = "opus"))
+  dict <- yaml::read_yaml(system.file("DATRAS-imbus.yaml", package = "opus"))
 
-  legacy_names <- vapply(legacy$tables, function(t) t$name, character(1))
-  current_names <- vapply(current$tables, function(t) t$name, character(1))
+  table_names <- vapply(dict$tables, function(t) t$name, character(1))
 
   rows <- list()
-  row_count <- 0
-
-  for (tname in legacy_names) {
+  for (tname in table_names) {
     if (!is.null(table_name) && tname != table_name) next
 
-    old_tbl <- legacy$tables[[which(legacy_names == tname)]]
-    new_tbl <- current$tables[[which(current_names == tname)]]
-
-    if (length(old_tbl$columns) != length(new_tbl$columns)) {
-      stop(sprintf(
-        "op_field_spec(): table '%s' has %d columns in DATRAS-data-dict-legacy.yaml but %d in DATRAS-data-dict.yaml -- the two are no longer a pure positional rename of each other.",
-        tname, length(old_tbl$columns), length(new_tbl$columns)
-      ), call. = FALSE)
-    }
-
-    for (i in seq_along(old_tbl$columns)) {
-      row_count <- row_count + 1
-      rows[[row_count]] <- data.frame(
+    tbl <- dict$tables[[which(table_names == tname)]]
+    for (col in tbl$columns) {
+      old_name <- op_legacy_field_name(col$details)
+      if (is.na(old_name)) {
+        stop(sprintf(
+          paste0("op_field_spec(): %s.%s carries no 'Legacy field name:' stamp ",
+                 "in its details -- the shipped dictionary is expected to be ",
+                 "self-contained for both naming schemes. Rebuild it via ",
+                 "data-raw/spec/spec_03_translate_new_names.R."),
+          tname, col$name
+        ), call. = FALSE)
+      }
+      rows[[length(rows) + 1]] <- data.frame(
         RecordHeader = tname,
-        old_name = old_tbl$columns[[i]]$name,
-        new_name = new_tbl$columns[[i]]$name,
-        type = new_tbl$columns[[i]]$type,
+        old_name = old_name,
+        new_name = col$name,
+        type = col$type,
         stringsAsFactors = FALSE
       )
     }
@@ -387,4 +380,223 @@ op_field_spec <- function(table_name = NULL) {
     ))
   }
   do.call(rbind, rows)
+}
+
+#' Translate a parsed DATRAS dictionary from legacy to current field names
+#'
+#' A pure rename of a parsed data-dict dictionary (an R list, as from
+#' [yaml::read_yaml()]): every type/units/range/examples/constraints/label
+#' value carries over unchanged; only column `name`s differ. Also:
+#'
+#' * translates column references inside `relationships` joins and
+#'   `conflicts`, table `definitions` expressions, and any `assert`
+#'   constraint expressions (column- and table-level);
+#' * stamps each column's `details` with `Legacy field name: {old}.`, so the
+#'   renamed dictionary stays self-contained for both naming schemes --
+#'   [op_legacy_field_name()] reads the stamp back, and [op_field_spec()]
+#'   depends on it.
+#'
+#' The rename map is [op_datras_rename_crosswalk()], ground-truthed against
+#' the dictionary's real columns first: every column must resolve to exactly
+#' one new name, and the crosswalk must not carry names the dictionary lacks
+#' -- a mismatch fails loudly rather than silently renaming only some
+#' columns. This is the ONLY step in opus's spec pipeline that introduces
+#' new names; seeding and curation are keyed by legacy names throughout.
+#'
+#' @param dict List: parsed dictionary keyed by legacy (ICES on-the-wire)
+#'   field names.
+#' @param crosswalk Data frame from [op_datras_rename_crosswalk()];
+#'   injectable so a caller translating several dictionaries resolves it
+#'   once.
+#'
+#' @return The same dictionary, keyed by current names.
+#'
+#' @examples
+#' \dontrun{
+#'   legacy <- yaml::read_yaml("data-raw/seed/DATRAS-curated-legacy.yaml")
+#'   current <- op_translate_dict_names(legacy)
+#' }
+#'
+#' @export
+op_translate_dict_names <- function(dict, crosswalk = op_datras_rename_crosswalk()) {
+  dict <- rewrap_singleton_arrays(dict)
+
+  # Ground-truth the crosswalk against the dictionary's real columns: every
+  # column must resolve to exactly one new name, and the crosswalk must not
+  # carry names the dictionary lacks.
+  for (tbl in dict$tables) {
+    expected_old <- vapply(tbl$columns, function(c) c$name, character(1))
+    xw <- crosswalk[crosswalk$RecordHeader == tbl$name, ]
+
+    only_in_dict <- setdiff(expected_old, xw$old_name)
+    only_in_crosswalk <- setdiff(xw$old_name, expected_old)
+
+    if (length(only_in_dict) > 0 || length(only_in_crosswalk) > 0) {
+      stop(sprintf(
+        paste0("op_translate_dict_names(): table %s: crosswalk doesn't match the ",
+               "dictionary's real columns.\n  In dict, not in crosswalk: %s\n  ",
+               "In crosswalk, not in dict: %s"),
+        tbl$name, paste(only_in_dict, collapse = ", "), paste(only_in_crosswalk, collapse = ", ")
+      ), call. = FALSE)
+    }
+    message("Ground-truthed ", tbl$name, ": all ", length(expected_old),
+            " legacy names resolve to exactly one new name")
+  }
+
+  # Rename every column, stamp its legacy name into details, translate any
+  # column-level assert expressions.
+  rename_maps <- list()
+  for (ti in seq_along(dict$tables)) {
+    tname <- dict$tables[[ti]]$name
+    xw <- crosswalk[crosswalk$RecordHeader == tname, ]
+    rename_map <- setNames(xw$new_name, xw$old_name)
+    rename_maps[[tname]] <- rename_map
+
+    for (ci in seq_along(dict$tables[[ti]]$columns)) {
+      col <- dict$tables[[ti]]$columns[[ci]]
+      old_name <- col$name
+      col$name <- unname(rename_map[[old_name]])
+
+      stamp <- sprintf("Legacy field name: %s.", old_name)
+      col$details <- if (is.null(col$details)) stamp else paste(stamp, col$details)
+
+      if (!is.null(col$constraints)) {
+        col$constraints <- lapply(col$constraints, function(k) {
+          if (is.list(k) && !is.null(k$assert)) {
+            k$assert <- translate_dict_expr(k$assert, rename_map)
+          }
+          k
+        })
+      }
+      dict$tables[[ti]]$columns[[ci]] <- col
+    }
+  }
+
+  # Translate relationships' join expressions and conflicts (table.column
+  # tokens), same crosswalk data applied to text instead of `name` fields.
+  if (!is.null(dict$relationships)) {
+    token_pattern <- "([A-Za-z_][A-Za-z0-9_]*)\\.([A-Za-z_][A-Za-z0-9_]*)"
+
+    translate_join <- function(join_expr) {
+      m <- gregexpr(token_pattern, join_expr, perl = TRUE)
+      tokens <- regmatches(join_expr, m)[[1]]
+      regmatches(join_expr, m)[[1]] <- vapply(tokens, function(tok) {
+        parts <- strsplit(tok, ".", fixed = TRUE)[[1]]
+        new_col <- rename_maps[[parts[1]]][[parts[2]]]
+        if (is.null(new_col)) {
+          stop("No rename mapping for '", tok, "' in a relationship's join -- ",
+               "crosswalk/relationships have drifted apart.", call. = FALSE)
+        }
+        paste0(parts[1], ".", new_col)
+      }, character(1))
+      join_expr
+    }
+
+    for (ri in seq_along(dict$relationships)) {
+      dict$relationships[[ri]]$join <- translate_join(dict$relationships[[ri]]$join)
+    }
+
+    # `conflicts` columns: every one is, by construction, a column HH also
+    # has, so HH's own rename map resolves them. Re-wrap as a list
+    # explicitly: read_yaml() parses a one-item YAML sequence back as a
+    # length-1 character vector, which write_yaml() would render as a bare
+    # scalar instead of an array.
+    for (ri in seq_along(dict$relationships)) {
+      conf <- dict$relationships[[ri]]$conflicts
+      if (is.null(conf)) next
+      dict$relationships[[ri]]$conflicts <- as.list(vapply(conf, function(old) {
+        new_col <- rename_maps[["HH"]][[old]]
+        if (is.null(new_col)) {
+          stop("No rename mapping for conflicts column '", old, "' -- ",
+               "crosswalk/relationships have drifted apart.", call. = FALSE)
+        }
+        new_col
+      }, character(1), USE.NAMES = FALSE))
+    }
+
+    # Ground-truth: every translated reference must exist on its
+    # (already-renamed) table.
+    for (rel in dict$relationships) {
+      tokens <- regmatches(rel$join, gregexpr(token_pattern, rel$join, perl = TRUE))[[1]]
+      for (tok in tokens) {
+        parts <- strsplit(tok, ".", fixed = TRUE)[[1]]
+        tbl <- dict$tables[[which(vapply(dict$tables, function(t) t$name, character(1)) == parts[1])]]
+        if (!(parts[2] %in% vapply(tbl$columns, function(c) c$name, character(1)))) {
+          stop("Translated relationship references '", tok, "', not a real column of ",
+               parts[1], call. = FALSE)
+        }
+      }
+    }
+    message("Translated ", length(dict$relationships), " relationship join(s) to curated names")
+  }
+
+  # Translate table-level constraints' assert expressions and table
+  # definitions' expressions. Both are single-table (bare column names, not
+  # table.column-qualified): whole-word identifier tokens that match one of
+  # THAT table's own legacy column names get renamed; tokens that aren't
+  # column names (operators, function names) never match the rename map and
+  # pass through untouched.
+  for (ti in seq_along(dict$tables)) {
+    tbl <- dict$tables[[ti]]
+    rename_map <- rename_maps[[tbl$name]]
+
+    if (!is.null(tbl$constraints)) {
+      tbl$constraints <- lapply(tbl$constraints, function(k) {
+        if (is.list(k) && !is.null(k$assert)) {
+          k$assert <- translate_dict_expr(k$assert, rename_map)
+        }
+        k
+      })
+    }
+
+    if (!is.null(tbl$definitions)) {
+      for (di in seq_along(tbl$definitions)) {
+        tbl$definitions[[di]]$expr <- translate_dict_expr(tbl$definitions[[di]]$expr, rename_map)
+      }
+    }
+
+    dict$tables[[ti]] <- tbl
+  }
+
+  dict
+}
+
+# yaml::read_yaml() silently collapses a single-element YAML sequence back
+# into a bare scalar on read (confirmed directly: `constraints:\n- required`
+# round-trips to a plain character "required", not a length-1 list) -- a
+# data-dict spec violation on write-back, since the spec requires an array
+# here regardless of length. A length>1 sequence round-trips fine as a plain
+# atomic vector, and a NAMED length-1 map (e.g. RecordHeader's
+# `values: {HH: ...}`) round-trips fine too and must NOT be touched.
+# Constraints that are assertion MAPS (list entries carrying `$assert`) are
+# likewise already lists and must not be re-wrapped -- only bare atomic
+# scalars need it.
+rewrap_singleton_arrays <- function(dict) {
+  array_fields <- c("constraints", "examples", "values")
+  for (ti in seq_along(dict$tables)) {
+    for (ci in seq_along(dict$tables[[ti]]$columns)) {
+      col <- dict$tables[[ti]]$columns[[ci]]
+      for (f in array_fields) {
+        v <- col[[f]]
+        if (!is.null(v) && length(v) == 1 && is.null(names(v)) && is.atomic(v)) {
+          col[[f]] <- list(v)
+        }
+      }
+      dict$tables[[ti]]$columns[[ci]] <- col
+    }
+  }
+  dict
+}
+
+# Whole-word identifier translation within a single-table expression
+# (definition `expr`, column/table `assert`): replaces tokens that match one
+# of the table's legacy column names; every other token passes through.
+translate_dict_expr <- function(expr, rename_map) {
+  identifier_pattern <- "[A-Za-z_][A-Za-z0-9_]*"
+  m <- gregexpr(identifier_pattern, expr, perl = TRUE)
+  tokens <- regmatches(expr, m)[[1]]
+  regmatches(expr, m)[[1]] <- vapply(tokens, function(tok) {
+    if (tok %in% names(rename_map)) unname(rename_map[[tok]]) else tok
+  }, character(1))
+  expr
 }

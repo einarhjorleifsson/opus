@@ -5,15 +5,16 @@
 \title{Render a data dictionary as a self-contained HTML page}
 \usage{
 op_render_spec(
-  dict_path = "inst/DATRAS-data-dict.yaml",
+  dict_path = "inst/DATRAS-imbus.yaml",
   output = NULL,
   data_dir = NULL,
+  diagram = TRUE,
   cli_bin = .op_cli()
 )
 }
 \arguments{
 \item{dict_path}{Path to data-dict.yaml or directory containing one
-(default: `"inst/DATRAS-data-dict.yaml"`)}
+(default: `"inst/DATRAS-imbus.yaml"`)}
 
 \item{output}{Path to write the HTML page. Default `NULL` writes to a
 tempfile and opens it in the browser; pass a path to keep a copy instead.}
@@ -24,9 +25,15 @@ tempfile and opens it in the browser; pass a path to keep a copy instead.}
 its original declared source unchanged. Implemented as a text
 substitution on a temp copy of the YAML (not a `yaml::read_yaml()` /
 `write_yaml()` round-trip), deliberately -- see
-`data-raw/spec_03_translate_new_names.R`'s own comment on
+`data-raw/spec/spec_03_translate_new_names.R`'s own comment on
 `rewrap_singleton_arrays()` for the round-trip bug that mechanism
 would otherwise risk reintroducing.}
+
+\item{diagram}{Draw the relationship diagram at the top of the page
+(default `TRUE`); `FALSE` passes the CLI's `--no-diagram`. The joins
+the diagram draws still show in the index -- each column keeps its
+join markers and each table its related-table chips -- so only the
+picture goes.}
 
 \item{cli_bin}{Path to the data-dict CLI binary. Defaults to the first
 of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local

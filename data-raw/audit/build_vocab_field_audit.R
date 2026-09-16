@@ -42,9 +42,9 @@
 #' resolve a controlled vocabulary for a plain number. Feeds a new ICES
 #' issue instead (see data-raw/ICES_ISSUE_REPORT.md).
 #'
-#' Reads inst/DATRAS-data-dict-legacy.yaml directly (legacy names, primary
+#' Reads data-raw/seed/DATRAS-curated-legacy.yaml directly (legacy names, primary
 #' throughout -- see spec_02_curate_dict.R's own header) rather than
-#' inst/DATRAS-data-dict.yaml plus a name round-trip: icesVocab's own keys
+#' inst/DATRAS-imbus.yaml plus a name round-trip: icesVocab's own keys
 #' are legacy-name-shaped, so every lookup here uses the field's real name
 #' directly.
 #'
@@ -53,7 +53,7 @@
 source("R/vocab.R")
 source("data-raw/audit/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_correction.R
 
-y <- yaml::read_yaml("inst/DATRAS-data-dict-legacy.yaml")
+y <- yaml::read_yaml("data-raw/seed/DATRAS-curated-legacy.yaml")
 types <- op_vocab_get_types()
 
 get_real_values <- function(col) {

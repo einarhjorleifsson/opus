@@ -1,0 +1,2353 @@
+$version: 0.1.0
+name: datras_exchange_ices
+label: ICES DATRAS Exchange Data (Tier 1) -- as documented by ICES's own sources
+description: >-
+  Direct per-haul submissions to ICES DATRAS: HH (haul), HL (length),
+  CA (age), LT (litter), as documented by ICES's own metadata sources: the live DATRAS
+  WebService WSDL (field types), getDatrasFieldList (descriptions), icesVocab (code
+  lists, unfiltered), and the DATRAS field-description spreadsheet (descriptions,
+  Mandatory, DataType, example records). A faithful consolidation: no corrections
+  applied; where ICES's sources disagree with each other the conflict is noted in
+  the field's details, not resolved. The one non-ICES content: examples for fields
+  ICES's own example records do not cover (all of LT, and any HH/HL/CA field left
+  blank in the example file) are drawn from the published archive itself, because
+  the data-dict format requires a representative-values key on every typed column.
+  Keyed by ICES's new field names; each column's details carries the legacy on-the-wire
+  name. For the archive-verified view of the same format, see inst/DATRAS-imbus.yaml.
+tables:
+- name: HH
+  columns:
+  - name: RecordHeader
+    type: string
+    description: >-
+      Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    details: >-
+      Legacy field name: RecordType.
+    constraints:
+    - required
+    examples:
+    - HH
+  - name: Survey
+    type: string
+    details: >-
+      Legacy field name: Survey.
+    description: >-
+      Survey code as used in ICES products, see https://vocab.ices.dk/?codetypeguid=016362a4-90be-424b-af01-a37ae58ca023
+    constraints:
+    - required
+    examples:
+    - G1022
+  - name: Quarter
+    type: enum
+    description: >-
+      Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: Quarter.
+    constraints:
+    - required
+  - name: Country
+    type: string
+    description: >-
+      ISO 3166 country codes and region codes used by ICES
+    details: >-
+      Legacy field name: Country.
+    constraints:
+    - required
+    examples:
+    - 'DK'
+  - name: Platform
+    type: string
+    description: >-
+      SeaDataNet Ship and Platform Codes
+    details: >-
+      Legacy field name: Ship.
+    constraints:
+    - required
+    examples:
+    - '26D4'
+  - name: Gear
+    type: string
+    description: >-
+      Gear type code
+    details: >-
+      Legacy field name: Gear.
+    constraints:
+    - required
+    examples:
+    - TVL
+  - name: SweepLength
+    type: number
+    description: >-
+      Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    details: >-
+      Legacy field name: SweepLngt.
+    examples:
+    - -9.0
+  - name: GearExceptions
+    type: enum
+    description: >-
+      Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+    details: >-
+      Legacy field name: GearEx.
+  - name: DoorType
+    type: enum
+    description: >-
+      Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+    details: >-
+      Legacy field name: DoorType.
+  - name: StationName
+    type: string
+    description: >-
+      Station number. National coding system, not defined by ICES.
+    details: >-
+      Legacy field name: StNo.
+    constraints:
+    - required
+    examples:
+    - '2'
+  - name: HaulNumber
+    type: number
+    description: >-
+      Sequential numbering of hauls during cruise.
+    details: >-
+      Legacy field name: HaulNo.
+    constraints:
+    - required
+    examples:
+    - 1.0
+  - name: Year
+    type: number
+    description: >-
+      Cruise year (YYYY)
+    details: >-
+      Legacy field name: Year. Spreadsheet DataType 'char' disagrees with
+      the live WSDL type (served as 'number'); the WSDL type is kept -- it is what
+      the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 2022.0
+  - name: Month
+    type: enum
+    description: >-
+      Sampling month, as part of the calendar date.
+    values:
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+    details: >-
+      Legacy field name: Month.
+    constraints:
+    - required
+  - name: Day
+    type: number
+    description: >-
+      Sampling day, as part of the calendar date
+    details: >-
+      Legacy field name: Day.
+    constraints:
+    - required
+    examples:
+    - 23.0
+  - name: StartTime
+    type: string
+    description: >-
+      Start time (GMT) of haul (HHMM), 4 digits. E.g. 10:15=1015
+    details: >-
+      Legacy field name: TimeShot.
+    constraints:
+    - required
+    examples:
+    - '722'
+  - name: DepthStratum
+    type: string
+    description: >-
+      Depth stratum in classes. Depth strata are survey specific, see survey
+      manuals for details.
+    details: >-
+      Legacy field name: DepthStratum.
+    examples:
+    - '10'
+  - name: HaulDuration
+    type: number
+    description: >-
+      Haul duration in minutes. Start time is the moment when the gear
+      settles at the bottom at the stated towing speed. Stop is defined as the start
+      of hauling of the gear.
+    details: >-
+      Legacy field name: HaulDur.
+    constraints:
+    - required
+    examples:
+    - 30.0
+  - name: DayNight
+    type: enum
+    description: >-
+      Timing of sampling: at daytime or at night. See survey manuals for
+      further details
+    values:
+    - D
+    - 'N'
+    details: >-
+      Legacy field name: DayNight.
+    constraints:
+    - required
+  - name: ShootLatitude
+    type: number
+    description: >-
+      Decimal latitude position on the shooting location
+    details: >-
+      Legacy field name: ShootLat.
+    constraints:
+    - required
+    examples:
+    - 55.4028
+  - name: ShootLongitude
+    type: number
+    description: >-
+      Decimal longitude position on the shooting location
+    details: >-
+      Legacy field name: ShootLong.
+    constraints:
+    - required
+    examples:
+    - 16.874566
+  - name: HaulLatitude
+    type: number
+    description: >-
+      Decimal latitude position on the hauling location
+    details: >-
+      Legacy field name: HaulLat.
+    constraints:
+    - required
+    examples:
+    - 55.40285
+  - name: HaulLongitude
+    type: number
+    description: >-
+      Decimal longitude position on the hauling location
+    details: >-
+      Legacy field name: HaulLong.
+    constraints:
+    - required
+    examples:
+    - 16.922833
+  - name: StatisticalRectangle
+    type: string
+    description: >-
+      Intended ICES statistical area rectangle (0.5 degrees latitude, 1
+      degree longitude)
+    details: >-
+      Legacy field name: StatRec.
+    examples:
+    - 39G6
+  - name: BottomDepth
+    type: number
+    description: >-
+      Sampling depth in metres, measured from the water surface.
+    details: >-
+      Legacy field name: Depth.
+    constraints:
+    - required
+    examples:
+    - 57.0
+  - name: HaulValidity
+    type: enum
+    description: >-
+      Haul validity code
+    values:
+    - A
+    - C
+    - I
+    - M
+    - 'N'
+    - S
+    - V
+    details: >-
+      Legacy field name: HaulVal.
+    constraints:
+    - required
+  - name: HydrographicStationID
+    type: string
+    description: >-
+      The national hydrographic station number. If possible, align with
+      information submitted to ocean.ices.dk
+    details: >-
+      Legacy field name: HydroStNo.
+    examples:
+    - '1'
+  - name: StandardSpeciesCode
+    type: enum
+    description: >-
+      Information on the whether standard species have been recorded. Standard
+      species depend on survey, see survey manuals for details.
+    values:
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: StdSpecRecCode.
+    constraints:
+    - required
+  - name: BycatchSpeciesCode
+    type: enum
+    description: >-
+      Information on which bycatch species have been recorded.
+    values:
+    - '0'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    details: >-
+      Legacy field name: BySpecRecCode.
+    constraints:
+    - required
+  - name: DataType
+    type: enum
+    description: >-
+      Specification of the data aggregation in the HL record. C: CPUE
+      (per hour) data; TotalNo and CatCatchWgt are adjusted per hour trawling. R (raw),
+      S (subsample of the entire catch): data as recorded during the cruise, and P
+      (pseudocategory sampling, only used by Scotland).
+    values:
+    - '-9'
+    - C
+    - P
+    - R
+    - S
+    details: >-
+      Legacy field name: DataType.
+    constraints:
+    - required
+  - name: NetOpening
+    type: number
+    description: >-
+      Mean value in metres of vertical net opening measurements. For details
+      see the survey manual.
+    details: >-
+      Legacy field name: Netopening.
+    examples:
+    - 5.3
+  - name: Rigging
+    type: enum
+    description: >-
+      The way the gear is rigged. Rigging depends on survey, see survey
+      manuals for further details.
+    values:
+    - '-9'
+    - BC
+    - BM
+    - BN
+    - D
+    - F
+    - FB
+    - FM
+    - FT
+    - FW
+    - M
+    - S
+    - T
+    - TS
+    - TT
+    details: >-
+      Legacy field name: Rigging.
+  - name: Tickler
+    type: number
+    description: >-
+      Amount of ticklers connected to the gear.
+    details: >-
+      Legacy field name: Tickler.
+    examples:
+    - -9.0
+  - name: Distance
+    type: number
+    description: >-
+      Distance in metres between haul start and haul end point.
+    details: >-
+      Legacy field name: Distance.
+    constraints:
+    - required
+    examples:
+    - 2963.0
+  - name: WarpLength
+    type: number
+    description: >-
+      Length of warp in metres. Defined by fishing depth. Warp/depth ratio
+      is depends on survey, for further details see survey manuals.
+    details: >-
+      Legacy field name: Warplngt.
+    examples:
+    - 330.0
+  - name: WarpDiameter
+    type: number
+    description: >-
+      Warp diametre in millimetres.
+    details: >-
+      Legacy field name: Warpdia.
+    examples:
+    - -9.0
+  - name: WarpDensity
+    type: number
+    description: >-
+      Warp weight in kg per linear meter of warp. See survey manuals for
+      more information.
+    details: >-
+      Legacy field name: WarpDen.
+    examples:
+    - -9.0
+  - name: DoorSurface
+    type: number
+    description: >-
+      Door surface area in square metres.
+    details: >-
+      Legacy field name: DoorSurface.
+    examples:
+    - 4.4
+  - name: DoorWeight
+    type: number
+    description: >-
+      Door weight in kilograms.
+    details: >-
+      Legacy field name: DoorWgt.
+    examples:
+    - 520.0
+  - name: DoorSpread
+    type: number
+    description: >-
+      Mean value in metres of door spread measurements.
+    details: >-
+      Legacy field name: DoorSpread.
+    examples:
+    - 77.7
+  - name: WingSpread
+    type: number
+    description: >-
+      Mean value in metres of wing spread measurements. For more details
+      see the manual.
+    details: >-
+      Legacy field name: WingSpread.
+    examples:
+    - 28.1
+  - name: Buoyancy
+    type: number
+    description: >-
+      Total buoyancy of the net floats in kilograms. Recommended values
+      depend on survey, see survey manuals for further details.
+    details: >-
+      Legacy field name: Buoyancy.
+    examples:
+    - 213.0
+  - name: KiteArea
+    type: number
+    description: >-
+      Kite area in square metres.
+    details: >-
+      Legacy field name: KiteDim.
+    examples:
+    - -9.0
+  - name: GroundRopeWeight
+    type: number
+    description: >-
+      Total weight of the ground rope in kilograms. Recommended weight
+      depends on survey, see survey manuals for further details.
+    details: >-
+      Legacy field name: WgtGroundRope.
+    examples:
+    - -9.0
+  - name: TowDirection
+    type: number
+    description: >-
+      Direction of towing in degrees. 360=direction from south to north.
+    details: >-
+      Legacy field name: TowDir.
+    examples:
+    - 94.0
+  - name: SpeedGround
+    type: number
+    description: >-
+      Ground speed of towing in knots. Recommended speed depends on survey,
+      see survey manuals for more details
+    details: >-
+      Legacy field name: GroundSpeed.
+    examples:
+    - 3.3
+  - name: SpeedWater
+    type: number
+    description: >-
+      Trawl speed on water in knots.
+    details: >-
+      Legacy field name: SpeedWater.
+    examples:
+    - 3.2
+  - name: SurfaceCurrentDirection
+    type: number
+    description: >-
+      Surface current direction in degrees. No movement = 0, 360=direction
+      from south to north.
+    details: >-
+      Legacy field name: SurCurDir.
+    examples:
+    - -9.0
+  - name: SurfaceCurrentSpeed
+    type: number
+    description: >-
+      Surface current speed in m/sec.
+    details: >-
+      Legacy field name: SurCurSpeed.
+    examples:
+    - -9.0
+  - name: BottomCurrentDirection
+    type: number
+    description: >-
+      Bottom current direction in degrees. No movement = 0, 360=direction
+      from south to north.
+    details: >-
+      Legacy field name: BotCurDir.
+    examples:
+    - -9.0
+  - name: BottomCurrentSpeed
+    type: number
+    description: >-
+      Bottom current speed in metres/sec.
+    details: >-
+      Legacy field name: BotCurSpeed.
+    examples:
+    - -9.0
+  - name: WindDirection
+    type: number
+    description: >-
+      Direction of wind in degrees. Calm = 0,  direction from north to
+      south = 360, varying direction = -1
+    details: >-
+      Legacy field name: WindDir.
+    examples:
+    - 294.0
+  - name: WindSpeed
+    type: number
+    description: >-
+      Speed of wind in metres/sec.
+    details: >-
+      Legacy field name: WindSpeed.
+    examples:
+    - 20.0
+  - name: SwellDirection
+    type: number
+    description: >-
+      Direction of swell in degrees. No movement=0, direction from south
+      to north = 360, varying direction = -1
+    details: >-
+      Legacy field name: SwellDir.
+    examples:
+    - -9.0
+  - name: SwellHeight
+    type: enum
+    description: >-
+      Height of (swell) waves, in metres
+    values:
+    - H
+    - L
+    - M
+    - 'N'
+    - NR
+    - VH
+    details: >-
+      Legacy field name: SwellHeight.
+  - name: SurfaceTemperature
+    type: number
+    description: >-
+      Temperature at the surface water layer in Celsius degrees.
+    details: >-
+      Legacy field name: SurTemp.
+    examples:
+    - 3.73
+  - name: BottomTemperature
+    type: number
+    description: >-
+      Temperature at the bottom water layer in degrees Celsius
+    details: >-
+      Legacy field name: BotTemp.
+    examples:
+    - 3.76
+  - name: SurfaceSalinity
+    type: number
+    description: >-
+      Salinity at the surface water layer in Practical Salinity Units (PSU).
+    details: >-
+      Legacy field name: SurSal.
+    examples:
+    - 7.61
+  - name: BottomSalinity
+    type: number
+    description: >-
+      Salinity at the bottom water layer in Practical Salinity Units (PSU).
+    details: >-
+      Legacy field name: BotSal.
+    examples:
+    - 7.62
+  - name: ThermoCline
+    type: enum
+    description: >-
+      Indication whether thermocline (min. 2 degrees temperature changes
+      over 10 metres depth) was observed
+    values:
+    - '-9'
+    - 'N'
+    - 'Y'
+    details: >-
+      Legacy field name: ThermoCline.
+  - name: ThermoClineDepth
+    type: number
+    description: >-
+      Depth (metres, measured from water surface) at which the thermocline
+      was found. Requires Y in Thermocline field.
+    details: >-
+      Legacy field name: ThClineDepth.
+    examples:
+    - -9.0
+  - name: CodendMesh
+    type: number
+    description: >-
+      Codend mesh size in mm
+    details: >-
+      Legacy field name: CodendMesh.
+    examples:
+    - 20.0
+  - name: SecchiDepth
+    type: number
+    description: >-
+      Secchi depth in metres
+    details: >-
+      Legacy field name: SecchiDepth.
+    examples:
+    - -9.0
+  - name: Turbidity
+    type: number
+    description: >-
+      Turbidity in NTU
+    details: >-
+      Legacy field name: Turbidity.
+    examples:
+    - -9.0
+  - name: TidePhase
+    type: number
+    description: >-
+      Tidal phase in minutes before the next high tide
+    details: >-
+      Legacy field name: TidePhase.
+    examples:
+    - -9.0
+  - name: TideSpeed
+    type: number
+    description: >-
+      Speed of tide in m/s
+    details: >-
+      Legacy field name: TideSpeed.
+    examples:
+    - -9.0
+  - name: PelagicSamplingType
+    type: enum
+    description: >-
+      Pelagic trawl sampling type
+    values:
+    - '-9'
+    - '1'
+    - '2'
+    - '3'
+    details: >-
+      Legacy field name: PelSampType.
+  - name: MinTrawlDepth
+    type: number
+    description: >-
+      Highest point of the pelagic trawling
+    details: >-
+      Legacy field name: MinTrawlDepth.
+    examples:
+    - -9.0
+  - name: MaxTrawlDepth
+    type: number
+    description: >-
+      Lowest point of the pelagic trawling
+    details: >-
+      Legacy field name: MaxTrawlDepth.
+    examples:
+    - -9.0
+  - name: DateofCalculation
+    type: number
+    details: >-
+      Legacy field name: DateofCalculation. Not documented under this name
+      in ICES's field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 15449.0
+    - 15453.0
+    - 15505.0
+    - 15651.0
+    - 15660.0
+- name: HL
+  columns:
+  - name: RecordHeader
+    type: string
+    description: >-
+      Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    details: >-
+      Legacy field name: RecordType.
+    constraints:
+    - required
+    examples:
+    - HL
+  - name: Survey
+    type: string
+    details: >-
+      Legacy field name: Survey.
+    description: >-
+      Survey code as used in ICES products, see https://vocab.ices.dk/?codetypeguid=016362a4-90be-424b-af01-a37ae58ca023
+    constraints:
+    - required
+    examples:
+    - G1022
+  - name: Quarter
+    type: enum
+    description: >-
+      Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: Quarter.
+    constraints:
+    - required
+  - name: Country
+    type: string
+    description: >-
+      ISO 3166 country codes and region codes used by ICES
+    details: >-
+      Legacy field name: Country.
+    constraints:
+    - required
+    examples:
+    - 'DK'
+  - name: Platform
+    type: string
+    description: >-
+      SeaDataNet Ship and Platform Codes
+    details: >-
+      Legacy field name: Ship.
+    constraints:
+    - required
+    examples:
+    - '26D4'
+  - name: Gear
+    type: string
+    description: >-
+      Gear type code
+    details: >-
+      Legacy field name: Gear.
+    constraints:
+    - required
+    examples:
+    - TVL
+  - name: SweepLength
+    type: number
+    description: >-
+      Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    details: >-
+      Legacy field name: SweepLngt.
+    examples:
+    - -9.0
+  - name: GearExceptions
+    type: enum
+    description: >-
+      Gear exceptions. Gear-related field
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+    details: >-
+      Legacy field name: GearEx.
+  - name: DoorType
+    type: enum
+    description: >-
+      Door type. Gear-related field.
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+    details: >-
+      Legacy field name: DoorType.
+  - name: StationName
+    type: string
+    description: >-
+      Station number. National coding system, not defined by ICES.
+    details: >-
+      Legacy field name: StNo.
+    constraints:
+    - required
+    examples:
+    - '2'
+  - name: HaulNumber
+    type: number
+    description: >-
+      Sequential numbering of hauls during cruise.
+    details: >-
+      Legacy field name: HaulNo.
+    constraints:
+    - required
+    examples:
+    - 1.0
+  - name: Year
+    type: number
+    description: >-
+      Cruise year (YYYY)
+    details: >-
+      Legacy field name: Year. Spreadsheet DataType 'char' disagrees with
+      the live WSDL type (served as 'number'); the WSDL type is kept -- it is what
+      the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 2022.0
+  - name: SpeciesCodeType
+    type: enum
+    description: >-
+      Type of species code used for species definition at the record. Use
+      'W' for WoRMS AphiaID
+    values:
+    - T
+    - W
+    details: >-
+      Legacy field name: SpecCodeType.
+    constraints:
+    - required
+  - name: SpeciesCode
+    type: number
+    description: >-
+      Official WoRMS AphiaID code of species reported at the record.
+    details: >-
+      Legacy field name: SpecCode. Spreadsheet DataType 'char' disagrees
+      with the live WSDL type (served as 'number'); the WSDL type is kept -- it
+      is what the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 126417.0
+  - name: SpeciesValidity
+    type: enum
+    description: >-
+      Validity of species records, e.g. to specify if species has only
+      been counted, measured, weighed, etc.
+    values:
+    - '0'
+    - '1'
+    - '10'
+    - '2'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+    details: >-
+      Legacy field name: SpecVal.
+    constraints:
+    - required
+  - name: SpeciesSex
+    type: enum
+    description: >-
+      Gender of the described species category. In CA-records should be
+      defined by dissection. If no determination was performed, report '-9'. If determination
+      failed, report 'U'.
+    values:
+    - '-9'
+    - B
+    - F
+    - M
+    - 'N'
+    - T
+    - U
+    details: >-
+      Legacy field name: Sex.
+  - name: TotalNumber
+    type: number
+    description: >-
+      Total number of specimensper category (unique combination of cruise
+      haul, species, sex, devstage and subsampling category identifier). For data
+      type C, values should be standardised to 60 minutes. TotalNo=SUM(HLNoAtLngt).
+    details: >-
+      Legacy field name: TotalNo.
+    examples:
+    - 9766.059
+  - name: SpeciesCategory
+    type: number
+    description: >-
+      Subsampling category by size for same species in the haul. If DataType
+      is C, CatIdentifier is always 1. Further details on survey specific subsampling
+      categories are available in the survey manuals.
+    details: >-
+      Legacy field name: CatIdentifier.
+    constraints:
+    - required
+    examples:
+    - 1.0
+  - name: SubsampledNumber
+    type: number
+    description: >-
+      "Number of measured specimens per category (unique combination of
+      cruise haul, species, sex, and subsampling category identifier and devstage).
+      For data type C, values should be standardised to 60 minutes.\r\nNoMeas=Sum(HLNoAtLngt)."
+    details: >-
+      Legacy field name: NoMeas.
+    constraints:
+    - required
+    examples:
+    - 237.0
+  - name: SubsamplingFactor
+    type: number
+    description: >-
+      Sub-sampling factor. If 1/6 of the catch was measured, report 6.
+      If DataType is C, it should be reported as 1. If DataType is S, it is always
+      >1. If DataType is R, the SubFactor is = 1 or >1 for different species depending
+      on whether they were subsampled.
+    details: >-
+      Legacy field name: SubFactor.
+    constraints:
+    - required
+    examples:
+    - 41.207
+  - name: SubsampleWeight
+    type: number
+    description: >-
+      Weight of the subsample in grams.
+    details: >-
+      Legacy field name: SubWgt.
+    examples:
+    - 8340.0
+  - name: SpeciesCategoryWeight
+    type: number
+    description: >-
+      For datatype R or S: Catch weight in grams per category (for the
+      unique combination of cruise haul, species, sex, devstage and subsampling category
+      identifier). For datatype C, values should be standardised to 60 minutes.
+    details: >-
+      Legacy field name: CatCatchWgt.
+    constraints:
+    - required
+    examples:
+    - 343666.0
+  - name: LengthCode
+    type: enum
+    description: >-
+      Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm).
+      Survey and species specific, see survey manuals for further details. When measured
+      to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
+      cm in LngtClass
+    values:
+    - '-9'
+    - '.'
+    - '0'
+    - '1'
+    - '2'
+    - '5'
+    - '9'
+    details: >-
+      Legacy field name: LngtCode.
+    constraints:
+    - required
+  - name: LengthClass
+    type: number
+    description: >-
+      Lower length boundary of the Length class. In cm or mm depending
+      on the LngtCode. E.g. 10-11 cm=10
+    details: >-
+      Legacy field name: LngtClass.
+    constraints:
+    - required
+    examples:
+    - 140.0
+    - 145.0
+    - 150.0
+    - 155.0
+    - 160.0
+  - name: NumberAtLength
+    type: number
+    description: >-
+      Number of measured fish for the length class per category (unique
+      combination of cruise haul, species, sex, devstage and category identifier).
+      For data type C, values should be standardised to 60 minutes.
+    details: >-
+      Legacy field name: HLNoAtLngt.
+    constraints:
+    - required
+    examples:
+    - 2.0
+    - 5.0
+    - 6.0
+    - 16.0
+    - 28.0
+  - name: DevelopmentStage
+    type: enum
+    description: >-
+      Development or maturity stage defined by non-invasive observations
+    values:
+    - '-9'
+    - B
+    - E
+    - J
+    details: >-
+      Legacy field name: DevStage.
+  - name: LengthType
+    type: enum
+    description: >-
+      Type of length measurement
+    values:
+    - '-9'
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '13'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+    details: >-
+      Legacy field name: LenMeasType.
+  - name: DateofCalculation
+    type: number
+    details: >-
+      Legacy field name: DateofCalculation. Not documented under this name
+      in ICES's field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 15449.0
+    - 15453.0
+    - 15505.0
+    - 15651.0
+    - 15660.0
+  - name: Valid_Aphia
+    type: string
+    details: >-
+      Legacy field name: Valid_Aphia. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - '55'
+    - '69'
+    - '101'
+    - '104'
+    - '105'
+- name: CA
+  columns:
+  - name: RecordHeader
+    type: string
+    description: >-
+      Definition of the data type recorded, affecting the layout of the
+      data fields included on that record. HH=Haul Information, HL=Length Frequency
+      Distribution, CA=individual fish recordings with biological information, LT=
+      Litter data records
+    details: >-
+      Legacy field name: RecordType.
+    constraints:
+    - required
+    examples:
+    - 'CA'
+  - name: Survey
+    type: string
+    details: >-
+      Legacy field name: Survey.
+    constraints:
+    - required
+    examples:
+    - G1022
+  - name: Quarter
+    type: enum
+    description: >-
+      Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: Quarter.
+    constraints:
+    - required
+  - name: Country
+    type: string
+    description: >-
+      ISO 3166 country codes and region codes used by ICES
+    details: >-
+      Legacy field name: Country.
+    constraints:
+    - required
+    examples:
+    - 'DK'
+  - name: Platform
+    type: string
+    description: >-
+      SeaDataNet Ship and Platform Codes
+    details: >-
+      Legacy field name: Ship.
+    constraints:
+    - required
+    examples:
+    - '26D4'
+  - name: Gear
+    type: string
+    description: >-
+      Gear type code
+    details: >-
+      Legacy field name: Gear.
+    constraints:
+    - required
+    examples:
+    - TVL
+  - name: SweepLength
+    type: number
+    description: >-
+      Length of sweep in metres. Recommended values depend on survey and
+      quarter, see survey manuals for further details
+    details: >-
+      Legacy field name: SweepLngt.
+    examples:
+    - -9.0
+  - name: GearExceptions
+    type: enum
+    description: >-
+      Deviations of the standard gear. Depends on survey, see survey manuals
+      for further details.
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+    details: >-
+      Legacy field name: GearEx.
+  - name: DoorType
+    type: enum
+    description: >-
+      Type of door used
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+    details: >-
+      Legacy field name: DoorType.
+  - name: StationName
+    type: string
+    description: >-
+      Station number. National coding system, not defined by ICES.
+    details: >-
+      Legacy field name: StNo.
+    constraints:
+    - required
+    examples:
+    - '2'
+  - name: HaulNumber
+    type: number
+    description: >-
+      Sequential numbering of hauls during cruise.
+    details: >-
+      Legacy field name: HaulNo.
+    constraints:
+    - required
+    examples:
+    - 1.0
+  - name: Year
+    type: number
+    description: >-
+      Cruise year (YYYY)
+    details: >-
+      Legacy field name: Year. Spreadsheet DataType 'char' disagrees with
+      the live WSDL type (served as 'number'); the WSDL type is kept -- it is what
+      the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 2022.0
+  - name: SpeciesCodeType
+    type: enum
+    description: >-
+      Type of species code used for species definition at the record. Use
+      'W' for WoRMS AphiaID
+    values:
+    - T
+    - W
+    details: >-
+      Legacy field name: SpecCodeType.
+    constraints:
+    - required
+  - name: SpeciesCode
+    type: number
+    description: >-
+      Official WoRMS AphiaID code of species reported at the record.
+    details: >-
+      Legacy field name: SpecCode. Spreadsheet DataType 'char' disagrees
+      with the live WSDL type (served as 'number'); the WSDL type is kept -- it
+      is what the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 126417.0
+  - name: AreaType
+    type: string
+    description: >-
+      Age sampling aggregation level
+    details: >-
+      Legacy field name: AreaType.
+    constraints:
+    - required
+    examples:
+    - '0'
+  - name: AreaCode
+    type: string
+    description: >-
+      Area coding according to AreaType
+    details: >-
+      Legacy field name: AreaCode.
+    constraints:
+    - required
+    examples:
+    - 39G6
+  - name: LengthCode
+    type: enum
+    description: >-
+      Measurement accuracy used for the LngtClass (mm, 0.5 cm, cm, 5 cm).
+      Survey and species specific, see survey manuals for further details. When measured
+      to the mm or 0.5 below: report LngtClass as mm (10.1=101), for cm and 5 cm report
+      cm in LngtClass
+    values:
+    - '-9'
+    - '.'
+    - '0'
+    - '1'
+    - '2'
+    - '5'
+    - '9'
+    details: >-
+      Legacy field name: LngtCode.
+    constraints:
+    - required
+  - name: LengthClass
+    type: number
+    description: >-
+      Lower length boundary of the Length class. In cm or mm depending
+      on the LngtCode. E.g. 10-11 cm=10
+    details: >-
+      Legacy field name: LngtClass.
+    constraints:
+    - required
+    examples:
+    - 95.0
+    - 100.0
+    - 105.0
+    - 115.0
+    - 120.0
+  - name: IndividualSex
+    type: enum
+    description: >-
+      Gender of the described species category. In CA-records should be
+      defined by dissection. If no determination was performed, report '-9'. If determination
+      failed, report 'U'.
+    values:
+    - '-9'
+    - B
+    - F
+    - M
+    - 'N'
+    - T
+    - U
+    details: >-
+      Legacy field name: Sex.
+  - name: IndividualMaturity
+    type: string
+    description: >-
+      Sexual maturation of the individual(s) measured. Often needs dissection,
+      but not for e.g. male elasmobranchs. MaturityScale should be filled in when
+      filling in Maturity.
+    details: >-
+      Legacy field name: Maturity.
+    examples:
+    - '63'
+    - '61'
+  - name: AgePlusGroup
+    type: enum
+    description: >-
+      Records with high age categories can be grouped into the Plus group.
+      If the plus group age is specified, no higher ages can be reported for the species
+      in the haul.
+    values:
+    - +
+    - '-9'
+    details: >-
+      Legacy field name: PlusGr.
+  - name: Age
+    type: number
+    details: >-
+      Legacy field name: Age. Not documented under this name in ICES's field-description
+      spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - -95.0
+    - -5.0
+    - -1.0
+    - 0.0
+    - 1.0
+  - name: NumberAtLength
+    type: number
+    description: >-
+      Amount of fish at the given category (per haul, species, length class,
+      sex, maturity, age).
+    details: >-
+      Legacy field name: CANoAtLngt.
+    constraints:
+    - required
+    examples:
+    - 1.0
+    - 2.0
+    - 7.0
+    - 5.0
+    - 4.0
+  - name: IndividualWeight
+    type: number
+    description: >-
+      Measured individual weight of the fish (grams)
+    details: >-
+      Legacy field name: IndWgt.
+    examples:
+    - 3.01
+    - 2.39
+    - 2.73
+    - 3.34
+    - 4.6
+  - name: FishID
+    type: string
+    description: >-
+      Fish identification number - running sampling number of the specimen
+    details: >-
+      Legacy field name: FishID.
+    examples:
+    - '8245464'
+    - '8245466'
+    - '8245465'
+    - '8245468'
+    - '8245472'
+  - name: GeneticSamplingFlag
+    type: string
+    description: >-
+      Flag whether genetic sample was taken
+    details: >-
+      Legacy field name: GenSamp.
+    examples:
+    - 'Y'
+  - name: StomachSamplingFlag
+    type: string
+    description: >-
+      Flag whether stomach sampling was performed
+    details: >-
+      Legacy field name: StomSamp.
+    examples:
+    - '-9'
+  - name: AgeSource
+    type: enum
+    description: >-
+      Biological sample type
+    values:
+    - '-9'
+    - LB
+    - OT
+    - SC
+    - VR
+    details: >-
+      Legacy field name: AgeSource.
+  - name: AgePreparationMethod
+    type: enum
+    description: >-
+      Preparation method of the sampled tissue
+    values:
+    - '-9'
+    - BK
+    - BR
+    - CP
+    - 'NO'
+    - WA
+    - WO
+    details: >-
+      Legacy field name: AgePrepMet.
+  - name: OtolithGrading
+    type: enum
+    description: >-
+      Grading of the otolith reading
+    values:
+    - '-9'
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: OtGrading.
+  - name: ParasiteSamplingFlag
+    type: string
+    description: >-
+      Flag whether parasites sampling was performed
+    details: >-
+      Legacy field name: ParSamp.
+    examples:
+    - '-9'
+  - name: MaturityScale
+    type: enum
+    description: >-
+      Maturity scale type used in the Maturity field. From 2021 only M6
+      and SMSF will be accepted for new submissions.
+    values:
+    - '-9'
+    - M1
+    - M10
+    - M4
+    - M5
+    - M6
+    - MRF6
+    - R1
+    - R2
+    - S6
+    - SMSF
+    details: >-
+      Legacy field name: MaturityScale.
+    constraints:
+    - required
+  - name: DateofCalculation
+    type: number
+    details: >-
+      Legacy field name: DateofCalculation. Not documented under this name
+      in ICES's field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 15449.0
+    - 15453.0
+    - 15505.0
+    - 15651.0
+    - 15660.0
+  - name: Valid_Aphia
+    type: string
+    details: >-
+      Legacy field name: Valid_Aphia. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - '213'
+    - '1066'
+    - '1130'
+    - '1135'
+    - '10216'
+- name: LT
+  columns:
+  - name: Survey
+    type: string
+    details: >-
+      Legacy field name: Survey.
+    description: >-
+      Survey code as used in ICES products, see https://vocab.ices.dk/?codetypeguid=016362a4-90be-424b-af01-a37ae58ca023
+    constraints:
+    - required
+    examples:
+    - BITS
+    - BTS
+    - 'DYFS'
+    - 'EVHOE'
+    - FR-CGFS
+  - name: Quarter
+    type: enum
+    description: >-
+      Cruise quarter. Hauls outside of the calendar quarter can be reported
+      with the same quarter reference, if agreed by the survey group.
+    values:
+    - '1'
+    - '2'
+    - '3'
+    - '4'
+    details: >-
+      Legacy field name: Quarter.
+    constraints:
+    - required
+  - name: Year
+    type: number
+    description: >-
+      Cruise year (YYYY)
+    details: >-
+      Legacy field name: Year. Spreadsheet DataType 'char' disagrees with
+      the live WSDL type (served as 'number'); the WSDL type is kept -- it is what
+      the service actually returns.
+    constraints:
+    - required
+    examples:
+    - 2006.0
+    - 2007.0
+    - 2008.0
+    - 2009.0
+    - 2010.0
+  - name: Platform
+    type: string
+    details: >-
+      Legacy field name: Ship.
+    description: >-
+      SeaDataNet Ship and Platform Codes
+    constraints:
+    - required
+    examples:
+    - 06NI
+    - 06SL
+    - '1186'
+    - 11AP
+    - '11BE'
+  - name: Gear
+    type: string
+    description: >-
+      Gear type code
+    details: >-
+      Legacy field name: Gear.
+    constraints:
+    - required
+    examples:
+    - BAK
+    - BT4A
+    - BT4AI
+    - BT4P
+    - BT4S
+  - name: Country
+    type: string
+    description: >-
+      ISO 3166 country codes and region codes used by ICES
+    details: >-
+      Legacy field name: Country.
+    constraints:
+    - required
+    examples:
+    - 'BE'
+    - 'DE'
+    - 'DK'
+    - 'EE'
+    - 'ES'
+  - name: StationName
+    type: string
+    details: >-
+      Legacy field name: StNo.
+    description: >-
+      Station number. National coding system, not defined by ICES.
+    constraints:
+    - required
+    examples:
+    - '001'
+    - '002'
+    - '003'
+    - '004'
+    - '005'
+  - name: HaulNumber
+    type: number
+    details: >-
+      Legacy field name: HaulNo.
+    description: >-
+      Sequential numbering of hauls during cruise.
+    constraints:
+    - required
+    examples:
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+    - 5.0
+  - name: ShootLatitude
+    type: number
+    details: >-
+      Legacy field name: ShootLat. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 36.0013
+    - 36.0014
+    - 36.0038
+    - 36.0165
+    - 36.0177
+  - name: ShootLongitude
+    type: number
+    details: >-
+      Legacy field name: ShootLong. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - -15.797
+    - -15.605
+    - -15.392
+    - -15.388
+    - -15.386
+  - name: HaulLatitude
+    type: number
+    details: >-
+      Legacy field name: HaulLat. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 36.0217
+    - 36.0223
+    - 36.0265
+    - 36.0273
+  - name: HaulLongitude
+    type: number
+    details: >-
+      Legacy field name: HaulLong. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - -15.837
+    - -15.594
+    - -15.408
+    - -15.402
+    - -15.397
+  - name: OSPARArea
+    type: string
+    details: >-
+      Legacy field name: OSPARArea. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - II
+    - III
+    - IV
+    - V
+  - name: MSFDArea
+    type: string
+    details: >-
+      Legacy field name: MSFDArea. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - Baltic Sea
+    - North-east Atlantic Ocean
+  - name: BottomDepth
+    type: number
+    details: >-
+      Legacy field name: BottomDepth. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 5.0
+    - 6.0
+    - 7.0
+    - 8.0
+    - 9.0
+  - name: Distance
+    type: number
+    details: >-
+      Legacy field name: Distance. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 22.0
+    - 74.0
+    - 85.0
+    - 93.0
+  - name: DoorSpread
+    type: number
+    details: >-
+      Legacy field name: DoorSpread. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 26.0
+    - 32.0
+    - 33.0
+  - name: WingSpread
+    type: number
+    details: >-
+      Legacy field name: WingSpread. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.8
+    - 7.1
+    - 8.9
+    - 9.6
+  - name: LTREF
+    type: enum
+    description: >-
+      Litter reference list.
+    values:
+    - C-TS
+    - C-TS-REV
+    - C-TS-REV2
+    - H01
+    - JCODELIST
+    - LT-FM
+    - MEDITS
+    - OSPAR-LT
+    - RECO-LT
+    - TSG-ML
+    - UNEP
+    - UNEP-RLC
+    details: >-
+      Legacy field name: LTREF.
+    constraints:
+    - required
+  - name: PARAM
+    type: string
+    details: >-
+      Legacy field name: PARAM.
+    description: >-
+      Refer to http://vocab.ices.dk/ for the complete list of codes for
+      the given LTREF
+    constraints:
+    - required
+    examples:
+    - 'A'
+    - 'A1'
+    - 'A10'
+    - 'A11'
+    - 'A12'
+  - name: LTSZC
+    type: string
+    details: >-
+      Legacy field name: LTSZC.
+    description: >-
+      Litter size category
+    examples:
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '13'
+  - name: UnitWeight
+    type: string
+    details: >-
+      Legacy field name: UnitWgt.
+    description: >-
+      Units used for reporting the next field
+    examples:
+    - g/haul
+    - kg/haul
+  - name: LT_Weight
+    type: number
+    description: >-
+      Litter weight, see prev. field for units
+    details: >-
+      Legacy field name: LT_Weight.
+    examples:
+    - -99.0
+    - 0.0
+    - 0.0001
+    - 0.0002
+    - 0.0003
+  - name: UnitItem
+    type: string
+    details: >-
+      Legacy field name: UnitItem.
+    description: >-
+      Units used for reporting the next field
+    examples:
+    - items/haul
+  - name: LT_Items
+    type: number
+    description: >-
+      Number of litter items, see prev. field for units
+    details: >-
+      Legacy field name: LT_Items.
+    examples:
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+  - name: LTSRC
+    type: enum
+    description: >-
+      Litter source
+    values:
+    - '-9'
+    - LB
+    - LBF
+    - LBI
+    - LBM
+    - LBS
+    - LBT
+    - OB
+    - RBI
+    - SBA
+    - SBF
+    - SBG
+    - SBMR
+    - SBR
+    - SBS
+    - SBT
+    - UNK
+    details: >-
+      Legacy field name: LTSRC.
+  - name: TYPPL
+    type: string
+    details: >-
+      Legacy field name: TYPPL.
+    description: >-
+      Type of polymer
+    examples:
+    - PE
+    - PET
+    - PP
+    - PS
+    - UPL
+  - name: LTPRP
+    type: string
+    description: >-
+      Additional litter properties
+    details: >-
+      Legacy field name: LTPRP.
+    examples:
+    - AO
+    - AO~CL1
+    - AO~CL1~CL4
+    - AO~CL12
+    - AO~CL2
+  - name: SweepLength
+    type: number
+    details: >-
+      Legacy field name: SweepLngt. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 47.0
+    - 50.0
+    - 55.0
+    - 60.0
+  - name: GearExceptions
+    type: enum
+    values:
+    - '-9'
+    - B
+    - D
+    - DB
+    - I2
+    - MN
+    - MY
+    - R
+    - S
+    - S1
+    - S2
+    - SB
+    - ST
+    details: >-
+      Legacy field name: GearEx. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: DoorType
+    type: enum
+    values:
+    - '-9'
+    - F
+    - K
+    - P
+    - PE
+    - PI
+    - R
+    - T
+    - T4
+    - T6
+    - V
+    - WR
+    details: >-
+      Legacy field name: DoorType. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: Month
+    type: enum
+    values:
+    - '1'
+    - '10'
+    - '11'
+    - '12'
+    - '2'
+    - '3'
+    - '4'
+    - '5'
+    - '6'
+    - '7'
+    - '8'
+    - '9'
+    details: >-
+      Legacy field name: Month. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: Day
+    type: number
+    details: >-
+      Legacy field name: Day. Not documented under this name in ICES's field-description
+      spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+    - 5.0
+  - name: StartTime
+    type: string
+    details: >-
+      Legacy field name: TimeShot. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - '0009'
+    - '0018'
+    - '0028'
+    - '0034'
+    - '0036'
+  - name: HaulDuration
+    type: number
+    details: >-
+      Legacy field name: HaulDur. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+  - name: StatisticalRectangle
+    type: string
+    details: >-
+      Legacy field name: StatRec. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - '01E2'
+    - '01E3'
+    - '02E0'
+    - '02E1'
+    - '02E2'
+  - name: Depth
+    type: number
+    details: >-
+      Legacy field name: Depth. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 5.0
+    - 6.0
+    - 7.0
+    - 8.0
+    - 9.0
+  - name: HaulValidity
+    type: enum
+    values:
+    - A
+    - C
+    - I
+    - M
+    - 'N'
+    - S
+    - V
+    details: >-
+      Legacy field name: HaulVal. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: DataType
+    type: enum
+    values:
+    - '-9'
+    - C
+    - P
+    - R
+    - S
+    details: >-
+      Legacy field name: DataType. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: NetOpening
+    type: number
+    details: >-
+      Legacy field name: Netopening. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 0.7
+    - 0.8
+    - 0.9
+    - 1.0
+  - name: Rigging
+    type: enum
+    values:
+    - '-9'
+    - BC
+    - BM
+    - BN
+    - D
+    - F
+    - FB
+    - FM
+    - FT
+    - FW
+    - M
+    - S
+    - T
+    - TS
+    - TT
+    details: >-
+      Legacy field name: Rigging. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: Tickler
+    type: number
+    details: >-
+      Legacy field name: Tickler. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - -9.0
+    - 0.0
+    - 5.0
+    - 8.0
+  - name: WarpLength
+    type: number
+    details: >-
+      Legacy field name: Warplngt. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 3.0
+    - 4.0
+    - 20.0
+  - name: WarpDiameter
+    type: number
+    details: >-
+      Legacy field name: Warpdia. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 16.0
+    - 18.0
+    - 20.0
+    - 22.0
+    - 24.0
+  - name: WarpDensity
+    type: number
+    details: >-
+      Legacy field name: WarpDen. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 2.0
+    - 12.0
+    - 26.0
+  - name: DoorSurface
+    type: number
+    details: >-
+      Legacy field name: DoorSurface. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 1.8
+    - 3.5
+    - 3.6
+    - 4.0
+    - 4.2
+  - name: DoorWeight
+    type: number
+    details: >-
+      Legacy field name: DoorWgt. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 235.0
+    - 350.0
+    - 520.0
+    - 540.0
+    - 650.0
+  - name: TowDirection
+    type: number
+    details: >-
+      Legacy field name: TowDir. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+  - name: SpeedGround
+    type: number
+    details: >-
+      Legacy field name: GroundSpeed. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 0.2
+    - 0.8
+    - 1.0
+    - 1.3
+  - name: SpeedWater
+    type: number
+    details: >-
+      Legacy field name: SpeedWater. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 0.8
+    - 0.9
+    - 1.0
+    - 1.1
+  - name: WindDirection
+    type: number
+    details: >-
+      Legacy field name: WindDir. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - -1.0
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+  - name: WindSpeed
+    type: number
+    details: >-
+      Legacy field name: WindSpeed. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+  - name: SwellDirection
+    type: number
+    details: >-
+      Legacy field name: SwellDir. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 1.0
+    - 2.0
+    - 3.0
+    - 4.0
+  - name: SwellHeight
+    type: enum
+    values:
+    - H
+    - L
+    - M
+    - 'N'
+    - NR
+    - VH
+    details: >-
+      Legacy field name: SwellHeight. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+  - name: CodendMesh
+    type: number
+    details: >-
+      Legacy field name: CodendMesh. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - 0.0
+    - 10.0
+    - 16.0
+    - 20.0
+    - 22.0
+  - name: EEZ
+    type: string
+    details: >-
+      Legacy field name: EEZ. Not documented under this name in ICES's field-description
+      spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - Belgian Exclusive Economic Zone
+    - 'Danish Exclusive Economic Zone'
+    - 'Dutch Exclusive Economic Zone'
+    - 'Estonian Exclusive Economic Zone'
+    - French Exclusive Economic Zone
+  - name: NMArea
+    type: string
+    details: >-
+      Legacy field name: NMArea. Not documented under this name in ICES's
+      field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - Belgian 12 NM
+    - 'Danish 12 NM'
+    - 'Dutch 12 NM'
+    - 'Estonian 12 NM'
+    - French 12 NM
+  - name: DateofCalculation
+    type: string
+    details: >-
+      Legacy field name: DateofCalculation. Not documented under this name
+      in ICES's field-description spreadsheet (snapshot datras_field_descriptions_20260817_075550_52c1a5f5.xlsx).
+      'Under this name': the spreadsheet uses ICES's new field names, which do
+      not all agree with the names ICES's own field-list service documents.
+    examples:
+    - '2015-11-27'
+    - '2016-01-25'
+    - '2016-01-26'
+    - '2017-03-06'
+    - '2017-04-04'
+$learn_more: http://data-dict.tidyverse.org/
+origin: data-raw/spec/spec_01_seed_dict.R -> data-raw/spec/spec_04_build_ices_yaml.R
+version:
+  date: '2026-09-15'

@@ -35,4 +35,4 @@ saved under a new dated filename here rather than overwriting this one —
 so which snapshot is current stays visible, not hidden.
 
 Raw yaml, if you want the machine-readable version directly:
-[`DATRAS-data-dict.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-data-dict.yaml)
+[`DATRAS-imbus.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-imbus.yaml) (archive-verified) · [`DATRAS-ices.yaml`](https://github.com/einarhjorleifsson/opus/blob/main/inst/DATRAS-ices.yaml) (ICES's own documented view)

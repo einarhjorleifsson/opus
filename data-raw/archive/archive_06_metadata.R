@@ -8,7 +8,7 @@
 #' ~4 KB rather than the whole dictionary, and so a rebuild's diff stays
 #' legible (provenance/coverage change every build; dict rarely):
 #'
-#'   datras:dict          the table's slice of inst/DATRAS-data-dict.yaml, as
+#'   datras:dict          the table's slice of inst/DATRAS-imbus.yaml, as
 #'                        resolved by `data-dict export-spec`, plus three things
 #'                        export-spec cannot know: legacy_name, parquet_type,
 #'                        r_type.
@@ -32,7 +32,7 @@ suppressPackageStartupMessages({
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 DM_CLI  <- path.expand("~/garbage/data-dict/target/release/data-dict")
-DM_DICT <- "inst/DATRAS-data-dict.yaml"
+DM_DICT <- "inst/DATRAS-imbus.yaml"
 
 # ---------------------------------------------------------------------------
 # The dictionary, resolved once per run by data-dict itself.

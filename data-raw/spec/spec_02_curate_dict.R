@@ -2,7 +2,7 @@
 # known domain-knowledge corrections. Deliberately diffable against the
 # seed, so the two together show the whole workflow at a glance:
 #
-#   diff data-raw/seed/DATRAS-exchange-dict-seed.yaml inst/DATRAS-data-dict-legacy.yaml
+#   diff data-raw/seed/DATRAS-exchange-dict-seed.yaml data-raw/seed/DATRAS-curated-legacy.yaml
 #
 # This is a separate script from spec_01_seed_dict.R on purpose (AGENTS.md's
 # Working principles, rule 11 / seed-vs-curate split): the seed reports
@@ -12,8 +12,10 @@
 # Restructured 2026-08-09 to key every correction/spec by legacy (real,
 # on-the-wire) field name, not ICES's suggested new name -- matches the
 # seed's own restructure (see spec_01_seed_dict.R's header for why). This
-# script's own output is now `inst/DATRAS-data-dict-legacy.yaml`; the
-# curated/new-named version opus actually ships is produced from it by
+# script's own output is `data-raw/seed/DATRAS-curated-legacy.yaml`, an
+# internal intermediate (moved out of inst/ 2026-09-15, when opus switched
+# to shipping DATRAS-ices.yaml + DATRAS-imbus.yaml); the curated/new-named
+# dictionary opus ships (inst/DATRAS-imbus.yaml) is produced from it by
 # data-raw/spec/spec_03_translate_new_names.R, a pure rename, nothing else.
 #
 # Each correction is a stand-in for a future DATRAS-known-issues.yaml row --
@@ -67,8 +69,26 @@ apply_col_update <- function(dict, table, field, updates) {
   # whichever constraint was already there. Verified this can't introduce
   # duplicates or reorder-related diffs: union() de-dupes and yaml::as.yaml()
   # renders any character vector the same way regardless of how it was built.
+  #
+  # Extended 2026-09-15 for assertion entries: a constraint can also be a
+  # MAP (`list(assert = "...", description = "...")`), which union()/
+  # unlist() would mangle. Barewords union; assert maps append, de-duplicated
+  # by their assert text so re-running a pass is idempotent.
   if (!is.null(updates$constraints)) {
-    col$constraints <- as.list(union(unlist(col$constraints), unlist(updates$constraints)))
+    split_constraints <- function(cs) {
+      bare <- character(0)
+      asserts <- list()
+      for (e in cs) {
+        if (is.list(e) && !is.null(e$assert)) asserts <- c(asserts, list(e))
+        else bare <- c(bare, as.character(e))
+      }
+      list(bare = bare, asserts = asserts)
+    }
+    ex <- split_constraints(if (is.null(col$constraints)) list() else col$constraints)
+    nw <- split_constraints(updates$constraints)
+    existing_assert_text <- vapply(ex$asserts, function(a) a$assert, character(1))
+    keep_new <- !vapply(nw$asserts, function(a) a$assert, character(1)) %in% existing_assert_text
+    col$constraints <- c(as.list(union(ex$bare, nw$bare)), ex$asserts, nw$asserts[keep_new])
   }
   if (!is.null(updates$details)) {
     col$details <- if (is.null(col$details)) updates$details else paste(col$details, updates$details)
@@ -1164,6 +1184,166 @@ glossary <- list(
   "SeaDataNet" = "A pan-European marine data infrastructure and common-vocabulary network. Some ICES/DATRAS reference concepts (e.g. certain parameter codes) trace back to SeaDataNet-maintained vocabularies rather than being DATRAS-specific inventions."
 )
 
+# ============================================================================
+# Physical non-negativity assertions (2026-09-15)
+# ============================================================================
+# First real use of data-dict's `assert` constraints in this dictionary.
+# Rule: every number(quantity) field whose quantity cannot physically be
+# negative carries `assert: {field} >= 0` -- a value below zero can only be
+# a data error (e.g. HaulDuration's two negative rows, Can-Mar 2017, both
+# inside the archive). The curated `range:` stays the descriptive observed
+# envelope (data-dict validates nothing against `range`); the assert is the
+# actual gate and fires D07 on violation.
+#
+# Excluded, deliberately:
+#   - latitudes/longitudes and temperatures (legitimately signed)
+#   - TidePhase (negative phase relative to slack tide is real)
+#   - directions (TowDir, WindDir, ...): physically 0-360, but WindDir's
+#     archive contains -1 whose meaning is unverified -- excluded pending
+#     that check, not silently asserted.
+# The stopifnot below makes the list exhaustive over the dictionary's
+# number(quantity) fields: adding a new quantity field to the dictionary
+# without a non-negativity decision here fails the build.
+nonnegative_fields <- c(
+  "SweepLngt", "HaulDur", "Depth", "BottomDepth", "Netopening", "Distance",
+  "Warplngt", "Warpdia", "WarpDen", "DoorSurface", "DoorWgt", "DoorSpread",
+  "WingSpread", "Buoyancy", "KiteDim", "WgtGroundRope", "GroundSpeed",
+  "SpeedWater", "SurCurSpeed", "BotCurSpeed", "WindSpeed", "SwellHeight",
+  "SurSal", "BotSal", "ThClineDepth", "CodendMesh", "SecchiDepth",
+  "Turbidity", "TideSpeed", "MinTrawlDepth", "MaxTrawlDepth",
+  "TotalNo", "NoMeas", "SubFactor", "SubWgt", "CatCatchWgt", "LngtClass",
+  "HLNoAtLngt", "Age", "CANoAtLngt", "IndWgt", "LT_Weight", "LT_Items"
+)
+signed_fields <- c(
+  "ShootLat", "ShootLong", "HaulLat", "HaulLong", "SurTemp", "BotTemp",
+  "TidePhase", "TowDir", "SurCurDir", "BotCurDir", "WindDir", "SwellDir"
+)
+qty_fields <- unique(unlist(lapply(curated$tables, function(t) {
+  vapply(t$columns, function(cc) {
+    if (!is.null(cc$type) && identical(cc$type, "number(quantity)")) cc$name else NA_character_
+  }, character(1))
+})))
+qty_fields <- qty_fields[!is.na(qty_fields)]
+unaccounted <- setdiff(qty_fields, c(nonnegative_fields, signed_fields))
+if (length(unaccounted) > 0) {
+  stop("number(quantity) fields with no non-negativity decision: ",
+       paste(unaccounted, collapse = ", "), call. = FALSE)
+}
+
+assert_specs <- lapply(nonnegative_fields, function(f) list(
+  field = f,
+  constraints = list(list(
+    assert = paste(f, ">= 0"),
+    description = "Physically non-negative quantity; a negative value can only be a data error."
+  ))
+))
+curated <- reduce(assert_specs, apply_shared_field_spec, .init = curated)
+message("Added non-negativity assertions for ", length(nonnegative_fields), " fields")
+
+# ============================================================================
+# Trim enum values to archive-observed codes (2026-09-15)
+# ============================================================================
+# Every enum column's `values:` map is restricted to the codes actually
+# observed in this table's published archive (`.datras/to_https/raw/`,
+# current names -- mapped from the legacy keys used here via
+# op_datras_rename_crosswalk(), same approach as
+# data-raw/audit/build_field_gap_audit.R). Consequences, all by design:
+#   - `-9` drops out of sentinel-strip fields (absent from the published
+#     archive) and stays in keep-policy fields (Tickler, PlusGr, DataType...);
+#   - codes observed but undocumented in icesVocab (ThermoCline's lowercase
+#     "y", LTSRC's "sba") are KEPT -- they are in the system -- and marked;
+#   - a value outside the trimmed list in new data fails D04 enum
+#     validation, forcing an explicit decision: data error or genuinely new
+#     code. That warning-on-novel-code behaviour is the point of trimming.
+# A column with zero observed non-null values is left untouched (trimming
+# to empty would destroy information about a column the archive happens to
+# carry as all-null).
+xw_all <- op_datras_rename_crosswalk()
+vocab_key_by_field <- read.csv("inst/DATRAS-vocab-correction.csv",
+                               stringsAsFactors = FALSE) |>
+  dplyr::filter(!is.na(proposed_vocab_key)) |>
+  dplyr::distinct(legacy_field, proposed_vocab_key)
+vocab_key_by_field <- setNames(vocab_key_by_field$proposed_vocab_key,
+                               vocab_key_by_field$legacy_field)
+
+n_trimmed <- 0L
+n_codes_dropped <- 0L
+n_codes_added <- 0L
+for (ti in seq_along(curated$tables)) {
+  tname <- curated$tables[[ti]]$name
+  ds <- arrow::open_dataset(file.path(".datras/to_https/raw", paste0(tname, ".parquet")))
+  xw <- xw_all[xw_all$RecordHeader == tname, ]
+  to_current <- setNames(xw$new_name, xw$old_name)
+
+  for (ci in seq_along(curated$tables[[ti]]$columns)) {
+    col <- curated$tables[[ti]]$columns[[ci]]
+    if (is.null(col$type) || !identical(col$type, "enum")) next
+    if (is.null(col$values)) next
+
+    pq_name <- unname(to_current[[col$name]])
+    if (is.null(pq_name) || !(pq_name %in% names(ds))) {
+      stop("Enum trim: no parquet column for ", tname, ".", col$name,
+           " (mapped to '", pq_name, "') -- crosswalk/dictionary drift.", call. = FALSE)
+    }
+
+    observed <- ds |>
+      dplyr::distinct(dplyr::across(dplyr::all_of(pq_name))) |>
+      dplyr::collect() |>
+      dplyr::pull(1)
+    observed <- sort(as.character(stats::na.omit(observed)))
+    if (length(observed) == 0) {
+      message("Enum trim: ", tname, ".", col$name, " is all-null in the archive; values left untouched")
+      next
+    }
+
+    vals <- col$values
+    is_map <- !is.null(names(vals))
+    declared <- if (is_map) names(vals) else as.character(unlist(vals))
+    dropped <- setdiff(declared, observed)
+    added <- setdiff(observed, declared)
+
+    if (is_map) {
+      vals <- vals[intersect(names(vals), observed)]
+      for (a in added) vals[[a]] <- "Observed in the archive; not documented in icesVocab"
+    } else {
+      vals <- as.list(c(intersect(declared, observed), added))
+    }
+    col$values <- vals
+
+    if (length(dropped) > 0 || length(added) > 0) {
+      key <- if (col$name %in% names(vocab_key_by_field)) {
+        unname(vocab_key_by_field[[col$name]])
+      } else {
+        NULL
+      }
+      n_total <- NA_integer_
+      if (!is.null(key)) {
+        n_total <- tryCatch(nrow(op_vocab_get_codes(key)), error = function(e) NA_integer_)
+      }
+      note <- paste0(
+        "values: restricted to the ", length(observed),
+        " code(s) observed in this table's published archive",
+        if (!is.null(key) && !is.na(n_total))
+          sprintf(" (icesVocab's %s defines %d in total)", key, n_total),
+        if (length(added) > 0)
+          sprintf("; observed but not documented in icesVocab: %s",
+                  paste(added, collapse = ", ")),
+        ". A value outside this list in new data fails D04 enum validation ",
+        "and needs review: data error or a genuinely new code."
+      )
+      col$details <- if (is.null(col$details)) note else paste(col$details, note)
+      n_trimmed <- n_trimmed + 1L
+      n_codes_dropped <- n_codes_dropped + length(dropped)
+      n_codes_added <- n_codes_added + length(added)
+    }
+
+    curated$tables[[ti]]$columns[[ci]] <- col
+  }
+}
+message("Enum trim: ", n_trimmed, " enum column(s) trimmed, ",
+        n_codes_dropped, " unobserved code(s) dropped, ",
+        n_codes_added, " undocumented-but-observed code(s) added")
+
 # Top-level metadata: add $learn_more (spec-recommended, S09), drop the
 # seed's "SEED ONLY / not yet curated" framing now that it's been curated,
 # point at this script for what changed and why. Reconstructed explicitly
@@ -1190,54 +1370,14 @@ curated <- list(
   glossary = glossary
 )
 
-write_yaml(curated, "inst/DATRAS-data-dict-legacy.yaml")
-
-# Post-process YAML: convert `description:`/`details:` scalars to folded
-# (`>-`) block style, matching data-dict's own canonical examples (e.g.
-# /site/examples/contoso.yaml in the data-dict repo). yaml::write_yaml()
-# has no option to choose this directly -- it emits plain or single-quoted
-# style depending on content, never `>` -- so this rewrites the already-written
-# file's raw text instead (same approach as the quote-number-examples
-# post-process below). Safe because a single line break inside a folded
-# scalar collapses to one space when parsed, identical to how a line break
-# already behaves inside the plain/quoted styles it replaces -- this changes
-# only delimiters and un-escapes `''`, never re-wraps text or changes the
-# parsed value (verified via a full parsed-value round-trip comparison
-# before this was ever run against the real file, 2026-08-18). `>-`
-# (strip chomping), not bare `>`, because bare `>` keeps one trailing
-# newline that the original plain/quoted value never had.
-fold_long_scalars <- function(outfile) {
-  lines <- readLines(outfile)
-  key_indent <- function(s) nchar(regmatches(s, regexpr("^\\s*", s))[[1]])
-  out <- character(0)
-  i <- 1
-  while (i <= length(lines)) {
-    line <- lines[i]
-    m <- regexec("^(\\s*)(description|details): (.*)$", line)
-    parts <- regmatches(line, m)[[1]]
-    if (length(parts) == 0 || parts[4] %in% c("|-", ">", ">-", "|", "|+")) {
-      out <- c(out, line); i <- i + 1; next
-    }
-    indent <- parts[2]; key <- parts[3]; first_val <- parts[4]
-    this_indent <- nchar(indent)
-    block <- c(first_val)
-    j <- i + 1
-    while (j <= length(lines) && nchar(lines[j]) > 0 && key_indent(lines[j]) > this_indent) {
-      block <- c(block, sub("^\\s+", "", lines[j]))
-      j <- j + 1
-    }
-    if (grepl("^'", block[1])) {
-      block[1] <- sub("^'", "", block[1])
-      last <- length(block)
-      block[last] <- sub("'$", "", block[last])
-      block <- gsub("''", "'", block, fixed = TRUE)
-    }
-    out <- c(out, paste0(indent, key, ": >-"), paste0(indent, "  ", block))
-    i <- j
-  }
-  writeLines(out, outfile)
-}
-fold_long_scalars("inst/DATRAS-data-dict-legacy.yaml")
+# Writes to data-raw/seed/ -- an internal intermediate, keyed by legacy
+# names. The shipped file (inst/DATRAS-imbus.yaml, current names) is
+# produced from it by data-raw/spec/spec_03_translate_new_names.R.
+# op_write_dict_yaml() (R/dict_write.R) applies opus's canonical
+# post-processing (folded description/details scalars, quoted number-like
+# string examples) -- previously two inline copies of that machinery lived
+# here and in spec_03; extracted once, per Working Principle 7b's spirit.
+op_write_dict_yaml(curated, "data-raw/seed/DATRAS-curated-legacy.yaml")
 
 # ============================================================================
 # Create strict icesVocab-only version for validation testing
@@ -1265,54 +1405,13 @@ fold_long_scalars("inst/DATRAS-data-dict-legacy.yaml")
 # LT table:
 #   - PARAM: 50 distinct values; A2/A5/A7/A14/A3/A6 undocumented (~50k rows)
 
-# Post-process YAML to quote number-looking string examples (new spec requirement)
-# (R's yaml writer doesn't preserve quote style for strings like "74E9", but only
-# for `string` columns -- `number(id)` examples should remain unquoted numbers)
-for (outfile in c("inst/DATRAS-data-dict-legacy.yaml")) {
-  lines <- readLines(outfile)
-  i <- 1
-  while (i <= length(lines)) {
-    # Look for "type: string" followed (several lines later) by "examples:"
-    if (grepl("^\\s+type: string\\s*$", lines[i])) {
-      # Found a string column; now look for its examples section
-      col_start <- i
-      j <- i + 1
-      examples_found <- FALSE
-      while (j <= length(lines) && !grepl("^\\s+- name: ", lines[j])) {
-        if (grepl("^\\s+examples:\\s*$", lines[j])) {
-          examples_found <- TRUE
-          # Quote examples on this string column
-          j <- j + 1
-          while (j <= length(lines) && grepl("^\\s+- ", lines[j])) {
-            match <- regexpr("- (.+)$", lines[j])
-            if (match > 0) {
-              value <- regmatches(lines[j], match)
-              value <- sub("^- ", "", value)
-              # Quote if it looks like a number/hex code and isn't already quoted
-              if (!grepl("^['\"]", value) && (grepl("^[0-9A-Fa-f]+$", value) || grepl("^[0-9A-Fa-f]*[E|D]", value))) {
-                indent <- regmatches(lines[j], regexpr("^\\s+", lines[j]))
-                lines[j] <- paste0(indent, "- '", value, "'")
-              }
-            }
-            j <- j + 1
-          }
-          break
-        }
-        j <- j + 1
-      }
-    }
-    i <- i + 1
-  }
-  writeLines(lines, outfile)
-}
-
 # ============================================================================
 # FINAL: Validate YAML structure against data-dict spec
 # ============================================================================
 
 source("R/validation.R")
 
-validation_result <- op_validate_spec("inst/DATRAS-data-dict-legacy.yaml")
+validation_result <- op_validate_spec("data-raw/seed/DATRAS-curated-legacy.yaml")
 
 if (!validation_result$valid) {
   cat("\n✗ YAML VALIDATION FAILED:\n\n")
@@ -1327,9 +1426,8 @@ message(
   "Curated ", length(corrections), " WSDL-disagreement correction(s), ",
   length(field_specs), " per-table field-spec fill(s), and ",
   length(shared_field_specs), " cross-table shared-spec fill(s). Wrote ",
-  "inst/DATRAS-data-dict-legacy.yaml (descriptive with observed data enums, ",
-  "keyed by ICES's own legacy field names). ",
-  "Post-processed to quote number-looking string examples for data-dict spec compliance.",
+  "data-raw/seed/DATRAS-curated-legacy.yaml (archive-observed enums, ",
+  "non-negativity assertions, keyed by ICES's own legacy field names). ",
   "\n✓ Validated against data-dict spec.",
-  "\nRun data-raw/spec/spec_03_translate_new_names.R next to produce the curated/new-named inst/DATRAS-data-dict.yaml."
+  "\nRun data-raw/spec/spec_03_translate_new_names.R next to produce the shipped inst/DATRAS-imbus.yaml."
 )

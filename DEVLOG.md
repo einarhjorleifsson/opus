@@ -2622,3 +2622,119 @@ tooling. Rejected: flag-generated dual YAMLs (ICES-literal vs descriptive)
 -- two shipped dictionaries are two contracts, divergence already lives
 annotated in one artifact, and an ICES-literal view, if ever needed, is an
 on-demand report rather than a parallel dictionary.
+
+---
+
+## 2026-09-15 (late night) -- two dictionaries ship: DATRAS-imbus.yaml + DATRAS-ices.yaml
+
+The dual-yaml idea parked earlier the same day (see above: "two shipped
+dictionaries are two contracts") came back in a different frame and this
+time won. The earlier rejection read the ICES-literal yaml as a second
+*contract*; the decisive reframe is that it is not a contract but
+*evidence* -- a faithful consolidation of what ICES's own four metadata
+sources currently say, existing so that the diff against the
+archive-verified dictionary is itself the corrections story for the ICES
+Datacenter. Strategic context: rather than bringing ICES a list of
+questions, bring them a specification they can confirm or deny -- opus's
+archive-grounded knowledge of what DATRAS actually contains likely exceeds
+any single ICES source's.
+
+**What changed:**
+
+- `inst/DATRAS-data-dict.yaml` -> `inst/DATRAS-imbus.yaml` (same role, new
+  name): the archive-side spec. Two new archive-grounded passes in
+  spec_02: (1) every enum's `values:` trimmed to the codes actually
+  observed in the published archive (38 enum columns trimmed, 464
+  unobserved icesVocab codes dropped, 2 undocumented-but-observed codes
+  kept and marked -- the ThermoCline "y" and LTSRC "sba" case-slips), so a
+  novel code in new data fails D04 and forces the explicit
+  error-vs-new-code decision; (2) the dictionary's first real assertions:
+  `assert: {field} >= 0` on every physically non-negative number(quantity)
+  field (43 fields; an exhaustive-stop guard fails the build if a quantity
+  field ever lacks a non-negativity decision). range: stays the
+  descriptive observed envelope -- data-dict validates nothing against
+  range; D07 is the gate.
+- `inst/DATRAS-ices.yaml` (new, spec_04): the seed (WSDL types,
+  getDatrasFieldList descriptions, unfiltered icesVocab code lists)
+  renamed to current names, then merged with the field-description
+  spreadsheet (descriptions preferred; Mandatory -> required; DataType/WSDL
+  conflicts noted in details, WSDL kept). No opus corrections anywhere.
+  data-dict's S07 requires a representative-values key on every typed
+  column and ICES's own example records cover only HH/HL/CA -- LT examples
+  (and any other gap) are archive-drawn, disclosed in the file's own
+  description.
+- Legacy-named yamls no longer ship: spec_02's output moved to
+  `data-raw/seed/DATRAS-curated-legacy.yaml`. The retired
+  `Legacy field name: {old}.` details stamp (retired 2026-08-09 as
+  redundant when two side-by-side files existed) is un-retired --
+  op_translate_dict_names() writes it at rename time and op_field_spec()
+  reads the shipped imbus yaml back through it. One shipped file per
+  dictionary, both naming schemes self-contained.
+- New exported functions: op_translate_dict_names() (the rename machinery
+  extracted from spec_03, extended to rewrite assert expressions and do
+  the stamping) and op_write_dict_yaml() (write_yaml + the fold/quote
+  post-processors, extracted from their two inline copies -- spec_04 would
+  have been a third).
+
+**Findings the restructure itself surfaced (all verified against the live
+sources, not inherited):**
+
+- The spreadsheet documents ten fields the WSDL does not serve:
+  HH SurveyIndexArea/EDMO/ReasonHaulDisruption, CA
+  IndividualAge/LiverWeight/PreservationMethod, LT
+  RecordHeader/Reserved1/Reserved2/DatrasSurvey. And it calls CA's Age
+  "IndividualAge" where ICES's own field-list service maps Age -> Age.
+  ICES-internal divergence, now visible in DATRAS-ices.yaml's details.
+- The new asserts fire on real archive errors that are NOT the standard -9
+  sentinel and were previously invisible: HL SpeciesCategoryWeight -900
+  (2,562 rows) and -100 (1); CA Age -1 (2,322 rows), -5 (1), -95 (1); LT
+  LT_Weight -99 (3). Plus the already-known HH HaulDuration negatives (2).
+  Registry candidates, not yet filed.
+- Validation after restructure: op_validate_spec clean on both yamls;
+  op_validate_meta clean on all four tables (the gate); D04 enum findings
+  against the archive now zero by construction; D07 findings are exactly
+  the known/now-known data errors above.
+
+Earlier the same day, before the restructure: built
+data-raw/audit/build_reference_artifact.R (consolidated
+DATRAS-reference.xlsx/.duckdb: fields/codes/corrections/ices_reference
+sheets) as a possible demo artifact for the ICES Datacenter conversation,
+and drafted data-raw/issue-drafts/ices-datacenter-meeting-agenda.md. The
+two-yaml split supersedes the artifact's role as the meeting's evidence,
+but the script stays -- its corrections table is the mechanical diff of
+the two yamls and remains useful.
+
+---
+
+## 2026-09-16 -- archive rebuilt with current-yaml footers; session cache staleness
+
+Re-ran `data-raw/archive/archive_06_consolidate.R` so the four
+`.datras/to_https/raw/*.parquet` footers were rewritten from the
+post-Policy-B `inst/DATRAS-imbus.yaml` (dict_sha256 in each file's
+provenance verified byte-identical to the on-disk yaml), then synced to
+the https server. Motivation, found while rendering the IMBUS D2.2
+deliverable: the footers still carried the pre-2026-09-15 full icesVocab
+enum lists, so `op_enums()` showed e.g. all 32 TS_Tickler codes where the
+shipped yaml now restricts `values:` to the 10 archive-observed ones --
+a rendered document reading the footers would contradict the yaml it
+claims to describe. After the rebuild, 20/20 enum fields spot-checked
+match between footer and yaml, and the `op_validate_meta()` gate is
+clean on all four tables.
+
+**Session cache serves stale dictionaries silently after a rebuild.**
+`.op_kv()` caches parsed footer metadata per (file, key) for the session;
+the cache key has no mtime/content component, so an R session that read
+a footer before a consolidation keeps returning the old dictionary for
+the re-written file at the same path. Debugging was further confused by
+the cache keys being dot-prefixed paths (".datras/..."), which `ls()`
+hides without `all.names = TRUE` -- a first cache-clear attempt via
+`rm(list = ls(envir = cache))` therefore removed nothing, without
+complaint. Not fixed; candidate fix is keying on path + mtime (or file
+size) so a rebuild invalidates automatically. Quarkus-fresh render
+processes are unaffected (each `quarto render` starts a new R session).
+
+Also verified live, while settling a D2.2 footnote: ICES's field-list
+service documents `IndividualAge`/`AgeRings` for CA's age field, but that
+pair never appears in the live response -- the wire serves `Age`
+(`op_datras_field_list()` tiers it `no_evidence`). The D2.2 text was
+corrected accordingly.

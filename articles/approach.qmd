@@ -115,14 +115,19 @@ resolves to a controlled list. Where sources conflict, the conflict is
 resolved against data and the resolution recorded, not silently applied.
 
 **Rename.** Translate legacy names to opus's curated names as a single,
-pure, positional rename — no other change in the same step. Keeping it
-isolated is what makes it auditable: the two files are one specification
-under two naming schemes, and any divergence between them is a bug rather
-than a design.
+pure rename — no other change in the same step. Keeping it isolated is what
+makes it auditable: any divergence beyond the names is a bug rather than a
+design. Each column's `details` is stamped with its legacy on-the-wire name
+at this step, so the shipped dictionaries stay self-contained for both
+naming schemes.
 
-Both files ship. `DATRAS-data-dict-legacy.yaml` is not an archive copy:
-submitters send ICES data under legacy names, so it is the submission-side
-specification.
+Two dictionaries ship, both keyed by the current names ICES is migrating
+to. `DATRAS-imbus.yaml` is the curated, archive-verified specification. `DATRAS-ices.yaml`
+is ICES's own documented view, consolidated faithfully from ICES's four
+metadata sources with no corrections applied — where those sources
+disagree, the conflict is noted, not resolved. The diff between the two
+files is the corrections story, and the basis for escalation to the ICES
+Datacenter.
 
 ## What the functions are for
 

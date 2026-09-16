@@ -39,8 +39,8 @@
 #'   disagreeing with each other is itself the finding (see Issue 11 for
 #'   the same class of thing, found via a narrower check).
 #'
-#' Legacy yaml (`inst/DATRAS-data-dict-legacy.yaml`) and curated yaml
-#' (`inst/DATRAS-data-dict.yaml`) are paired by column position within
+#' Legacy yaml (`data-raw/seed/DATRAS-curated-legacy.yaml`) and curated yaml
+#' (`inst/DATRAS-imbus.yaml`) are paired by column position within
 #' each table -- spec_03_translate_new_names.R does a pure 1:1 rename
 #' preserving column count and order, so position is a safe join key
 #' where regex-extracting names back out of `details:` would be fragile.
@@ -94,8 +94,8 @@ excel_to_comparable_type <- function(excel_type) {
   excel_type
 }
 
-legacy_dict <- yaml::read_yaml("inst/DATRAS-data-dict-legacy.yaml")
-curated_dict <- yaml::read_yaml("inst/DATRAS-data-dict.yaml")
+legacy_dict <- yaml::read_yaml("data-raw/seed/DATRAS-curated-legacy.yaml")
+curated_dict <- yaml::read_yaml("inst/DATRAS-imbus.yaml")
 
 rows <- list()
 

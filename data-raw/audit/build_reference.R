@@ -38,7 +38,8 @@ GROUPS <- list(
       "these rather than parsing it, so there is one place where the shape of",
       "the specification is known."
     ),
-    fns = c("op_field_spec", "op_field_name_map", "op_legacy_field_name")
+    fns = c("op_field_spec", "op_field_name_map", "op_legacy_field_name",
+            "op_translate_dict_names", "op_write_dict_yaml")
   ),
   list(
     tier = "core",
@@ -115,7 +116,8 @@ GROUPS <- list(
       "makes editing a large yaml by hand safe."
     ),
     fns = c("op_validate_spec", "op_validate_meta", "op_validate_data",
-            "op_validate_full", "op_validation_problems", "op_flag_violations")
+            "op_validate_full", "op_validation_problems", "op_flag_violations",
+            "op_render_report")
   ),
   list(
     tier = "maintainer",

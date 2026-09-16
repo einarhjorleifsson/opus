@@ -13,7 +13,7 @@ suppressPackageStartupMessages({
 `%||%` <- function(x, y) if (is.null(x)) y else x
 
 SRC     <- "/Users/einarhj/R/Pakkar/opus/.datras/to_https/raw"
-DICT    <- "/Users/einarhj/R/Pakkar/opus/inst/DATRAS-data-dict.yaml"
+DICT    <- "/Users/einarhj/R/Pakkar/opus/inst/DATRAS-imbus.yaml"
 CLI     <- path.expand("~/garbage/data-dict/target/release/data-dict")
 args    <- commandArgs(trailingOnly = TRUE)
 OUT     <- if (length(args)) args[1] else "mock/raw"

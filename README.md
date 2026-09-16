@@ -10,12 +10,22 @@ ICES DATRAS Data Dictionary and Known-Issues Registry
 **opus** produces two machine-readable YAML specifications that document
 ICES DATRAS as it actually is:
 
-1.  **`DATRAS-data-dict.yaml`** — Complete specification of Tier 1
-    exchange tables (HH, HL, CA, LT): field names, types, units, ranges,
-    constraints, relationships, and domain glossary. Conforms to
-    [data-dict.yaml v0.1.0](https://data-dict.tidyverse.org/).
+1.  **`DATRAS-imbus.yaml`** — The archive-side specification of Tier 1
+    exchange tables (HH, HL, CA, LT), verified against the full
+    published archive: field names, types, units, ranges, constraints,
+    relationships, and domain glossary. Enum values are restricted to
+    codes actually observed in submissions, and physical non-negativity
+    bounds are expressed as assertions. Conforms to [data-dict.yaml
+    v0.1.0](https://data-dict.tidyverse.org/).
 
-2.  **`DATRAS-known-issues.yaml`** — Registry of metadata gaps between
+2.  **`DATRAS-ices.yaml`** — ICES’s own documented view of the same
+    format, consolidated faithfully from ICES’s four metadata sources
+    (WSDL, getDatrasFieldList, icesVocab, the field-description
+    spreadsheet) with no corrections applied. Where ICES’s sources
+    disagree, the conflict is noted, not resolved. The diff between this
+    file and `DATRAS-imbus.yaml` is the corrections story.
+
+3.  **`DATRAS-known-issues.yaml`** — Registry of metadata gaps between
     official ICES specs and real submission patterns. Documents type
     mismatches, undocumented codes, incomplete vocabularies, and their
     escalation status.
@@ -48,9 +58,13 @@ remotes::install_github("einarhjorleifsson/opus")
 ``` r
 library(yaml)
 
-# Data dictionary
-dict_path <- system.file("DATRAS-data-dict.yaml", package = "opus")
+# Data dictionary (archive-side, empirically grounded)
+dict_path <- system.file("DATRAS-imbus.yaml", package = "opus")
 dict <- yaml::read_yaml(dict_path)
+
+# ICES's own documented view of the format
+ices_path <- system.file("DATRAS-ices.yaml", package = "opus")
+ices_dict <- yaml::read_yaml(ices_path)
 
 # Known-issues registry
 issues_path <- system.file("DATRAS-known-issues.yaml", package = "opus")
@@ -66,7 +80,7 @@ library(opus)
 result <- op_validate_data(
   data_path = "my_submission.parquet",
   table = "HH",
-  dict_path = system.file("DATRAS-data-dict.yaml", package = "opus")
+  dict_path = system.file("DATRAS-imbus.yaml", package = "opus")
 )
 
 # Check results
@@ -87,10 +101,16 @@ Available functions:
 
 ## File reference
 
-**`inst/DATRAS-data-dict.yaml`**: - Field definitions (type, range,
-units, enums, constraints) - Source: ICES WSDL + icesVocab, curated
-against real archive submissions - Use when: “Is this value valid?” or
-“What does this field mean?”
+**`inst/DATRAS-imbus.yaml`**: - Field definitions (type, range, units,
+enums, constraints) - Source: ICES WSDL + icesVocab + field-description
+spreadsheet, curated and verified against the real archive - Enum values
+restricted to archive-observed codes; a value outside the list in new
+data fails validation and needs review (data error or genuinely new
+code) - Use when: “Is this value valid?” or “What does this field mean?”
+
+**`inst/DATRAS-ices.yaml`**: - What ICES’s own metadata sources
+currently document, uncorrected - Use when: “What does ICES say this
+field is?” or “Where do ICES’s sources disagree?”
 
 **`inst/DATRAS-known-issues.yaml`**: - Metadata issues in ICES specs
 (incomplete vocabularies, type mismatches, undocumented codes) - This is
@@ -126,13 +146,13 @@ vignettes.
   `data-raw/spec/` pipeline (`spec_02_curate_dict.R` →
   `spec_03_translate_new_names.R`), which is the source of truth. Hand
   edits made 2026-08-29 onward (while the pipeline was retired) are
-  recorded as a comment block atop each shipped YAML and are pending port
-  into `spec_02`; see TODO.md
+  recorded as a comment block atop each shipped YAML and are pending
+  port into `spec_02`; see TODO.md
 - Scripts in `data-raw/` are grouped by concern: `spec/` (dictionary
-  pipeline), `archive/` (download/parse/consolidate), `audit/` (on-demand
-  checks), `assets/` (generated outputs)
+  pipeline), `archive/` (download/parse/consolidate), `audit/`
+  (on-demand checks), `assets/` (generated outputs)
 - Requires `data-dict` CLI for full validation (see
-  `data-raw/validate.R`)
+  `data-raw/audit/validate_against_datadict.R`)
 - Versioning: patch (0.1.1) for typos; minor (0.2.0) for new content;
   major (1.0.0) when stable
 

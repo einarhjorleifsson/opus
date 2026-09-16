@@ -7,7 +7,7 @@
 op_render_report(
   data_path,
   table,
-  dict_path = "inst/DATRAS-data-dict.yaml",
+  dict_path = "inst/DATRAS-imbus.yaml",
   output = NULL,
   cli_bin = .op_cli()
 )

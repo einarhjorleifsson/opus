@@ -18,7 +18,7 @@ Data frame: RecordHeader, old_name, new_name -- exactly one row
 \description{
 Thin wrapper around [op_datras_field_list()] for callers that need a
 clean, collision-free 1:1 `old_name` -> `new_name` map to actually rename
-columns with (`data-raw/spec_03_translate_new_names.R`,
+columns with (`data-raw/spec/spec_03_translate_new_names.R`,
 `data-raw/archive_06_split_legacy_new.R`) -- as opposed to
 [op_datras_field_list()]'s own broader, diagnostic purpose (reporting
 every candidate rename along with its confidence tier, for auditing).

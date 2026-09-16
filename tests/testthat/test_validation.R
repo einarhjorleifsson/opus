@@ -28,7 +28,7 @@
 hh_path <- system.file("HH.parquet", package = "opus")
 
 test_that("op_validate_spec validates YAML dictionary", {
-  dict_path <- system.file("DATRAS-data-dict.yaml", package = "opus")
+  dict_path <- system.file("DATRAS-imbus.yaml", package = "opus")
   result <- op_validate_spec(dict_path = dict_path)
   expect_type(result, "list")
   expect_true("valid" %in% names(result))

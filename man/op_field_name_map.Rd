@@ -7,7 +7,7 @@
 op_field_name_map(dict, table_name = NULL)
 }
 \arguments{
-\item{dict}{List: parsed DATRAS-data-dict.yaml (from `yaml::read_yaml()`)}
+\item{dict}{List: parsed DATRAS-imbus.yaml (from `yaml::read_yaml()`)}
 
 \item{table_name}{Character: optional filter to one table (HH, HL, CA, LT)}
 }
@@ -32,7 +32,7 @@ easier analysis/reporting.
 }
 \examples{
 \dontrun{
-  dict <- yaml::read_yaml("inst/DATRAS-data-dict.yaml")
+  dict <- yaml::read_yaml("inst/DATRAS-imbus.yaml")
   mapping <- op_field_name_map(dict)
 
   # All HH table field renames

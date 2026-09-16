@@ -1,11 +1,11 @@
 # Wrapper around the `data-dict` CLI (~/garbage/data-dict, Rust, language-
 # agnostic -- opus's own R usage is incidental, not something the CLI itself
-# knows or cares about) to test a real dataset against inst/DATRAS-data-dict.yaml.
+# knows or cares about) to test a real dataset against inst/DATRAS-imbus.yaml.
 # Exploratory/dev tool, not part of opus's shipped content (opus ships no R
 # functions, ever -- AGENTS.md's Working principles, rule 7) -- lives in
 # data-raw/, sourced by hand when wanted, never in R/.
 #
-# Why a temp copy of the dict, not inst/DATRAS-data-dict.yaml directly: the
+# Why a temp copy of the dict, not inst/DATRAS-imbus.yaml directly: the
 # `validate-meta`/`validate-data` subcommands both require the table being
 # checked to declare a `source: parquet: <path>` (spec.md, "Source"), but
 # opus's shipped yaml deliberately has none -- a machine-specific absolute
@@ -13,7 +13,7 @@
 # archive layout, which cuts against the whole point of a portable,
 # language-agnostic spec. So this function injects `source` into an in-
 # memory copy for just the one table being tested, writes THAT to a
-# tempfile, points the CLI at it, and leaves inst/DATRAS-data-dict.yaml
+# tempfile, points the CLI at it, and leaves inst/DATRAS-imbus.yaml
 # untouched.
 #
 # data-dict is a fast-moving, pre-1.0 tool (AGENTS.md's Format section) --
@@ -27,7 +27,7 @@
 validate_against_dict <- function(data_path,
                                    table,
                                    level = c("data", "meta"),
-                                   dict_path = "inst/DATRAS-data-dict.yaml",
+                                   dict_path = "inst/DATRAS-imbus.yaml",
                                    cli_bin = "~/garbage/data-dict/target/release/data-dict") {
   level <- match.arg(level)
   cli_bin <- path.expand(cli_bin)
@@ -44,7 +44,7 @@ validate_against_dict <- function(data_path,
   # into a length-1 atomic vector, indistinguishable from a bare scalar --
   # yaml::write_yaml() then re-serializes it AS a scalar (`constraints:
   # required`), which the CLI correctly rejects (it expects an array).
-  # Confirmed 2026-07-29 by round-tripping inst/DATRAS-data-dict.yaml without
+  # Confirmed 2026-07-29 by round-tripping inst/DATRAS-imbus.yaml without
   # this handler and hitting exactly that error against real HH data. Forcing
   # every sequence to stay a list, regardless of length or uniformity,
   # preserves the original structure through the read-modify-write done here.

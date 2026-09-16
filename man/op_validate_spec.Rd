@@ -5,13 +5,13 @@
 \title{Validate opus specs against real DATRAS data}
 \usage{
 op_validate_spec(
-  dict_path = "inst/DATRAS-data-dict.yaml",
+  dict_path = "inst/DATRAS-imbus.yaml",
   json = FALSE,
   cli_bin = .op_cli()
 )
 }
 \arguments{
-\item{dict_path}{Path to YAML dictionary (default: inst/DATRAS-data-dict.yaml)}
+\item{dict_path}{Path to YAML dictionary (default: inst/DATRAS-imbus.yaml)}
 
 \item{json}{Logical: also request the structured JSON report (steps +
 problems + run info), parsed into `$report`? (default: FALSE, plain-text

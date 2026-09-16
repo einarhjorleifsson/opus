@@ -30,7 +30,7 @@ sources**, never against documentation alone:
    limiting the check to fields that already look like coded values is
    itself a blind spot
 6. Raw LT exchange XML, parsed directly (at least one non-empty file per
-   survey, all 28 surveys) and diffed against `inst/DATRAS-data-dict.yaml`'s
+   survey, all 28 surveys) and diffed against `inst/DATRAS-imbus.yaml`'s
    own legacy-name annotations for all four tables -- confirms
    Issues 1-3 (LT's real field set, the `Ship`/`StNo`/`HaulNo` renames, and
    the phantom `RecordType` field) by a method independent of (1)-(2). Zero
@@ -292,7 +292,7 @@ it risks.
 
 Two of the five originally-clean matches (`Tickler`, `CatIdentifier`) have
 since been adopted into opus's own curated spec as `type: enum` --
-`inst/DATRAS-data-dict.yaml` now reflects this directly, opus's own
+`inst/DATRAS-imbus.yaml` now reflects this directly, opus's own
 downstream reaction to a gap that remains ICES's to close, noted here for
 completeness rather than because it changes the finding. The other three
 were deliberately left as-is, each for a distinct reason rather than a
@@ -578,7 +578,7 @@ against the real archived LT parquet data (columns are literally named
 
 Opus's own resolution of this (LT's `Ship`/`StNo`/`HaulNo` mapped to
 `Platform`/`StationName`/`HaulNumber`, matching the other three tables) is
-recorded in `inst/DATRAS-data-dict.yaml`'s own field annotations, not here —
+recorded in `inst/DATRAS-imbus.yaml`'s own field annotations, not here —
 this section reports ICES's metadata bug; it isn't opus's naming ledger.
 
 **Recommendation:** Correct the LT section's `FieldNameOld` for `Platform`,

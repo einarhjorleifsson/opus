@@ -78,7 +78,7 @@ op_sentinel_policy <- function(table, sentinel = NULL) {
     }
   }
 
-  dict <- yaml::read_yaml(system.file("DATRAS-data-dict.yaml", package = "opus"))
+  dict <- yaml::read_yaml(system.file("DATRAS-imbus.yaml", package = "opus"))
   tnames <- vapply(dict$tables, function(t) t$name, character(1))
   if (!table %in% tnames) {
     stop("Unknown table '", table, "'. Valid: ", paste(tnames, collapse = ", "),

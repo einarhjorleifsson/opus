@@ -12,7 +12,7 @@
 
 #' Check YAML dictionary conformance to data-dict.yaml spec
 #'
-#' @param dict_path Path to YAML dictionary (default: inst/DATRAS-data-dict.yaml)
+#' @param dict_path Path to YAML dictionary (default: inst/DATRAS-imbus.yaml)
 #' @param json Logical: also request the structured JSON report (steps +
 #'   problems + run info), parsed into `$report`? (default: FALSE, plain-text
 #'   `$output` only, for backward compatibility). `validate-spec --json` is a
@@ -26,7 +26,7 @@
 #' @return List: (valid = TRUE/FALSE, exit_status, output = plain-text lines,
 #'   report = parsed JSON report when json=TRUE (NULL otherwise), command)
 #' @export
-op_validate_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+op_validate_spec <- function(dict_path = "inst/DATRAS-imbus.yaml",
                              json = FALSE,
                              cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
@@ -132,7 +132,7 @@ op_inspect_parquet <- function(parquet_path,
 #' @return List: (valid = T/F, exit_status, result = JSON, raw_output, stderr)
 #' @export
 op_validate_meta <- function(data_path, table,
-                             dict_path = "inst/DATRAS-data-dict.yaml",
+                             dict_path = "inst/DATRAS-imbus.yaml",
                              cli_bin = .op_cli()) {
   .validate_via_dict("validate-meta", data_path, table, dict_path, cli_bin)
 }
@@ -151,7 +151,7 @@ op_validate_meta <- function(data_path, table,
 #' @return List: (valid = T/F, exit_status, result = JSON, raw_output, stderr)
 #' @export
 op_validate_data <- function(data_path, table,
-                             dict_path = "inst/DATRAS-data-dict.yaml",
+                             dict_path = "inst/DATRAS-imbus.yaml",
                              cli_bin = .op_cli()) {
   .validate_via_dict("validate-data", data_path, table, dict_path, cli_bin)
 }
@@ -170,7 +170,7 @@ op_validate_data <- function(data_path, table,
 #' @return List: (spec_valid, meta_valid, data_valid, spec_output, meta_result, data_result)
 #' @export
 op_validate_full <- function(data_path, table,
-                             dict_path = "inst/DATRAS-data-dict.yaml",
+                             dict_path = "inst/DATRAS-imbus.yaml",
                              cli_bin = .op_cli()) {
   # NAMED, not positional: op_validate_spec()'s second parameter is `json`,
   # so `op_validate_spec(dict_path, cli_bin)` bound a path to it and died in
@@ -400,7 +400,7 @@ op_validate_full <- function(data_path, table,
 #'
 #' @export
 op_flag_violations <- function(data_path, table,
-                              dict_path = "inst/DATRAS-data-dict.yaml") {
+                              dict_path = "inst/DATRAS-imbus.yaml") {
   dict_path <- path.expand(dict_path)
   if (!file.exists(dict_path)) {
     stop("Dictionary not found at ", dict_path, call. = FALSE)
@@ -702,7 +702,7 @@ op_draft_from_parquet <- function(parquet_paths,
 #' expanded to their full definitions, descriptions populated, types normalized.
 #'
 #' @param dict_path Path to data-dict.yaml or directory containing one
-#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#'   (default: `"inst/DATRAS-imbus.yaml"`)
 #' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
 #' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
 #'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
@@ -711,7 +711,7 @@ op_draft_from_parquet <- function(parquet_paths,
 #' @return List: (valid = T/F, spec = parsed JSON, raw_output = JSON text,
 #'   exit_status, command)
 #' @export
-op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+op_export_spec <- function(dict_path = "inst/DATRAS-imbus.yaml",
                           pretty = FALSE,
                           cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
@@ -754,7 +754,7 @@ op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' distinct counts, value distributions, and example values for each column.
 #'
 #' @param dict_path Path to data-dict.yaml or directory containing one
-#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#'   (default: `"inst/DATRAS-imbus.yaml"`)
 #' @param pretty Logical: pretty-print JSON? (default: FALSE for compact output)
 #' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
 #'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
@@ -763,7 +763,7 @@ op_export_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' @return List: (valid = T/F, data = parsed JSON, raw_output = JSON text,
 #'   exit_status, command)
 #' @export
-op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+op_export_data <- function(dict_path = "inst/DATRAS-imbus.yaml",
                           pretty = FALSE,
                           cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
@@ -819,7 +819,7 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #' never something the repo keeps in sync.
 #'
 #' @param dict_path Path to data-dict.yaml or directory containing one
-#'   (default: `"inst/DATRAS-data-dict.yaml"`)
+#'   (default: `"inst/DATRAS-imbus.yaml"`)
 #' @param output Path to write the HTML page. Default `NULL` writes to a
 #'   tempfile and opens it in the browser; pass a path to keep a copy instead.
 #' @param data_dir Optional directory holding `TABLE.parquet` files (e.g.
@@ -831,15 +831,21 @@ op_export_data <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #'   `data-raw/spec/spec_03_translate_new_names.R`'s own comment on
 #'   `rewrap_singleton_arrays()` for the round-trip bug that mechanism
 #'   would otherwise risk reintroducing.
+#' @param diagram Draw the relationship diagram at the top of the page
+#'   (default `TRUE`); `FALSE` passes the CLI's `--no-diagram`. The joins
+#'   the diagram draws still show in the index -- each column keeps its
+#'   join markers and each table its related-table chips -- so only the
+#'   picture goes.
 #' @param cli_bin Path to the data-dict CLI binary. Defaults to the first
 #'   of \code{$OPUS_DATA_DICT}, \code{data-dict} on \code{$PATH}, or a local
 #'   release build; an explicit value is never overridden.
 #'
 #' @return List: (valid = T/F, exit_status, output_path, raw_output, command)
 #' @export
-op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
+op_render_spec <- function(dict_path = "inst/DATRAS-imbus.yaml",
                           output = NULL,
                           data_dir = NULL,
+                          diagram = TRUE,
                           cli_bin = .op_cli()) {
   cli_bin <- path.expand(cli_bin)
   dict_path <- path.expand(dict_path)
@@ -903,6 +909,9 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
   # `render-report` for a validation run -- with no alias for the old name.
   # The argument shape is unchanged: path positional, `-o` for the output.
   args <- c("render-spec", render_path, "-o", output)
+  if (!diagram) {
+    args <- c(args, "--no-diagram")
+  }
   raw_output <- system2(cli_bin, args, stdout = TRUE, stderr = TRUE)
   status <- attr(raw_output, "status") %||% 0L
 
@@ -986,7 +995,7 @@ op_render_spec <- function(dict_path = "inst/DATRAS-data-dict.yaml",
 #'   op_render_report(".datras/to_https/raw/HH.parquet", "HH")
 #' }
 op_render_report <- function(data_path, table,
-                             dict_path = "inst/DATRAS-data-dict.yaml",
+                             dict_path = "inst/DATRAS-imbus.yaml",
                              output = NULL,
                              cli_bin = .op_cli()) {
   cli_bin <- normalizePath(path.expand(cli_bin))

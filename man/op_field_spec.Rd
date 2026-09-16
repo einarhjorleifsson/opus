@@ -2,7 +2,7 @@
 % Please edit documentation in R/field_names.R
 \name{op_field_spec}
 \alias{op_field_spec}
-\title{Build a combined old-name / new-name / type spec from opus's own shipped YAMLs}
+\title{Build a combined old-name / new-name / type spec from opus's shipped dictionary}
 \usage{
 op_field_spec(table_name = NULL)
 }
@@ -20,15 +20,12 @@ Data frame: `RecordHeader`, `old_name` (ICES's legacy,
   transformation itself).
 }
 \description{
-Pairs `inst/DATRAS-data-dict-legacy.yaml` (ICES's real, on-the-wire field
-names) against `inst/DATRAS-data-dict.yaml` (opus's own curated current
-names) POSITIONALLY, per table -- safe because
-`data-raw/spec_03_translate_new_names.R` builds the latter from the
-former as a pure, order-preserving rename (only `name` ever changes;
-column count and order are guaranteed identical). Unlike
-[op_datras_rename_crosswalk()], this reads only the two YAML files opus
-already ships -- no live ICES web-service calls -- so it's cheap enough
-to call on every use, not just at opus's own build time.
+Reads `inst/DATRAS-imbus.yaml` (opus's curated, archive-grounded
+dictionary, keyed by current field names) and pairs each column with its
+legacy (ICES on-the-wire) name, which [op_translate_dict_names()] stamps
+into the column's `details` as `Legacy field name: {old}.` at build time.
+Reads only the one YAML file opus ships -- no live ICES web-service calls,
+no second dictionary file -- so it's cheap enough to call on every use.
 }
 \examples{
 \dontrun{

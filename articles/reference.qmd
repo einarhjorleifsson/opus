@@ -7,7 +7,7 @@ This page is generated from the package's own `man/*.Rd` files by `data-raw/audi
 Full documentation for any function is `?name` in an R session.
 :::
 
-opus exports 50 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
+opus exports 53 functions. The yaml dictionaries are the deliverable; these are the tooling around them.
 
 # Core -- consuming the archive and the specification
 
@@ -17,9 +17,11 @@ The dictionary as data. Downstream code should reach the yaml through these rath
 
 | Function | |
 |---|---|
-| `op_field_spec()` | Build a combined old-name / new-name / type spec from opus's own shipped YAMLs |
+| `op_field_spec()` | Build a combined old-name / new-name / type spec from opus's shipped dictionary |
 | `op_field_name_map()` | Build field name mapping from data-dict YAML |
 | `op_legacy_field_name()` | Extract legacy field name from column details |
+| `op_translate_dict_names()` | Translate a parsed DATRAS dictionary from legacy to current field names |
+| `op_write_dict_yaml()` | Write a parsed dictionary to YAML with opus's canonical post-processing |
 
 ## Reading the published archive
 
@@ -73,6 +75,7 @@ Is the dictionary well-formed, and does it still describe the data? These matter
 | `op_validate_full()` | Run full validation suite |
 | `op_validation_problems()` | Flatten a data-dict validation report's problems into a data frame |
 | `op_flag_violations()` | Flag rows with violations against dictionary constraints |
+| `op_render_report()` | Validate a table and render the report as a self-contained HTML page |
 
 # Maintainer tooling -- building and auditing both
 

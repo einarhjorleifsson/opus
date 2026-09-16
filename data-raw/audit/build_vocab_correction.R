@@ -33,10 +33,10 @@
 #'                                        treat as unresolved, not "close
 #'                                        enough"), or "no_candidate"
 #'
-#' Restructured 2026-08-09 to read inst/DATRAS-data-dict-legacy.yaml (now a
+#' Restructured 2026-08-09 to read data-raw/seed/DATRAS-curated-legacy.yaml (now a
 #' real, primary package file, keyed by legacy names throughout -- see
 #' data-raw/spec_02_curate_dict.R's own header) directly, rather than
-#' reading inst/DATRAS-data-dict.yaml (curated/new names) and round-tripping
+#' reading inst/DATRAS-imbus.yaml (curated/new names) and round-tripping
 #' back to the legacy name via op_legacy_field_name(). Same real data,
 #' same 46 full / 6 no_candidate / 0 partial tally either way -- verified,
 #' not assumed, when this change was made.
@@ -47,7 +47,7 @@ source("R/vocab.R")
 source("R/field_names.R")
 source("data-raw/audit/vocab_fit_helper.R")  # pick_best_vocab_match(), shared with build_vocab_field_audit.R
 
-y <- yaml::read_yaml("inst/DATRAS-data-dict-legacy.yaml")
+y <- yaml::read_yaml("data-raw/seed/DATRAS-curated-legacy.yaml")
 types <- op_vocab_get_types()
 crosswalk <- op_datras_rename_crosswalk()
 
@@ -92,7 +92,7 @@ for (tbl in y$tables) {
     new_name <- crosswalk$new_name[crosswalk$RecordHeader == tbl$name & crosswalk$old_name == legacy_name]
     if (length(new_name) != 1) {
       stop("No 1:1 crosswalk entry for ", tbl$name, "/", legacy_name,
-           " -- inst/DATRAS-data-dict-legacy.yaml and op_datras_rename_crosswalk() have drifted.",
+           " -- data-raw/seed/DATRAS-curated-legacy.yaml and op_datras_rename_crosswalk() have drifted.",
            call. = FALSE)
     }
 

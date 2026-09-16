@@ -7,7 +7,7 @@
 op_validate_data(
   data_path,
   table,
-  dict_path = "inst/DATRAS-data-dict.yaml",
+  dict_path = "inst/DATRAS-imbus.yaml",
   cli_bin = .op_cli()
 )
 }

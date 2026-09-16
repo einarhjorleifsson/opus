@@ -47,8 +47,8 @@ suppressMessages({
   library(arrow)
 })
 
-CURATED_YAML <- "inst/DATRAS-data-dict.yaml"
-LEGACY_YAML  <- "inst/DATRAS-data-dict-legacy.yaml"
+CURATED_YAML <- "inst/DATRAS-imbus.yaml"
+LEGACY_YAML  <- "data-raw/seed/DATRAS-curated-legacy.yaml"
 
 dict        <- yaml::read_yaml(CURATED_YAML)
 dict_legacy <- yaml::read_yaml(LEGACY_YAML)

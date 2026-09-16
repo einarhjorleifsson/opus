@@ -5,14 +5,14 @@
 \title{Export dictionary as fully-resolved JSON}
 \usage{
 op_export_spec(
-  dict_path = "inst/DATRAS-data-dict.yaml",
+  dict_path = "inst/DATRAS-imbus.yaml",
   pretty = FALSE,
   cli_bin = .op_cli()
 )
 }
 \arguments{
 \item{dict_path}{Path to data-dict.yaml or directory containing one
-(default: `"inst/DATRAS-data-dict.yaml"`)}
+(default: `"inst/DATRAS-imbus.yaml"`)}
 
 \item{pretty}{Logical: pretty-print JSON? (default: FALSE for compact output)}
 

@@ -4,7 +4,7 @@
 \alias{op_flag_violations}
 \title{Flag rows with violations against dictionary constraints}
 \usage{
-op_flag_violations(data_path, table, dict_path = "inst/DATRAS-data-dict.yaml")
+op_flag_violations(data_path, table, dict_path = "inst/DATRAS-imbus.yaml")
 }
 \arguments{
 \item{data_path}{Path to parquet file}

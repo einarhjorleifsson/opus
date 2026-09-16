@@ -131,7 +131,7 @@ For "BOTH (different)" fields, add clarification to details:
 ## 2. Enum Value Descriptions: Storage Without Violating data-dict Spec
 
 **Date:** 2026-08-02  
-**Status:** Implemented (see inst/DATRAS-data-dict.yaml)
+**Status:** Implemented (see inst/DATRAS-imbus.yaml)
 
 ### The Challenge
 
@@ -200,7 +200,7 @@ op_legacy_field_name <- function(details) {
 
 #' Build field name mapping from data-dict
 #'
-#' @param dict List: parsed DATRAS-data-dict.yaml
+#' @param dict List: parsed DATRAS-imbus.yaml
 #' @param table_name Character: HH, HL, CA, LT (optional, defaults to all)
 #' @return Data frame: columns = (RecordHeader, new_name, old_name, has_legacy)
 #'
@@ -237,7 +237,7 @@ op_field_name_map <- function(dict, table_name = NULL) {
 ## 3. Enum Value Descriptions: Source and Coverage
 
 **Date:** 2026-08-02  
-**Status:** Implemented (see inst/DATRAS-data-dict.yaml)
+**Status:** Implemented (see inst/DATRAS-imbus.yaml)
 
 ### Coverage Summary
 
@@ -319,7 +319,7 @@ A related discovery along the way: `LT.SwellHeight` isn't independently measured
 
 ### Practical Guidance for Anyone Reading `.datras/*.parquet` Directly
 
-Before computing statistics on this archive without going through the curated spec: `-9` (and the other 8 sentinel values) are now **real, literal values**, not silently removed. A naive `mean(Turbidity)` today would be badly wrong — 99.86% of that column's "measurements" are the sentinel, not real turbidity. Always check the field's declared `range`/`values` in `inst/DATRAS-data-dict.yaml` first, or use `op_flag_violations()`, which already treats declared out-of-range/non-enum values as violations.
+Before computing statistics on this archive without going through the curated spec: `-9` (and the other 8 sentinel values) are now **real, literal values**, not silently removed. A naive `mean(Turbidity)` today would be badly wrong — 99.86% of that column's "measurements" are the sentinel, not real turbidity. Always check the field's declared `range`/`values` in `inst/DATRAS-imbus.yaml` first, or use `op_flag_violations()`, which already treats declared out-of-range/non-enum values as violations.
 
 ### References
 

@@ -421,7 +421,7 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       close the SWC-IBTS gap. It does not; the appendix has been corrected.
 
 - [ ] **Candidate registry entry: `HaulDuration` violates its own declared
-      range in published data.** `inst/DATRAS-data-dict.yaml` declares HH
+      range in published data.** `inst/DATRAS-imbus.yaml` declares HH
       `HaulDuration` as `constraints: [required]` with `range_min: 1`,
       `range_max: 120` (minutes). Measured on the published archive
       2026-09-02, over 150,217 HH rows: **219 rows below 1** (including two
@@ -667,8 +667,8 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
       (row counts, coverage, the CA worked example) and drifts with it.
 
 - [ ] **`LengthClass`'s `label` says `(cm)`, and the field is mm about half the
-      time.** Both copies -- HL `inst/DATRAS-data-dict.yaml:1713` and CA
-      `:2289` -- carry `label: Length Class (cm)`, which contradicts the
+      time.** Both copies -- HL `inst/DATRAS-imbus.yaml:1910` and CA
+      `:2455` -- carry `label: Length Class (cm)`, which contradicts the
       `description` and `details` sitting directly above it: the unit varies by
       the sibling `LengthCode` (`.`/`0` are mm, `1`/`2`/`5` are cm). Measured on
       the published archive 2026-09-02: **HL 39.65% mm / 57.73% cm** (2.62%
@@ -702,12 +702,22 @@ done, when, and why — lives in `DEVLOG.md`; settled design lives in `AGENTS.md
 - [ ] **Eleven citations of the dead path `data-raw/ICES_ISSUE_REPORT.md`
       remain in shipped files.** That document became `articles/issues.qmd` on
       2026-08-18; the "Issue N" numbering carried over, so only the path is
-      wrong. Nine are in `inst/DATRAS-known-issues.yaml`, one in each of
-      `inst/DATRAS-data-dict.yaml` and `inst/DATRAS-data-dict-legacy.yaml`.
+      wrong. Nine are in `inst/DATRAS-known-issues.yaml` and one in
+      `inst/DATRAS-imbus.yaml` (plus one in the unshipped pipeline intermediate
+      `data-raw/seed/DATRAS-curated-legacy.yaml`).
       AGENTS.md's was fixed on 2026-08-29; these were deliberately left, because
       the known-issues file is embedded in the published parquet footers and
       propagating the fix means rebuilding and re-uploading the archive. Worth
       folding into the next rebuild rather than doing on its own.
+
+      **A second item now waits on the same rebuild (2026-09-16).** The
+      em-dash fix in CA's table-level details changed the dictionary, so
+      `datras:provenance.dict_sha256` in all four published files still reads
+      `7e31260e...` where `inst/DATRAS-imbus.yaml` is now `fa7ca42e...` -- the
+      drift check those footers exist to support currently reports drift. The
+      content difference is one character of prose, and `datras:dict` is JSON,
+      which parses as UTF-8 regardless of locale, so nothing downstream reads
+      wrong; only the sha is stale.
 
 ## imbus / ICES liaison (WP2 handoff)
 

@@ -14,7 +14,7 @@ description: >-
 origin: data-raw/spec/spec_01_seed_dict.R -> data-raw/spec/spec_02_curate_dict.R ->
   data-raw/spec/spec_03_translate_new_names.R
 version:
-  date: '2026-09-15'
+  date: '2026-09-16'
 tables:
 - name: HH
   columns:
@@ -2761,7 +2761,7 @@ tables:
   details: >-
     Grain: each row is one biological specimen (a single aged fish) from a
     haul. Population: individual organisms sampled and measured from hauls within
-    covered surveys, not the full catch — a subsample. Linked to HH via the composite
+    covered surveys, not the full catch -- a subsample. Linked to HH via the composite
     haul identifier (Survey + Year + Quarter + Country + Platform/Ship + Gear + StationName/StNo
     + HaulNumber). Note (see DATRAS-known-issues.yaml issue ca_haulno_unlinkable_to_hh):
     as submitted, HaulNumber/HaulNo contains 0 true nulls -- 305,276 rows (5.12% of

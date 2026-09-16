@@ -2,7 +2,7 @@
 
 # opus — ICES DATRAS Data Dictionary and Known-Issues Registry
 
-**Status:** Active (2026–onward). **Version:** 0.2.0+
+**Status:** Active (2026–onward). **Version:** 0.3.0
 
 ------------------------------------------------------------------------
 
@@ -37,7 +37,7 @@ opus is **institutional data governance audit infrastructure**, not a data refor
 
 **2. Consolidate scattered knowledge.** WSDL, icesVocab, Technical Reference, real submissions — bring together into one machine-readable place.
 
-**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation, conversion and curation tooling (34 R functions). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
+**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation, conversion and curation tooling (53 exported functions across 9 files in `R/`). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
 
 **4. Don't guess; document.** Every range/constraint/enum needs evidence: real data, WSDL, or icesVocab. Borderline calls get flagged in `details:` for expert review.
 

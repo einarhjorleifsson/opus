@@ -2738,3 +2738,63 @@ service documents `IndividualAge`/`AgeRings` for CA's age field, but that
 pair never appears in the live response -- the wire serves `Age`
 (`op_datras_field_list()` tiers it `no_evidence`). The D2.2 text was
 corrected accordingly.
+
+---
+
+## 2026-09-16 (later) -- one em-dash was dropping the whole LT table
+
+`inst/DATRAS-imbus.yaml` held exactly three non-ASCII bytes -- `e2 80 94`, a
+UTF-8 em-dash -- on line 2764, inside CA's *table-level* `details` ("not the
+full catch -- a subsample"). LT's block starts 24 lines later, at 2788. In an R
+session whose `LC_CTYPE` is `C`, which is what a bare `Rscript` gets on this
+machine, `yaml::read_yaml()` warns *"invalid input found on input connection"*
+and returns **three tables, not four**. No error, no mention of LT. Under a
+UTF-8 locale all four parse, which is why this survived: interactive R and
+`quarto render` are UTF-8, so nothing a human watched ever showed it.
+
+The cost was real, not cosmetic. `op_field_spec()` -- the export that exists to
+serve obus -- returned 132 rows instead of 190, silently missing LT's 58
+columns, and `R/sentinels.R:81` reads the same file, so LT's sentinel policy
+vanished with it. Any `Rscript`-driven pipeline step inherited the truncation.
+
+The 2026-09-15 entry above lists this character among the accepted residuals of
+the Policy B reconciliation, as "one CA em-dash byte difference". **That
+assessment was wrong** -- the character was load-bearing, and "accepted
+residual" is precisely the label that stopped anyone looking at it again.
+
+Fixed at source under Policy B: one ASCII `--` in
+`data-raw/spec/spec_02_curate_dict.R:980`, then `spec_02` -> `spec_03`. The
+intermediate `data-raw/seed/DATRAS-curated-legacy.yaml` and the shipped yaml
+each diff against their predecessor in exactly two places, the version date and
+that character. The shipped file is now pure ASCII, parses to four tables with
+LT's 58 columns under `LC_CTYPE=C`, and `op_field_spec()` returns 190 rows with
+no warnings. `op_validate_spec` clean on the regenerated file; suite 45 pass /
+0 fail / 6 skip (the known fixture skips).
+
+`DATRAS-ices.yaml` and `DATRAS-known-issues.yaml` were checked the same way and
+are pure ASCII. The `checkmark`/`cross` characters in the three spec scripts are
+console output only and touch no artifact. The copy of the dictionary sent out
+with IMBUS D2.2 on 2026-09-16 carries the old bytes; the file itself is
+complete and correct, and D2.2's scope is HH/HL/CA, so nothing in that
+deliverable is wrong -- only a C-locale R parse of that copy is short.
+
+**Left open: the footers now disagree with the yaml.** `datras:dict` is stored
+as JSON, which `jsonlite` decodes as UTF-8 regardless of locale, so the em-dash
+does no harm there and each footer carries only its own table. But
+`datras:provenance.dict_sha256` in all four published files is still
+`7e31260e...`, the pre-fix dictionary, where the shipped yaml is now
+`fa7ca42e...` -- so the drift check that footer exists to support currently
+reports drift. It is one character in CA's table-level prose; folding the
+rebuild into the next archive consolidation (alongside the deferred
+`ICES_ISSUE_REPORT.md` path fix, already waiting on exactly that) is the
+proportionate call, rather than materialising 14.4M HL rows and re-syncing the
+server for it.
+
+Also corrected the same day: `AGENTS.md`'s header still said version 0.2.0+ and
+principle 3 still said "34 R functions" (now 0.3.0 and 53 exported functions
+across 9 files); four live citations of the pre-rename
+`inst/DATRAS-data-dict.yaml` in `articles/technical-notes.qmd` and three in
+`TODO.md`, including two stale line numbers for the `LengthClass` label issue
+(now 1910 / 2455) and a reference to the no-longer-shipped legacy yaml. The
+one remaining mention, in technical-notes' dated 2026-08-09 note, is accurate
+as history and already superseded by the 2026-09-15 note below it.

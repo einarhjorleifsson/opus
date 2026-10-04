@@ -19,7 +19,7 @@ WORKSPACE <- ".datras"                # Relative to package root
 # is a safe, explicit "get me the latest" -- distinct from the normal
 # incremental behavior, which skips anything already fetched.
 # NULL = normal incremental behavior. Example: OPUS_FORCE_REFRESH_YEARS <- 2024:2026
-OPUS_FORCE_REFRESH_YEARS <- NULL
+OPUS_FORCE_REFRESH_YEARS <- 2025:2026
 
 ## ---- Paths (relative to opus package root) ----
 DATRAS_XML_DIR <- file.path(WORKSPACE, "xml")

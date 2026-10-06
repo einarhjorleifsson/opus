@@ -1,315 +1,456 @@
-------------------------------------------------------------------------
+# opus — ICES DATRAS data dictionary and known-issues registry
 
-# opus — ICES DATRAS Data Dictionary and Known-Issues Registry
-
-**Status:** Active (2026–onward). **Version:** 0.3.0
+**Status:** active. Version 0.3.0. The published archive was last rebuilt on
+2026-10-04. Open work is in `TODO.md`; dated history, measurements and how
+things were found are in `DEVLOG.md`; earlier versions of this file are in git.
 
 ------------------------------------------------------------------------
 
 ## The YAML is the deliverable
 
-opus produces **three YAML specifications**:
+opus produces three YAML specifications:
 
-1. **`DATRAS-imbus.yaml`** — The archive-side specification of Tier 1 (HH, HL, CA, LT): what the published archive **actually contains**, empirically grounded. Enum values restricted to archive-observed codes (a novel code in new data fails D04 and needs review: data error or genuinely new code); physical non-negativity bounds expressed as `assert:` constraints (D07). Keyed by opus's current field names; each column's `details` carries the legacy on-the-wire name.
+1. **`inst/DATRAS-imbus.yaml`** — the archive-side specification of Tier 1 (HH,
+   HL, CA, LT): what the published archive actually contains, grounded in it.
+   Enum values are restricted to codes observed in the archive (a new code in new
+   data fails D04 and needs review: a data error or a genuinely new code);
+   physical non-negativity is expressed as `assert:` constraints. Keyed by opus's
+   current field names; each column's `details` carries the legacy on-the-wire
+   name.
+2. **`inst/DATRAS-ices.yaml`** — ICES's own documented view of the same format,
+   consolidated faithfully from ICES's four metadata sources (WSDL,
+   `getDatrasFieldList`, icesVocab, the field-description spreadsheet) with no
+   corrections applied. Where ICES's sources disagree, the conflict is noted in
+   `details`, not resolved. The difference between this file and
+   `DATRAS-imbus.yaml` is the corrections story for the ICES Data Centre.
+3. **`inst/DATRAS-known-issues.yaml`** — the registry of where ICES's
+   specification and the submitted data part company: type mismatches,
+   undocumented codes, incomplete vocabularies, systemic submission patterns a
+   reader of the archive must know about, and their escalation status with ICES.
 
-2. **`DATRAS-ices.yaml`** — ICES's own documented view of the same format, consolidated faithfully from ICES's four metadata sources (WSDL, getDatrasFieldList, icesVocab, field-description spreadsheet) with **no corrections applied**. Where ICES's sources disagree, the conflict is noted in `details`, not resolved. The diff between this file and `DATRAS-imbus.yaml` is the corrections story for ICES Datacenter.
-
-3. **`DATRAS-known-issues.yaml`** — Registry of metadata gaps between official ICES specs and real submission patterns. Tracks type mismatches, undocumented codes, incomplete vocabularies, and their escalation status with ICES.
-
-The R package (`opus`) provides **thin tooling** around these YAML files: validation functions, generation scripts, and documentation. The YAML itself is the reference — portable, language-agnostic, and suitable for any tool.
+The R package provides thin tooling around these files: validation, generation
+scripts, readers for the published archive. The YAML itself is the reference —
+portable, language-agnostic, usable by any tool.
 
 ------------------------------------------------------------------------
 
 ## What the project does
 
-opus is **institutional data governance audit infrastructure**, not a data reformatting tool. It systematically exposes where ICES's own metadata sources (WSDL, getDatrasFieldList, icesVocab) diverge from each other and from real submitted data. The known-issues registry is an accountability log — evidence, impact, fix — and this reconciliation work is the actual deliverable; the YAML specs are the vehicle.
+opus is data-governance audit infrastructure, not a data-reformatting tool. It
+exposes where ICES's own metadata sources diverge from each other and from the
+data actually submitted. The registry is an accountability log — evidence,
+impact, fix — and that reconciliation is the deliverable; the YAML specifications
+are the vehicle.
 
-1. **Consolidates scattered knowledge** — WSDL, icesVocab, Technical Reference, real submissions — into one authoritative YAML
-2. **Documents reality vs. spec** — When real data diverges from official documentation, capture it (not as error, but as known issue)
-3. **Enables pre-submission validation** — Submitters can validate locally before uploading to ICES
-4. **Escalates problems upstream** — Known-issues registry feeds into imbus/ICES dialogue
-
-------------------------------------------------------------------------
-
-## Working Principles
-
-**1. Real data is ground truth.** When WSDL/icesVocab/specs conflict with live submissions, trust the submissions; file the divergence as a known issue.
-
-**2. Consolidate scattered knowledge.** WSDL, icesVocab, Technical Reference, real submissions — bring together into one machine-readable place.
-
-**3. Metadata-centric, not domain logic.** opus ships YAML specs + metadata validation, conversion and curation tooling (53 exported functions across 9 files in `R/`). These functions work *on* the specification and data patterns, not *on* domain questions. No contextual QC (e.g., "door spread constraints vs. depth"), no statistical analysis, no derived products. That computational work belongs in obus/imbus.
-
-**4. Don't guess; document.** Every range/constraint/enum needs evidence: real data, WSDL, or icesVocab. Borderline calls get flagged in `details:` for expert review.
-
-**5. Separate concerns: specs ≠ QC.** Known-issues registry documents schema gaps (upstream at ICES). Data-quality problems (wrong values) belong downstream in obus/imbus. opus surfaces whether data violates the *documented* spec; imbus solves whether it's *valid* in context.
-
-**6. Shared fields stay consistent.** HH/HL/CA/LT repeat field names (same facts). Type, units, range must match byte-for-byte across tables.
-
-**7. Adapt when needed.** Principles are Magna Carta, not law. Revisable when practice demands.
-
-**7b. No similar code in `data-raw/` and `R/`, ever.** `data-raw/` may *call* `R/` and add orchestration on top -- caching, looping, file layout -- but never re-implement it. A ported copy is a duplicate, and a verbatim behavioural copy is the worst kind because it drifts silently the first time either side is touched. The vocab helpers are the model: `get_codes_cached()` and friends call `op_vocab_get_codes()` and add only caching. Anything a downstream package or an article would need to call belongs in `R/`, exported.
-
-**8. Verify empirically.** A claim only counts as checked once confirmed against live, primary data — the real archive, the real service response — not by re-reading a document, a citation, or your own earlier note.
-
-**9. Audit exhaustively.** Cover every relevant variant before concluding something is missing or absent — legacy name and current name, every prefix candidate — not just the first one that resolves. A confirmed null result is only meaningful if it's a null result for the complete set of things worth checking, not a partial one. See the icesVocab field-name dependency note below for the concrete case that forced this rule into existence: each individual check was genuinely empirical (principle 8) yet a sweep still missed the answer because it wasn't exhaustive (principle 9) — the two failures are independent, and both are needed to actually verify something. Full discovery story in `DEVLOG.md` (2026-08-02, 2026-08-08).
+1. **Consolidates scattered knowledge** — WSDL, icesVocab, the field
+   descriptions, real submissions — into one machine-readable specification.
+2. **Documents reality against the specification** — where the data diverges
+   from the documentation, it is captured as a known issue, not as an error.
+3. **Enables pre-submission validation** — submitters can validate locally before
+   uploading to ICES.
+4. **Escalates upstream** — the registry feeds the IMBUS and ICES dialogue.
 
 ------------------------------------------------------------------------
 
-## Task
+## Working principles
 
-**opus feeds imbus WP2 (reference specification).** Deliver the most accurate DATRAS data-dict YAML, verified against real submissions. Documents the schema as actually submitted, flags upstream divergences (WSDL/icesVocab gaps), and escalates them to ICES. This is the work.
+**1. Real data is ground truth for what the archive contains.** When the WSDL,
+icesVocab or a specification conflicts with live submissions, trust the
+submissions and file the divergence as a known issue.
 
-**opus does NOT:**
-- Build QC infrastructure (imbus WPX handles complex contextual validation — e.g., door spread constraints vs depth)
-- Compute or transform data
-- Analyze or report on data quality independently
-- Solve multivariate co-parameter constraints (beyond data-dict's scope)
+**2. Consolidate scattered knowledge** into one machine-readable place.
 
-**Thin wrappers only:** Functions are OK if they're glue around external tools (e.g., `validate_with_datadict()` wrapping the data-dict CLI for basic spec/metadata/data validation). Computation is not — that belongs downstream.
+**3. Metadata-centric, not domain logic.** opus ships the specifications and
+tooling that works *on* them — validation, conversion, curation. No contextual QC
+("door spread against depth"), no statistics, no derived products; that work
+belongs in obus and imbus.
 
-**Why we monitor data-dict:** data-dict's three-level validation (spec/metadata/data) covers the basic checks; its R-package (`datadict`, shipped 2026-08-27, CRAN-track — see Key Facts below) gives downstream users of opus's yaml a zero-setup way to run that validation themselves. But imbus's **real QC work** — complex contextual rules like "door spread limits depend on depth" — is beyond data-dict's scope and belongs to imbus's own QC workpackage. We track data-dict to prevent reinventing spec validation, but set realistic expectations about what it can deliver. See [[data_dict_trajectory]] for roadmap.
+**4. Don't guess; document.** Every range, constraint and enum needs evidence:
+real data, the WSDL or icesVocab. Borderline calls are flagged in `details:` for
+expert review.
 
-### Decision Gate: New Work
+**5. Specifications are not QC.** The registry records what a reader of the
+archive must know to read it correctly: schema and vocabulary gaps at ICES, and
+systemic submission patterns (records that cannot be linked to a haul, a missing
+raising factor). Whether a value is plausible in context is downstream, in obus
+and imbus. opus surfaces whether data violate the *documented* specification;
+imbus decides whether they are *valid* in context.
 
-Before starting work on opus, ask:
-1. Does this improve the YAML specification (types, constraints, values, known issues)?
-2. If adding code: does it work *on* the specification (validation, curation, metadata utilities) or work *with* the specification (domain QC, contextual constraints, data transformation)?
-   - *On* the spec → belongs in opus (metadata-centric per Principle 3)
-   - *With* the spec → belongs in obus/imbus (domain logic)
-3. Will this function help data submitters validate locally or help opus maintainers curate specs?
-4. If uncertain: flag for explicit decision before proceeding.
+**6. Shared fields stay consistent.** HH, HL, CA and LT repeat field names for the
+same facts; type, units and range match across tables.
+
+**7. Principles are Magna Carta, not dogma** — revisable when practice demands.
+Use them to explain surprising state before doubting the design.
+
+**7b. No similar code in `data-raw/` and `R/`, ever.** `data-raw/` may *call*
+`R/` and add orchestration — caching, looping, file layout — but never
+re-implement it. A ported copy drifts silently the first time either side is
+touched. The vocab helpers are the model: `get_codes_cached()` calls
+`op_vocab_get_codes()` and adds only caching. Anything a downstream package or an
+article needs belongs in `R/`, exported.
+
+**8. Verify empirically.** A claim is checked only once confirmed against live,
+primary data — the real archive, the real service response — not by re-reading a
+document, a citation, or an earlier note.
+
+**9. Audit exhaustively.** Cover every relevant variant before concluding that
+something is missing — legacy name and current name, every prefix candidate —
+not just the first that resolves. A null result means something only for the
+complete set of things worth checking. Empirical (8) and exhaustive (9) are
+independent failures, and both are needed.
+
+------------------------------------------------------------------------
+
+## Task and boundaries
+
+**opus feeds IMBUS WP2 (the reference specification):** the most accurate DATRAS
+dictionary, verified against real submissions, with upstream divergences flagged
+and escalated to ICES.
+
+**opus does not** build QC infrastructure (contextual validation is WP3's,
+on-vessel tooling), compute or transform data, report on data quality
+independently, or solve multivariate constraints beyond data-dict's scope.
+
+**Thin wrappers only.** Glue around external tools is fine — `op_validate_spec()`,
+`op_validate_meta()`, `op_validate_data()` and `op_validate_full()` wrap the
+data-dict CLI for its three levels of validation. Computation is not.
+
+**data-dict's role.** Its three levels (spec, metadata, data) catch schema
+violations and basic constraints; operational QC (co-parameter rules, on-vessel
+limits) is beyond it and belongs to WP3. data-dict's own R package (`datadict`,
+CRAN-track) is consumer-facing — install, validate data, view a report — and does
+not expose spec/meta validation, export, render, describe or draft, nor inject a
+`source:` path the way opus's wrappers do, so it complements opus's tooling rather
+than replacing it. Worth pointing WP3 or ICES submitters at for a zero-setup
+self-check against opus's YAML. opus watches data-dict so as not to reinvent
+specification validation, and so that WP3 does not expect it to solve their QC.
+
+### Decision gate for new work
+
+1. Does it improve the YAML specification (types, constraints, values, known
+   issues)?
+2. If it is code: does it work *on* the specification (validation, curation,
+   metadata utilities — opus) or *with* it (domain QC, contextual constraints,
+   transformation — obus or imbus)?
+3. Will it help submitters validate locally, or maintainers curate?
+4. If uncertain, flag it for an explicit decision first.
 
 ------------------------------------------------------------------------
 
 ## Scope
 
-**Tier 1: DATRAS Exchange Data (raw submissions)**
-- **HH** (Haul Information): Primary exchange table
-- **HL** (Length Frequency): Primary exchange table
-- **CA** (Catch at Age): Primary exchange table
-- **LT** (Litter Assessment): Hybrid—some novel observations + lookup/join fields to HH. Attached to Tier 1 but not purely exchange data.
-
-**Tier 2: DATRAS Derived Products (computed from Tier 1, future)**
-- **CPUEL, CPUEA** (Catch Per Unit Effort): Computed from HH/HL with species name lookup
-- **FL** (Fishing Effort): Derived from HH
-- **IDX** (Survey Index): Derived product
-- These are processed outputs, not raw submissions
-
-**Tier 3: obus Derived Products (future)**
-- Contracts, aggregations, and domain-specific derivatives built on top of opus specs
+- **Tier 1, DATRAS exchange data:** HH (hauls), HL (length frequencies), CA
+  (biological data), LT (litter; partly novel observations, partly lookups and
+  joins to HH).
+- **Tier 2, DATRAS products computed from Tier 1** (CPUEL, CPUEA, FL, IDX):
+  not curated yet.
+- **Tier 3, obus's derived products:** contracts and derivatives built on opus's
+  specifications; not curated yet.
 
 ------------------------------------------------------------------------
 
 ## Format: data-dict.yaml v0.1.0
 
-- Uses relationships, constraints, definitions, glossary, todo (added 2026-08-16, see `DEVLOG.md`), and assertions (added 2026-09-15: `assert: {field} >= 0` on every physically non-negative `number(quantity)` field — the first evidence-backed use; negative haul durations and ages exist in the archive)
-- One file per tier
-- Schema closed: only standard keys allowed
+Uses relationships, constraints, definitions, glossary, `todo`, and `assert:`
+(non-negativity on every physically non-negative `number(quantity)` field; the
+archive holds negative haul durations and ages). One file per tier; the schema is
+closed, so only standard keys are allowed.
 
 ------------------------------------------------------------------------
 
-## Known-Issues Registry
-
-`inst/DATRAS-known-issues.yaml`: Escalation log for ICES Datacenter. Documents where official specs diverge from actual submissions. Schema/vocab problems only (not data-quality issues).
-
-------------------------------------------------------------------------
-
-## Data Sources
+## Data sources
 
 opus consolidates metadata from four ICES sources:
 
-1. **WSDL (Web Services Definition Language)**
-   - Source: `https://datras.ices.dk/WebServices/DATRASWebService.asmx`
-   - Provides: Field types (string/int/decimal) for each operation
-   - Authority: Primary—describes what the service actually returns
-   - Scope: DATRAS-specific (HH, HL, CA, LT operations only)
+1. **WSDL** — `https://datras.ices.dk/WebServices/DATRASWebService.asmx`. Field
+   types (string/int/decimal) per operation; primary, because it describes what
+   the service actually returns. DATRAS operations only (HH, HL, CA, LT).
+2. **`getDatrasFieldList`** —
+   `https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList`.
+   Old-to-new name mappings, descriptions and a `DataFormat` per record type and
+   field. Secondary, and unreliable in specific, documented ways (filed with ICES;
+   `articles/issues.qmd`). Its `DataFormat` diverges from the WSDL (for example
+   `Year` is `char`, `Distance` is `float`), so opus sources types from the WSDL.
+   It also documents fields the WSDL does not serve, and some of its descriptions
+   are misplaced (the FA record's are shifted by one row). Its XML namespace is
+   `ices.dk.local/DATRAS`; opus parses it by regex (`op_datras_field_metadata()`).
+3. **icesVocab** — `https://vocab.ices.dk/services/api/`. Code definitions and
+   meanings, cross-domain (opus filters to vocabularies that apply to DATRAS
+   fields). Code semantics only, not types, and keyed by each field's **legacy**
+   name (Key facts). Each code type carries a `Guid`; a GUID match is exact and
+   ICES-declared, unlike every name-based match, which is a guess
+   (`op_vocab_resolve_guid()`).
+4. **The DATRAS field-description spreadsheet**, linked from
+   `https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx`
+   and fetched by `data-raw/audit/build_field_description_snapshot.R`.
+   Per-field `Mandatory`, `DataType` and `Description`, an ICES-wide convention
+   ("submit -9 for a field with no information"), and occasionally a vocabulary
+   GUID. The nearest thing to a technical reference — but hand-maintained, dated
+   in its filename, not an API, not kept in sync with the other three (its
+   `Vocab` column is rarely filled). Re-run the build script when a new dated
+   version appears.
 
-2. **getDatrasFieldList API**
-   - Source: `https://datras.ices.dk/WebServices/DATRASWebService.asmx/getDatrasFieldList`
-   - Provides: Field name mappings (old → new), descriptions
-   - Authority: Secondary — derived from WSDL and internal DATRAS schema, and confirmed unreliable (6 confirmed errors: LT coverage gap, wrong LT renames, a phantom field, an unverifiable CA rename, missing entries, a data-duplication miss — filed with ICES, see `articles/issues.qmd`; full findings in `DEVLOG.md` 2026-08-06)
-   - Scope: DATRAS-specific (no other ICES products)
-   - Note: DataFormat field can diverge from WSDL; opus sources types from WSDL directly
+The disparity between the four (four formats, no single owner keeping them in
+sync) is itself part of what the registry exists to surface.
 
-3. **icesVocab (ICES Vocabularies)**
-   - Source: `https://vocab.ices.dk/services/api/`
-   - Provides: Code definitions and meanings (e.g., Gear codes, species validation)
-   - Authority: Cross-domain reference—used by multiple ICES data systems
-   - Scope: Not DATRAS-exclusive; opus filters to vocabularies applicable to DATRAS fields
-   - Note: Provides code semantics only, not structural types. Keyed by each field's **legacy** (on-the-wire) name, not its current opus name — see the icesVocab field-name dependency note under Key Facts below. Each code-type also carries a `Guid` (`op_vocab_get_types()`); a GUID match is exact and ICES-declared, unlike every name-based match in this package, which is always a guess (`op_vocab_resolve_guid()`, added 2026-08-17 — see `DEVLOG.md`).
-
-4. **DATRAS field-description spreadsheet** (found 2026-08-17 — see `DEVLOG.md`)
-   - Source: linked from `https://www.ices.dk/data/data-portals/Pages/DATRAS_format_description.aspx`, currently `DATRAS_Field_descriptions_and_example_file_December2025.xlsx`; fetched by `data-raw/audit/build_field_description_snapshot.R`
-   - Provides: per-field `Mandatory`/`DataType`/`Description`, an ICES-wide general convention ("submit -9 for a field with no information"), and occasionally a direct icesVocab GUID
-   - Authority: Closest thing to a real Technical Reference opus has — but hand-maintained (dated filename, prose version notes), not an API, and not kept in sync with the other three sources (its `Vocab` column is populated in only 1 of 154 field rows)
-   - Scope: DATRAS-specific
-   - Note: A versioned document, not a stable endpoint — re-run the build script periodically rather than treating one snapshot as permanently current
-
-opus unifies these four sources into a single YAML specification, making inconsistencies visible and escalatable to ICES — the disparity between them (four sources, four formats, no single owner keeping them in sync) is itself part of what opus's known-issues registry exists to surface.
-
-**No R-package dependency on either `icesDatras` or `icesVocab`** (removed 2026-08-06): opus calls these two web services directly (`R/vocab.R`, `R/field_names.R`'s `op_datras_field_list()`), verifying every claim against at least two independent live sources rather than trusting either service's metadata blindly. Full history of this removal, and of a since-corrected attribution error that had described the real `icesDatras` package as hand-patching data it doesn't actually patch, in `DEVLOG.md` (2026-08-06, 2026-08-09).
+**No R-package dependency on `icesDatras` or `icesVocab`.** opus calls both web
+services directly (`R/vocab.R`, `R/datras_service.R`, `R/field_names.R`) and
+checks every claim against at least two independent live sources.
 
 ------------------------------------------------------------------------
 
 ## Implementation
 
-**User-facing exported functions** (50 total; the rendered index is `articles/reference.qmd`, generated from `man/*.Rd` by `data-raw/audit/build_reference.R`):
+The exported surface is `NAMESPACE` (roxygen2-generated; never hand-edit it) and
+the rendered index `articles/reference.qmd`, generated from `man/*.Rd` by
+`data-raw/audit/build_reference.R`, which fails if an export belongs to no group.
 
-*Reading the published archive and the dictionary embedded in it* (`R/archive.R`) — every one of these is a parquet **footer** read, so against the hosted archive each costs one HTTP range request (~0.1s), not a download:
-- `op_archive(path)` — resolve the archive root. An opus archive is a directory named `raw` holding the four exchange tables, local or hosted; anything else is an error. The narrowness is what lets every accessor below assume the five `datras:` keys are present.
-- `op_con(table, path)` — a lazy `tbl` over one raw table
-- `op_dict(table)` — the dictionary, one row per column, carrying **three type views**: `type` (opus's curated semantic type), `parquet_type`/`logical_type` (what is physically stored), `r_type` (what a reader gets back). They are allowed to disagree; making that visible is the point (see TODO.md's open decision).
-- `op_crosswalk(table)` / `op_rename(d, table, to)` — legacy ↔ current names **with no external list**: the mapping is written into the footer at build time and read back from the same file as the data, so it cannot describe a different vintage than what you loaded. `op_crosswalk()` asserts it is 1:1 and total rather than trusting it.
-- `op_enums(table, column)` — code → label for enum columns
-- `op_definitions(table)` / `op_define(d, table, name)` — the dictionary's named filters and metrics, each carrying code already rendered for R and DuckDB, so one authored rule runs in both engines
-- `op_relationships(table)` — the resolved join `by =` and `conflicts` (the 8-field composite haul key)
-- `op_coverage(table)` / `op_surveys()` — what the archive holds; the survey list without a live ICES call
-- `op_sentinel_meta(table)` — the strip/keep policy actually applied to that file
-- `op_provenance(table)` / `op_known_issues(table)` — build facts (including `dict_sha256`, which is how a consumer tells whether its installed opus is the opus that built the file) and the issues naming that table
-- `op_keys(table)` — which metadata keys the footer carries, and their sizes
-- `op_catalog(path)` — rebuilds the views, comments and `enum_labels`/`range_constraints`/`field_constraints` lookups in an in-memory DuckDB, from the footers
+- **Reading the published archive** (`R/archive.R`) — every function here reads a
+  parquet footer, so against the hosted archive each costs one range request,
+  not a download: `op_archive()` (the archive root: a directory named `raw`
+  holding the four tables, which is what lets every reader assume the `datras:`
+  keys exist), `op_con()`, `op_dict()` (one row per column with three type views
+  — the curated `type`, the stored `parquet_type`/`logical_type`, the `r_type` a
+  reader gets — allowed to disagree), `op_crosswalk()`/`op_rename()` (legacy ↔
+  current names from the footer itself, asserted 1:1 and total),
+  `op_enums()`, `op_definitions()`/`op_define()` (named filters and metrics with
+  code for R and DuckDB), `op_relationships()` (the eight-field composite haul
+  key), `op_coverage()`/`op_surveys()`, `op_sentinel_meta()`,
+  `op_provenance()`/`op_known_issues()` (including `dict_sha256`, which tells a
+  consumer whether its installed opus built the file), `op_keys()`, and
+  `op_catalog()` (an in-memory DuckDB of views, comments and lookups rebuilt from
+  the footers).
+- **Specification validation, parquet exploration, drafting**
+  (`R/validation.R`): the four `op_validate_*()` wrappers; `op_inspect_parquet()`;
+  `op_flag_violations()`, which flags every violating row, because the CLI's
+  report stops at the first few rows per problem; `op_validation_problems()`;
+  `op_describe_parquet()`; `op_draft_from_parquet()`; `op_export_spec()`,
+  `op_export_data()`, `op_render_spec()` (data-dict's `render`, on demand only;
+  `data_dir` injects a `source:` so the page profiles real data, because the
+  shipped dictionary declares none).
+- **The DATRAS web service** (`R/datras_service.R`, the single implementation of
+  the ASMX crawl): `op_datras_operations()` (doubles as the migration tripwire:
+  each table ICES converts to current names appears as a new `…NewHeaders`
+  operation), `op_datras_operation_types()`, `op_datras_field_metadata()` (the
+  field list as ICES publishes it, unverified).
+- **XML to parquet conversion** (`R/cast.R`, `R/rename.R`, `R/sentinels.R`),
+  exported so a downstream package converting its own fetch gets exactly the
+  published archive: `op_cast_wsdl_types()` (sentinels preserved),
+  `op_rename_to_new()` (asserts the incoming columns against the crosswalk first;
+  harmless on data already in current names), `op_strip_sentinels()`,
+  `op_cast_to_spec()` (refuses to convert what it cannot parse), and
+  `op_wsdl_type_overrides()`.
+- **Sentinel policy** (`R/sentinels.R`): `op_sentinels()`, `op_sentinel_policy()`,
+  `op_sentinel_audit()`.
+- **icesVocab** (`R/vocab.R`): `op_vocab_get_types()`, `op_vocab_resolve_key()`,
+  `op_vocab_resolve_guid()`, `op_vocab_get_codes()`, `op_vocab_first_usable()`,
+  `op_vocab_resolve_datras_key()` (reads `inst/DATRAS-vocab-correction.csv`).
+- **Field names** (`R/field_names.R`): `op_legacy_field_name()`,
+  `op_field_name_map()`, `op_field_spec()` (old name, new name and type for every
+  Tier 1 column from the shipped `DATRAS-imbus.yaml` alone), 
+  `op_translate_dict_names()` (the one legacy-to-current rename the pipeline
+  applies, ground-truthing the crosswalk first), `op_datras_field_list()` (verified
+  mappings from the live services, tiered `confirmed` / `cross_table_confirmed` /
+  `no_evidence`), `op_datras_rename_crosswalk()`. Both of the last two resolve over
+  the full Tier 1 set whatever `tables` is, and narrow only at the end: a mapping
+  confirmed for one table is borrowed for another, so resolving one table alone
+  would degrade silently (LT inherits most of its renames from HH, HL and CA).
+- **Dictionary writing** (`R/dict_write.R`): `op_write_dict_yaml()`, the canonical
+  writer every dictionary goes through.
 
-*Specification validation, parquet exploration, and drafting* (`R/validation.R` -- all of them; despite the name, `op_describe_parquet()`/`op_draft_from_parquet()` live here too, not in a separate file):
-- `op_validate_spec(dict_path, json)` — Check YAML spec conformation (uses data-dict CLI); `json=TRUE` also returns the structured report (`$report`)
-- `op_validate_meta(data_path, table, dict_path)` — Validate column names/types
-- `op_validate_data(data_path, table, dict_path)` — Validate values vs constraints
-- `op_validate_full(data_path, table, dict_path)` — Run all three checks
-- `op_inspect_parquet(parquet_path)` — See what data-dict CLI sees
-- `op_flag_violations(data_path, table, dict_path)` — Flag EVERY row violating required/enum/range constraints, exhaustively. Complements, not superseded by, the CLI's own report (`op_validate_meta()`/`op_validate_data()`'s `$result`, `op_validate_spec(json=TRUE)`'s `$report`): the report is capped at the first 5 rows/problem (no CLI flag raises this — see `site/report.md#counting-and-capping` in the data-dict repo), so this function still exists specifically for exhaustive marking.
-- `op_validation_problems(report)` — Flatten any of the above reports' `problems` into a data frame (pure reshaping, no new checks)
-- `op_describe_parquet(parquet_path)` — Describe parquet structure and statistics
-- `op_draft_from_parquet(parquet_paths, output_path)` — Generate skeleton YAML from parquet data
-- `op_export_spec(dict_path)` — Export a fully-resolved dictionary as JSON (wraps data-dict CLI's `export-spec`)
-- `op_export_data(dict_path)` — Export a dictionary with per-column data profiles as JSON (wraps data-dict CLI's `export-data`)
-- `op_render_spec(dict_path, output, data_dir)` — Render a dictionary as a self-contained HTML page (wraps data-dict CLI's `render`); on-demand tool only, nothing shipped/committed. `data_dir` (e.g. `.datras/to_https/raw`) **injects a `source:` for any table that declares none**, which is what makes the page profile real data at all — data-dict renders spec-only unless at least one table's source file is present, and the shipped dictionary deliberately declares no source (the archive is not in the repository, so a committed path would dangle for everyone but whoever built it).
+**`data-raw/`** is grouped by concern: `spec/` (the dictionary pipeline, run in
+numeric order), `archive/` (download, parse, consolidate), `audit/` (on-demand
+cross-source checks), `assets/` (generated files), plus `seed/`, `issue-drafts/`,
+`mock/`, `retired/`. Basenames are stable because the shipped YAML cites script
+paths and those citations reach the published footers.
 
-*Reading the DATRAS web service* (`R/datras_service.R` -- the single implementation of the ASMX crawl; nothing in `data-raw/` may re-implement it, see Working Principle 7b):
-- `op_datras_operations()` — every operation the service currently exposes. Doubles as the migration tripwire: ICES converts tables to current field names one at a time, and each converted table appears as a new `…NewHeaders` operation.
-- `op_datras_operation_types(operation)` — the fields *and WSDL types* one operation actually returns
-- `op_datras_field_metadata()` — `getDatrasFieldList` as ICES publishes it, unverified. Not to be confused with `op_datras_field_list()`, which is what survives cross-checking; this one is what ICES *claims*.
+**The specification pipeline** (`data-raw/spec/`, keyed by legacy names until the
+final rename). **The generator is the source of truth:** YAML changes arrive only
+through `spec_02` → `spec_03` (and `spec_04`) regeneration, never by hand.
+- `spec_01_seed_dict.R` — specifications from the live WSDL, field list and
+  icesVocab, uncorrected, keyed by legacy names.
+- `spec_02_curate_dict.R` — hand-written corrections and enriched enums, then two
+  archive-grounded passes: non-negativity `assert:` on every physically
+  non-negative quantity (an undecided quantity field fails the build), and enum
+  `values:` trimmed to codes observed in the archive. Writes the internal
+  `data-raw/seed/DATRAS-curated-legacy.yaml`.
+- `spec_03_translate_new_names.R` — the pure rename via
+  `op_translate_dict_names()`; writes `inst/DATRAS-imbus.yaml`.
+- `spec_04_build_ices_yaml.R` — renames the seed the same way and merges the
+  field-description spreadsheet (its descriptions preferred; `Mandatory` →
+  `required`; conflicts and coverage gaps noted in `details`; examples from its
+  own example records, with an archive fallback that says so); writes
+  `inst/DATRAS-ices.yaml`.
 
-*XML → parquet conversion* (`R/cast.R`, `R/rename.R`, `R/sentinels.R`) — four steps whose order is load-bearing, exported so a downstream package calling them on its own live fetch gets a result identical to the published archive rather than a near-miss:
-- `op_cast_wsdl_types(df, table)` — physical types from the WSDL; **sentinels preserved exactly**. Deciding which sentinels mean "missing" is not a type-casting decision.
-- `op_rename_to_new(df, table)` — legacy → current names, asserting the incoming columns against the crosswalk first. Self-retiring: applied to data already in current names it alters nothing, so an ICES-side flip breaks nothing.
-- `op_strip_sentinels(df, table)` — `-9` → `NA` where it means absence, per the registry
-- `op_cast_to_spec(df, table)` — the semantic types the wire cannot express (`date`). **Refuses** to convert a column holding anything it cannot parse rather than producing `NA`.
-- `op_wsdl_type_overrides()` — the documented per-field exceptions where the WSDL is wrong, or where the dictionary's `enum` typing requires string-like storage
+Rendering is data-dict's `render` (`op_render_spec()`); the registry is not a
+data-dict document and stays plain YAML.
 
-*Sentinel policy* (`R/sentinels.R`):
-- `op_sentinels()` — the registry accessor (`inst/DATRAS-known-issues.yaml`'s `sentinels:` block)
-- `op_sentinel_policy(table)` — the per-column verdict, with the reasoning attached
-- `op_sentinel_audit(path, table)` — sentinel counts per column in a real parquet file; both the evidence behind each decision and the regression check afterwards
+**The archive pipeline** (`data-raw/archive/`):
+- `archive_01_download_config.R`, `archive_02_download.R`, `archive_03_catalog.R`
+  — download the XML and build a manifest.
+- `archive_04_parse_phase2.R`, `archive_05_backfill_lt_partitions.R` — parse XML
+  to parquet and chain the four conversion calls in order. No conversion logic of
+  their own. Phase A is WSDL-only and does not know the YAML: enum-ness is a
+  curation conclusion drawn from the archive, so it cannot be an input to
+  building it.
+- `archive_06_consolidate.R` — to `.datras/to_https/raw/{TABLE}.parquet`,
+  current names only, rebuilt from the partitions every run; asserts no legacy
+  names survived and that the sentinel policy held per column.
+  `archive_06_metadata.R` writes the footers.
+- The rebuild depends only on `.datras/xml/`: survey, year and quarter come from
+  the directory path; types and the crosswalk from the live service; the registry
+  and the dictionary from the installed package.
 
-*ICES Vocabulary utilities* (`R/vocab.R`):
-- `op_vocab_get_types()` — Get all ICES vocabulary code-types with prefix metadata
-- `op_vocab_resolve_key(field_name, types)` — Find candidate vocabulary keys for a field, given the full domain table from `op_vocab_get_types()`
-- `op_vocab_resolve_guid(guid, types)` — Resolve an ICES Vocabulary GUID to its key. Exact and ICES-declared, unlike every name-based match in this package — use whenever an external source (e.g. the field-description spreadsheet's `Vocab` column) hands you one.
-- `op_vocab_get_codes(vocab_key)` — Fetch code:description pairs for a vocabulary
-- `op_vocab_first_usable(vocab_keys)` — Select first non-empty vocabulary from candidates
-- `op_vocab_resolve_datras_key(table, field)` — Look up opus's own audited vocab-key proposal for a Tier 1 field from the pre-computed correction table (`inst/DATRAS-vocab-correction.csv`)
-
-*Field name utilities* (`R/field_names.R`):
-- `op_legacy_field_name(details)` — Extract legacy (old ICES) field name from YAML details
-- `op_field_name_map(dict, table_name=NULL)` — Build legacy→new field name mapping table
-- `op_field_spec(table_name=NULL)` — old-name/new-name/type for every Tier 1 column, read from the shipped `DATRAS-imbus.yaml` alone (legacy names come from each column's `Legacy field name:` details stamp, written by `op_translate_dict_names()`); no live service calls. Backs `op_cast_to_spec()`.
-- `op_translate_dict_names(dict, crosswalk)` — The pure legacy→current rename the spec pipeline applies exactly once: renames columns, rewrites relationships/definitions/assert expressions, and stamps each column's `details` with its legacy name. Ground-truths the crosswalk against the dictionary's real columns before touching anything.
-- `op_datras_field_list(tables)` — Derive verified Tier 1 old-name→new-name mappings directly from ICES's live services (replaces `icesDatras::getDatrasFieldList()`); tiers each mapping as `confirmed` / `cross_table_confirmed` / `no_evidence` rather than trusting ICES's field-list metadata blindly. See its own roxygen docs for the six confirmed ICES-side errors this caught.
-- `op_datras_rename_crosswalk()` — The legacy→curated rename table `spec_03_translate_new_names.R` actually applies (wraps `op_datras_field_list()`, with the one known correction and a general collision guard, not a hardcoded special case)
-
-*Dictionary writing* (`R/dict_write.R`):
-- `op_write_dict_yaml(dict, path)` — `yaml::write_yaml()` plus opus's canonical post-processing (folded `description:`/`details:` scalars, quoted number-like string examples); every dictionary the pipeline writes goes through this, so the treatment is identical everywhere
-
-  Both resolve over the **full Tier 1 set regardless of `tables`**, and narrow only at the end. Tier 2 borrows a `confirmed` mapping from another table, so resolving a single table leaves nothing to borrow from — and the result degrades silently rather than erroring. Asked for `"LT"` alone the crosswalk returns 1 rename instead of 23, because ICES documents `Ship`/`StNo`/`HaulNo` and 34 more as renamed for HH/HL/CA but not for LT.
-
-These wrappers enable the curation loop: build YAML → validate against real data → identify issues → refine YAML. The **IMBUS YAML** (DATRAS-imbus.yaml) is the reference for what exists in practice — every enum code and every range verified against the published archive.
-
-**Development-only functions:** none. The original three-phase bootstrap workflow's six functions were removed 2026-08-17, superseded by the `data-raw/spec/` scripts since 2026-08-05/08 (see [[project_bootstrap_yaml_workflow]] for the original rationale, `DEVLOG.md` 2026-08-17 for the removal).
-
-**`NAMESPACE` is roxygen2-generated** (since 2026-08-17 — see `DEVLOG.md`): every `@export`-tagged function is live automatically; `devtools::document()` regenerates the file completely, so it never needs hand-editing and can never again silently drift from what's actually tagged `@export` in the source (the exact failure mode behind the six dead functions above, and behind `op_vocab_resolve_guid()` needing a manual NAMESPACE edit just before this).
-
-**Source scripts.** `data-raw/` is grouped into subdirectories by concern: `spec/` (dictionary pipeline, run in numeric order), `archive/` (download/parse/consolidate pipeline, numeric order), `audit/` (on-demand cross-source checks, no numbers — run independently), `assets/` (generated qmd, audit CSVs, benchmark outputs), plus the pre-existing `seed/`, `issue-drafts/`, `mock/`, `retired/`. Basenames are unchanged from the flat layout because the shipped YAML's `details` prose cites script paths (`data-raw/audit/build_field_description_snapshot.R` etc.) and those citations propagate into the published parquet footers.
-
-**Spec-building pipeline** (`data-raw/spec/`, keyed by legacy field names throughout except the final translate step). **Policy B (2026-09-15): the generator is the source of truth** — YAML changes arrive only via `spec_02` → `spec_03` regeneration, never by hand. The dictionaries were hand-maintained while the pipeline was retired (2026-08-29 to 2026-09-15); reconciliation completed the same day (all hand edits either ported into `spec_02` or decided against — see the required-vs-strip decision below), and the shipped YAMLs are generator output again:
-- (the former `spec_00_operation_types.R` crawler is gone — it was a second copy of `R/field_names.R`'s ASMX parser; both are now `op_datras_operation_types()`, `R/datras_service.R`)
-- `spec_01_seed_dict.R` — pull specs from live WSDL + getDatrasFieldList + icesVocab (no corrections); keyed by ICES's own legacy (real, on-the-wire) field names
-- `spec_02_curate_dict.R` — apply hand-written corrections, enrich enums, keyed by legacy field names throughout; ends with two archive-grounded passes: non-negativity `assert:` constraints on every physically non-negative `number(quantity)` field (exhaustive — an undecided quantity field fails the build), and trimming every enum's `values:` to the codes observed in the published archive; writes `data-raw/seed/DATRAS-curated-legacy.yaml` (internal intermediate, not shipped)
-- `spec_03_translate_new_names.R` — pure rename, legacy → opus's curated names, via `op_translate_dict_names()` (`R/field_names.R`, which also stamps each column's `details` with `Legacy field name: {old}.`); writes `inst/DATRAS-imbus.yaml`, the only step that introduces new names at all
-- `spec_04_build_ices_yaml.R` — renames the seed via the same `op_translate_dict_names()`, then merges the field-description spreadsheet (descriptions preferred over getDatrasFieldList's; Mandatory → `required`; DataType/WSDL conflicts and spreadsheet coverage gaps noted in `details`; `examples` from the spreadsheet's own example records, archive fallback with disclosure); writes `inst/DATRAS-ices.yaml`
-
-Rendering (a hand-rolled Quarto generator's old job) is now handled by data-dict's own `render` command (`op_render_spec()`, `R/validation.R`) — a self-contained HTML page with a relationship diagram, searchable index, and live data profiling. `known-issues.yaml` has no `render` equivalent (it isn't a real data-dict.yaml document) and stays plain YAML.
-
-There is a second, separate pipeline (`data-raw/archive/`, `archive_0N_*`) that downloads and converts the real DATRAS archive rather than building the spec:
-- `archive_01_download_config.R` / `archive_02_download.R` / `archive_03_catalog.R` — download the raw XML and build a manifest
-- `archive_04_parse_phase2.R` / `archive_05_backfill_lt_partitions.R` — parse XML → parquet, then chain the four `opus::` conversion calls in order (cast → rename → strip sentinels → cast to spec). These scripts hold **no conversion logic of their own**; the former `archive_00_wsdl_types.R` is gone, its `apply_wsdl_types()` now `op_cast_wsdl_types()` in `R/cast.R`. Phase A is still WSDL-only and still does not know the yaml or the word "enum": enum-ness is a curation conclusion drawn from archive data, so it cannot be an input to building that archive without circularity. Each script carries its own copy of the XML parser; see the source for why.
-- `archive_06_consolidate.R` — consolidates the partitioned output into `.datras/to_https/raw/{TABLE}.parquet`, current names only, rebuilding from the partitioned directory every run so provenance is always known. Legacy-named output is no longer produced: opus publishes one name per table. Two whole-table assertions live here (no legacy column names survived; the sentinel policy held all-or-nothing per column); the per-file crosswalk ground-truth check moved into `op_rename_to_new()`, which now runs it on every file rather than once per consolidation.
-- **Data-wise the rebuild depends only on `.datras/xml/`.** `archive_05` derives survey/year/quarter from the directory path and reads neither the manifest nor the catalog; the four conversion functions read no `.datras` file at all (types and crosswalk come from the live service, the registry and dictionary from the installed package's `inst/`).
-
-Full construction history, reorg, and bug fixes for both pipelines are in `DEVLOG.md`.
-
-**Standalone audit tooling** (`data-raw/audit/`, not part of either pipeline above — each re-run independently, on demand, to verify or re-derive a specific cross-source fact rather than to build a shipped artifact):
-- `build_vocab_correction.R` — for each of the ~55 Tier 1 enum fields, picks the best-fitting icesVocab key and reports the fit; writes `inst/DATRAS-vocab-correction.csv`, read at runtime by `op_vocab_resolve_datras_key()`
-- `build_vocab_field_audit.R` — the same name-match/value-fit check extended to all 190 Tier 1 fields, not just the already-curated enums (`vocab_fit_helper.R`'s `pick_best_vocab_match()` is shared by both, factored out once rather than duplicated)
-- `build_icesvocab_snapshot.R` — full-catalog bulk download of every icesVocab code-type's codes (opus's own direct HTTP, not the `icesVocab` package), cached under `.datras/ices-schemas/` with hash-stamped provenance; makes audits needing many codes at once fast and reproducible instead of hundreds of live calls per run
-- `build_field_description_snapshot.R` — downloads and caches the DATRAS field-description spreadsheet (opus's 4th data source, above), same caching convention
-- `build_reference.R` — regenerates `articles/reference.qmd` from `man/*.Rd`, so the site's function index cannot drift from the roxygen. Grouping is hand-maintained the way a pkgdown reference section would be, and the script **fails** if an exported function belongs to no group — adding an export forces a decision about where it belongs.
-- `build_field_gap_audit.R` — cross-references real sentinel usage, icesVocab coverage, and the field-description spreadsheet's `Mandatory`/`DataType` columns against opus's own spec for all 190 fields at once; this is what surfaced the 2026-08-17 fixes above (13 stale-citation fields, 35 missing-`required` fields, `Year`/`SpecCode`'s type divergence) — none of which either of the two audits above, run independently, had ever caught, because they'd never been cross-referenced against each other. Worth re-running whenever the field-description spreadsheet gets a new dated version, not treated as a one-off.
-
-------------------------------------------------------------------------
-
-## Key Facts
-
-**Shared fields really are consistent where it matters — checked, not assumed.** Working Principle 6 requires type/units to match byte-for-byte across HH/HL/CA/LT. Verified 2026-08-29 across all 50 field names appearing in more than one table: **`type` and `units` diverge in zero cases.** 23 of the 50 differ in some key, but only in ones that legitimately vary per table — `constraints` (19; a `primary_key` in HH is not one in HL), `range` (4; LT's `DateofCalculation` starts later than the others'), `label` (2) and `values` (1; `RecordHeader` names its own table). Useful when weighing anything that would duplicate field definitions: the duplication already exists in the yaml and does not drift.
-
-**A curated `type` is an analysis-level claim, not a storage instruction — and that is data-dict's rule, not opus's invention.** `site/spec.md` is explicit: *"Types capture data types at a level that makes sense for analysis, which is typically coarser than the logical types of the underlying data"*, and a `type` "should match (**approximately**) the underlying data type". The implementation enforces it — `parquet_element_type()` collapses INT32, INT64, FLOAT and DOUBLE all to `number`, the measure qualifier (`(quantity)`/`(ordinal)`/`(id)`) is never read from a file because it is a semantic claim about what operations are meaningful, and `validate_meta.rs` asserts `types_compatible("number(quantity)", "number")`. So `SweepLength` declared `number(quantity)` and stored INT32 is conformant, which is why `op_validate_meta()` is clean on all four tables. **opus follows this and must keep following it:** `op_cast_wsdl_types()` casts from WSDL physical types, and `op_cast_to_spec()` overrides only `date`/`datetime` — the one semantic type the wire cannot express. Nothing here casts from a curated `type`, and nothing should. A downstream package that does (obus's `dr_settypes()` maps `number(quantity)` → `as.numeric()`) manufactures a divergence the archive does not have; it should cast from the `r_type`/`parquet_type` each footer now carries, or from the WSDL. Verified 2026-08-29 that ICES both declares and sends integers for every affected field: 0 decimal values in 100,280,647, scanning all 29 tags across all 3,892 files of `.datras/xml/`.
-
-
-**The published parquet is self-describing again, and the sidecar catalog is gone.** Each file in `raw/` carries five `datras:` keys in its own footer (`data-raw/archive/archive_06_metadata.R`): `dict` (the table's slice of the dictionary as `data-dict export-spec` resolves it, plus `legacy_name`, `parquet_type` and `r_type` per column), `provenance`, `sentinels`, `coverage` and `known_issues`. A detached file therefore carries its own field descriptions, its own legacy-name crosswalk, and the record of which sentinels were stripped from it. `op_dict()`/`op_crosswalk()`/`op_catalog()` (`R/archive.R`) read them; over https a footer read costs one range request, not a download. The writer is `nanoparquet` with `write_arrow_metadata = FALSE`: `arrow` serializes custom metadata a second time inside `ARROW:schema` (~1.37x), and that key is arrow's own sidecar which parquet does not require and DuckDB never reads.
-
-
-**`raw/` is the minimum faithful rendering of the exchange data as parquet, and that is the test for what belongs in it.** `.datras/to_https/raw/{HH,HL,CA,LT}.parquet` are the ICES exchange tables, not products. Work belongs there only if parquet cannot represent the data honestly without it: current field names, WSDL-derived types, `-9` resolved to a real null where it means absence, and a date stored as a `DATE`. Anything computed -- derived quantities, joins, unit conversions, CPUE -- is a downstream product and belongs at the `datras/` root, not here. The one thing beside the parquet is `raw/datras-data-dict.html`, the rendered dictionary (`data-dict render`): it is not a product but a description of exactly these four files, and it sits with them for the same reason `raw/catalog.duckdb` used to. A layer's own description belongs with the layer; a product computed *from* the layer does not.
-
-**The catalog is a function, not a published file.** `op_catalog()` rebuilds the views, table/column comments and the `enum_labels`/`range_constraints`/`field_constraints` lookups in an in-memory DuckDB, reading them out of the four footers on demand. The former published `raw/catalog.duckdb` was a separate file describing other files: nothing forced it to be rebuilt when the parquet was, and a consumer who downloaded one table alone got no dictionary at all. Deriving it removes both problems, and it cannot describe a different vintage than the data beside it. Verified against the file it replaced: `enum_labels` (869) and column comments (169) identical; it differs only by resolving `.inf` to a null bound rather than the string `"Inf"`, and by expanding `primary_key` into its implied `unique`/`required`.
-
-
-**The published parquet carries no sentinel, except where `-9` is a documented answer.** Parquet has a native null; `-9` is an artifact of a fixed-width text format that cannot express missingness, and carrying it forward makes every naive `mean()` silently wrong. But it cannot be stripped blindly: ICES overloads the value. Of the 29 Tier 1 enum fields whose `values:` map documents a `-9` code, 24 label it as absence (`Not known`, `Not available`, `Unknown`, …) and 5 as a real answer (`No ticklers are allowed`, `No plus group`, `Invalid hauls`). **Neither the value nor its prevalence is the discriminator — the published label is.** `Tickler` is ~78% `-9` and real; `Turbidity` is ~99.6% `-9` and simply never recorded. The policy (registry `sentinels: resolution`) strips by default, keeps where the vocabulary documents a real answer, and resolves an unrecognised label to *keep* — never silently destroying a documented code. That `-9` means two things inside one vocabulary is an ICES-side defect and is recorded as such.
-
-**Ordering in the conversion is load-bearing, and getting it wrong is silent.** Cast → rename → strip sentinels → cast to spec. The WSDL type map is keyed by each operation's own (legacy) field names, so casting must precede renaming. The sentinel registry is keyed by current names, so the strip must follow it. And a `Date` column cannot hold `-9`, so the semantic cast must come last — converting `DateofCalculation` while sentinels are present turns every one into a null, a conversion that is individually correct, collectively destructive, and reports nothing. `op_cast_to_spec()` refuses to convert anything it cannot parse rather than producing `NA`, as the backstop.
-
-**An `enum`'s data must be string-like, and retyping to a number deletes its labels.** data-dict's own rule (`site/validation.md`, "Enum membership") makes an integer-stored `enum` a type mismatch (M01); `S07` separately forbids a `values:` map on a `number(*)` column. So each such field is a judgement, not a rule: `Quarter`/`Month` became `number(ordinal)` (their labels restate the number), while `Tickler`/`SpeciesCategory` stay enums stored as **text** — their 32 and 56 codes carry meaning, and the labels reach users through `op_enums()` (or `op_catalog()`'s `enum_labels` table), read from the dictionary embedded in the file itself. "Make the validator pass" is not the goal; which side moves is a question about what the specification is for.
-
-**Two dictionaries ship, one naming scheme (2026-09-15).** `inst/DATRAS-imbus.yaml` (archive-verified) and `inst/DATRAS-ices.yaml` (ICES's four sources, uncorrected, spreadsheet included) both use current field names; the legacy-named yamls are internal intermediates under `data-raw/seed/` and never shipped. Names stay self-contained via the revived `Legacy field name: {old}.` details stamp, written by `op_translate_dict_names()` and read back by `op_legacy_field_name()`/`op_field_spec()` — the mechanism was retired 2026-08-09 as redundant when a legacy-named yaml shipped beside the curated one, and un-retired when that file left `inst/`. The ICES yaml's own build surfaced fresh evidence of ICES-internal divergence: the spreadsheet documents ten fields the WSDL does not serve (HH `SurveyIndexArea`/`EDMO`/`ReasonHaulDisruption`, CA `IndividualAge`/`LiverWeight`/`PreservationMethod`, LT `RecordHeader`/`Reserved1`/`Reserved2`/`DatrasSurvey`) and calls CA's `Age` `IndividualAge`, disagreeing with ICES's own field-list service.
-
-**`op_validate_meta()` against the published archive is the gate.** All four tables validate clean (194 checks, 0 failures; re-verified 2026-09-15). Treat any regression there as a release blocker rather than a note — it is the only automated check that the dictionary and the data still describe each other.
-
-**`op_validate_data()` against the published archive: the required-vs-strip collision is settled (2026-09-15) — the `todo` side won.** Every D01 `nulls_in_required` finding sat on a column whose sentinel policy is `strip`; declaring `required` and then nulling sentinels must fail, and both sides were individually correct but meant different things (ICES's submission rule requires `-9`, not blanks). Decision: the dictionary describes the **published archive**, where those columns genuinely are null-heavy, so Mandatory-but-null-heavy fields carry a `todo` recording ICES's Mandatory claim and the measured null rate, not a `required` constraint. The 13 hand-added `required`s were deliberately not ported into the generator. D01 findings dropped 26 → 13; the remainder get `required` from other passes and are their own question. The two then-remaining D04 findings (HH `ThermoCline` = `y`, LT `LTSRC` = `sba`) no longer fire as of 2026-09-15: enum `values:` are now restricted to archive-observed codes, and both case-slips are carried as observed-but-undocumented values pending ICES's disposition (`ThermoCline` was already contested at WKDATR13). The new `assert:` non-negativity constraints DO fire on the archive — HH `HaulDuration` (2 rows: -514, -238, Can-Mar 2017), HL `SpeciesCategoryWeight` (2,563 rows: -900, -100), CA `Age` (2,324 rows: -1 ×2,322, -5, -95), LT `LT_Weight` (3 rows: -99) — none of them standard -9 sentinels, all previously invisible; candidates for the registry. Cost is a non-issue: ~0.1–0.7 s per table, all of Tier 1 in about a second, which is what makes the `archive_07_validate.R` ratchet proposed in TODO.md cheap to run on every rebuild. The data-dict binary and the `datadict` R package read different env vars for the CLI path (`OPUS_DATA_DICT` vs `DATA_DICT`).
-
-
-**Scope clarity: opus is WP2 (reference spec); WP3 owns operational QC on vessels.** opus's task is the reference YAML specification and processed data products for imbus's WP2. imbus's **QC work** (on-vessel quality control, including domain violations like "door spread constraints depend on depth") lives in **WP3** (Marine Institute, Stokes) — a separate workpackage that requires operational QC tooling, not data-dictionary work.
-
-**data-dict's realistic role:** data-dict covers three validation levels (spec/metadata/data) — sufficient for catching schema violations and basic constraint checking. But imbus's **operational QC** (multivariate co-parameter rules, on-vessel validation logic, domain-specific limits) is beyond data-dict's scope. opus wraps data-dict for basic validation via its own `R/validation.R` (thin wrappers around the CLI); the heavy QC lifting belongs to WP3's operational tools.
-
-**data-dict's own R-package (`datadict`, shipped, CRAN-track) is a separate, narrower thing:** it's consumer-facing — `dd_install()` + `dd_validate_data()` — for someone with data and a dictionary who wants a zero-setup validate-and-view-HTML-report flow. It doesn't expose validate-spec/meta, export, render, describe, or draft separately, and it can't inject a `source:` path the way opus's own `validate_against_dict()` does, so it doesn't replace opus's tooling. Worth pointing WP3 or ICES submitters at, if they want to self-check data against opus's yaml without building anything.
-
-**Why we monitor data-dict:** Prevents reinventing spec validation; clarifies boundaries. WP3 should not expect data-dict to solve their operational QC problem — that's a separate engineering effort. Monitoring helps opus stay proportionate and avoid scope creep into work that's not ours. See [[data_dict_trajectory]] and [[imbus_structure]] for roadmaps.
-
-**icesVocab is keyed by each field's legacy (on-the-wire) name, not its current opus name — resolve the legacy name first, always check both.** DATRAS fields have two names (legacy ICES names and opus's current names), and icesVocab code lookups depend on which one is used — sometimes pointing to entirely different vocabularies. Example: `Sex` has `TS_Sex`/`AC_Sex` (ambiguous between trawl/acoustic domains), but `IndividualSex` does not; `GearEx` has `TS_GearEx` (13 codes) while `GearExceptions` has `AC_GearExceptions` (1 code). A full audit of all 190 Tier 1 fields found this is the rule, not an occasional pitfall: of the 21 renamed enum fields with any vocab match, 100% resolve via the legacy name, 0% via the current name. Document legacy names in each column's `details:` via `Legacy field name: {OldName}`; use the dual-lookup wrappers in `R/vocab.R` + `R/field_names.R` for anything new. Full discovery story — including a case where resolving only the current name produced a false "missing from vocab" finding — is in `DEVLOG.md` (2026-08-02, 2026-08-08).
+**Standalone audits** (`data-raw/audit/`, each re-run on demand):
+`build_vocab_correction.R` (best-fitting icesVocab key per enum field, writes
+`inst/DATRAS-vocab-correction.csv`), `build_vocab_field_audit.R` (the same check
+over every Tier 1 field), `build_icesvocab_snapshot.R` and
+`build_field_description_snapshot.R` (cached, hash-stamped snapshots under
+`.datras/ices-schemas/`), `build_reference.R`, `build_field_gap_audit.R`
+(sentinel usage, icesVocab coverage and the spreadsheet's `Mandatory`/`DataType`
+cross-referenced against opus's specification for every field at once — re-run
+whenever the spreadsheet gets a new dated version), `validate_against_datadict.R`,
+`validate_issue_registry_sync.R` (keeps the registry and `articles/issues.qmd`
+consistent), `validate_vocab_annotations_sync.R`.
 
 ------------------------------------------------------------------------
 
-## Working with Einar (collaboration rules, distilled from Claude Desktop memory)
+## Key facts
 
-These are standing user feedback, carried over from the Claude Desktop project memory (`~/.claude/projects/-Users-einarhj-R-Pakkar-opus/memory/`), which remains the fuller source:
+**Shared fields are consistent where it matters.** Across every field name that
+appears in more than one table, `type` and `units` never diverge; other keys
+differ only where they legitimately vary by table (a primary key in HH is not one
+in HL, LT's date range starts later, `RecordHeader` names its own table).
 
-1. **Confer before git stage/commit.** Explicit per-commit confirmation; work on `main`, no branches.
-2. **No discovery narrative in deliverables.** Dates and "how we found it" belong in `DEVLOG.md` only — not in the YAML prose, TODO.md items, or ICES-facing reports.
-3. **Pace before planning.** Checkpoint with findings after a bounded round; do not chain long autonomous sweeps.
-4. **Plan, don't just prioritize, when findings may share a root cause.** Investigate connections and sequence by dependency before proposing fixes.
-5. **Verify, don't inherit.** Trace claims to the literal source; re-check inherited numbers, including opus's own; fix the generator, not just the generated file.
-6. **Write deliverables for biologists, in ICES terms.** ICES-document lingo, not software lingo; issue reports lead with ICES's legacy field names (the legacy→new mapping is a separate entity).
-7. **Check for a vocab mixup before blaming ICES.** A `TS_` key can be a bare "see X" redirect; resolve legacy AND current names before filing a gap.
-8. **Stay out of obus internals.** Read obus's published data and public contract, not its R/QC internals; never mine `obus_retired` for facts.
-9. **YAML is the source; no code shortcuts.** Fix the dictionary and re-run the pipeline; never drop real rows to make a join work.
-10. **Keep process proportionate.** opus is one narrow slice of IMBUS; default to the lowest-ceremony option.
-11. **Working principles are Magna Carta, not dogma.** Use them to explain surprising state before doubting the design.
-12. **IMBUS_FISHMAP#29 postings need a go-ahead each time** — it is a public ICES-side ticket, not opus's own repo.
-13. **Einar wants a recommendation, not a survey of options.**
+**A curated `type` is an analysis-level claim, not a storage instruction — and
+that is data-dict's rule.** data-dict's specification says types "capture data
+types at a level that makes sense for analysis, which is typically coarser than
+the logical types of the underlying data", and its implementation collapses all
+numeric physical types to `number` and never reads the measure qualifier
+(`(quantity)`, `(ordinal)`, `(id)`) from a file. So a `number(quantity)` stored as
+INT32 is conformant. opus casts from WSDL physical types, and `op_cast_to_spec()`
+overrides only `date`/`datetime`; nothing casts from a curated `type`, and
+nothing should. A downstream package that did would manufacture a divergence the
+archive does not have; cast from the `r_type`/`parquet_type` each footer carries.
+ICES both declares and sends integers for every affected field.
+
+**The published parquet is self-describing.** Each file in `raw/` carries five
+`datras:` keys in its footer: `dict` (the table's slice of the dictionary, plus
+`legacy_name`, `parquet_type`, `r_type` per column), `provenance`, `sentinels`,
+`coverage`, `known_issues`. A detached file carries its own descriptions,
+crosswalk and record of which sentinels were stripped. The writer is
+`nanoparquet` with `write_arrow_metadata = FALSE`, because arrow would serialise
+the custom metadata a second time inside `ARROW:schema`, which DuckDB never reads.
+
+**`raw/` is the minimum faithful rendering of the exchange data as parquet.**
+Work belongs there only if parquet cannot represent the data honestly without it:
+current names, WSDL types, `-9` resolved to null where it means absence, dates as
+`DATE`. Anything computed is a product and belongs at the `datras/` root. The one
+other file is `raw/datras-data-dict.html`, the rendered dictionary, which
+describes exactly these files.
+
+**The catalog is a function, not a published file.** `op_catalog()` rebuilds the
+views, comments and lookups in an in-memory DuckDB from the footers on demand, so
+it cannot describe a different vintage from the data beside it, and a consumer
+who downloads one table still gets its dictionary.
+
+**The published parquet carries no sentinel, except where `-9` is a documented
+answer.** A `-9` makes every naive mean wrong, but ICES overloads the value: most
+`-9` codes in the vocabularies mean absence (`Not known`, `Not available`), a few
+are real answers (`No ticklers are allowed`, `No plus group`, `Invalid hauls`).
+Neither the value nor its prevalence is the discriminator — the published label
+is: `Tickler` is mostly `-9` and real, `Turbidity` mostly `-9` and never
+recorded. The policy (registry `sentinels: resolution`) strips by default, keeps
+where the vocabulary documents a real answer, and keeps any unrecognised label,
+never silently destroying a documented code. That one value means two things in
+one vocabulary is an ICES-side defect, recorded as such.
+
+**The order of conversion is load-bearing, and getting it wrong is silent.** Cast
+→ rename → strip sentinels → cast to spec. The WSDL type map is keyed by legacy
+names, so casting precedes renaming; the sentinel registry is keyed by current
+names, so the strip follows; a `Date` cannot hold `-9`, so the semantic cast
+comes last. `op_cast_to_spec()` refuses to convert what it cannot parse, as the
+backstop.
+
+**An `enum`'s data must be string-like, and retyping it to a number deletes its
+labels.** data-dict makes an integer-stored `enum` a type mismatch and forbids a
+`values:` map on a `number(*)` column. So each such field is a judgement:
+`Quarter` and `Month` became `number(ordinal)` (their labels restate the number);
+`Tickler` and `SpeciesCategory` stay enums stored as text, because their codes
+carry meaning that reaches users through `op_enums()`. Which side moves is a
+question about what the specification is for, not about making the validator
+pass.
+
+**Two dictionaries ship, one naming scheme.** `DATRAS-imbus.yaml` and
+`DATRAS-ices.yaml` both use current names; the legacy-named YAMLs are internal
+intermediates under `data-raw/seed/`. Names stay self-contained through the
+`Legacy field name: {old}.` stamp in `details`. ICES's own sources diverge: the
+spreadsheet documents fields the WSDL does not serve (HH `SurveyIndexArea`,
+`EDMO`, `ReasonHaulDisruption`; CA `LiverWeight`, `PreservationMethod`; LT
+`RecordHeader`, `Reserved1`, `Reserved2`, `DatrasSurvey`), the field list
+documents most of them too (not `PreservationMethod` or `DatrasSurvey`), and both
+call CA's `Age` `IndividualAge`, while the WSDL and the archive call it `Age`.
+Some `FieldName` values in the field list carry an embedded line break, so trim
+before matching.
+
+**`op_validate_meta()` against the published archive is the gate.** All four
+tables validate clean; treat any regression as a release blocker. It is the only
+automated check that the dictionary and the data still describe each other.
+
+**`op_validate_data()` against the published archive.** The dictionary describes
+the published archive, where `-9` has been stripped, so a field ICES calls
+Mandatory but which is null-heavy in the archive carries a `todo` recording
+ICES's claim and the null rate, not a `required` constraint; declaring `required`
+on a stripped column would fail by construction. Enum `values:` are the codes
+observed in the archive, and observed-but-undocumented codes are carried pending
+ICES's disposition. The non-negativity `assert:` constraints fire on a handful of
+real negative values (haul durations, category weights, ages, litter weights),
+none of them standard sentinels — candidates for the registry. Validation is
+cheap enough to run on every rebuild. The data-dict binary and the `datadict`
+package read different environment variables for the CLI path (`OPUS_DATA_DICT`
+and `DATA_DICT`).
+
+**icesVocab is keyed by each field's legacy name, not its current one — resolve
+the legacy name first, and always check both.** The two can point to different
+vocabularies (`Sex` has `TS_Sex`/`AC_Sex`, `IndividualSex` has neither; `GearEx`
+has `TS_GearEx`, `GearExceptions` has `AC_GearExceptions`). For renamed enum
+fields this is the rule, not the exception: they resolve through the legacy name.
+Record legacy names in `details:` and use the dual-lookup wrappers in
+`R/vocab.R` and `R/field_names.R`.
+
+**Scope against WP3.** opus is WP2's reference specification. On-vessel quality
+control, including contextual rules ("door spread depends on depth"), is WP3's
+(Marine Institute) and needs operational tooling, not dictionary work.
+
+------------------------------------------------------------------------
+
+## Working with Einar
+
+Standing collaboration rules; the opus project memory
+(`~/.claude/projects/-Users-einarhj-R-Pakkar-opus/memory/`) is the fuller source.
+
+1. **Confer before git stage or commit.** Explicit confirmation per commit; work
+   on `main`, no branches.
+2. **No discovery narrative in deliverables.** Dates and "how we found it" belong
+   in `DEVLOG.md` only — not in the YAML prose, `TODO.md`, this file, or
+   ICES-facing reports.
+3. **Pace before planning.** Check in with findings after a bounded round; do not
+   chain long autonomous sweeps.
+4. **Plan, don't just prioritise, when findings may share a root cause.**
+   Investigate connections and sequence by dependency before proposing fixes.
+5. **Verify, don't inherit.** Trace claims to the literal source, re-check
+   inherited numbers (opus's own included), and fix the generator, not the
+   generated file.
+6. **Write deliverables for biologists, in ICES terms.** Issue reports lead with
+   ICES's legacy field names.
+7. **Check for a vocabulary mix-up before blaming ICES.** A `TS_` key can be a bare
+   "see X" redirect; resolve legacy and current names before filing a gap.
+8. **Stay out of obus internals.** Read obus's published data and public
+   contract, not its R or QC internals; never mine `obus_retired` for facts.
+9. **The YAML is the source; no code shortcuts.** Fix the dictionary and re-run
+   the pipeline; never drop real rows to make a join work.
+10. **Keep process proportionate.** opus is one narrow slice of IMBUS; default to
+    the lowest-ceremony option.
+11. **Postings to IMBUS_FISHMAP#29 need a go-ahead each time** — it is a public
+    ICES-side ticket, not opus's own repository.
+12. **Einar wants a recommendation, not a survey of options.**

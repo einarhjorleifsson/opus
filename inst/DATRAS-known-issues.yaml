@@ -219,10 +219,10 @@ known_violations:
   - id: "datras_field_list_type_divergence"
     severity: "C"
     scope: "systemic"
-    field: "Year, SpecCode"
-    table: "HH, HL, CA, LT (Year); HL, CA (SpecCode)"
+    field: "Year, SpecCode, Distance"
+    table: "HH, HL, CA, LT (Year); HL, CA (SpecCode); HH (Distance)"
     issue: "ICES's own documentation-side metadata sources disagree with the live WSDL contract (and real submitted data) about these fields' physical type."
-    extent: "Year: live WSDL declares int; getDatrasFieldList and the DATRAS field-description spreadsheet (data-raw/build_field_description_snapshot.R) both independently say char, across all four tables. SpecCode: live WSDL declares int (it's a WoRMS AphiaID, a numeric species identifier); the same spreadsheet says char, in both HL and CA."
+    extent: "Year: live WSDL declares int; getDatrasFieldList and the DATRAS field-description spreadsheet (data-raw/build_field_description_snapshot.R) both independently say char, across all four tables. SpecCode: live WSDL declares int (it's a WoRMS AphiaID, a numeric species identifier); the same spreadsheet says char, in both HL and CA. Distance: getDatrasFieldList declares float, while the live WSDL and the spreadsheet say int and the archive stores INT32 integers."
     implication: "opus seeds types from WSDL only (Working Principle 1: real data is ground truth, and WSDL is the auto-generated, authoritative source -- see AGENTS.md's Data Sources), so opus's own spec already correctly types both fields as numeric (Year: number(ordinal); SpecCode: number(id)) and this is not a bug in opus's spec to fix. It IS a real, persistent gap in ICES's own institutional metadata: two independently-maintained ICES documentation sources (getDatrasFieldList, and now the field-description spreadsheet -- built and maintained separately, years apart) have both been wrong about these fields' type in the same direction, for as long as opus has been checking. First noted 2026-08-02 (Year only, WSDL vs getDatrasFieldList) but never actually written into this registry until now -- DEVLOG.md's own narrative had described it as 'documented in known-issues #10', which was true of intent, not of this file. See data-raw/ICES_ISSUE_REPORT.md Issue 12 for the ICES-facing writeup."
     discovered: "2026-08-02 (Year, WSDL vs getDatrasFieldList); corroborated 2026-08-17 (both fields, vs the field-description spreadsheet)"
 
@@ -255,6 +255,16 @@ known_violations:
     extent: "Verified 2026-09-14 on NS-IBTS HL, archive vs live whole-survey CSV pull (4,164,330 vs 4,101,389 rows, gap 62,941). Direction 1 -- the CSV extract lags recent submissions: 2026 Q1 (48,070 rows) absent from the CSV API entirely (its NS-IBTS range ends at 2025), 2025 Q3 partial (34,296 vs 47,288), smaller lags at 2024 Q3 (+740) and 2025 Q1 (+1,081). Same failure class as the already-documented CODS-Q4 absence: the download product is a periodic extract, not a live view. Direction 2 -- the CSV serves rows the XML service withholds: 1985/86/87/91/92 Q1 each carry exactly 2 extra rows in the CSV (10 total), the anonymized records (blank Country/Platform, StNo/HaulNo=999). Verified NOT a vintage difference: the archive's copy of 1985 Q1 carries the same DateofCalculation (2024-01-16) as the anonymized rows, and a fresh live XML pull of that cell returns 45,054 records (the archive's count), not the CSV's 45,056 -- same database, same reprocessing, different row sets per endpoint."
     implication: "A consumer pulling 'the same data' from the two endpoints gets different data, in both directions, with no documentation saying so. opus's archive is XML-derived and therefore lacks the anonymized rows; nothing in the archive signals their absence. For consumers needing those rows (they are real, if anonymized, length-frequency records), only the CSV route sees them."
     discovered: "2026-09-14, while benchmarking a DuckDB-based live reader against the archive (see DEVLOG.md 2026-09-14 and data-raw/read_datras_benchmarks_2026-09-14.md)"
+
+  - id: "datras_field_list_fa_descriptions_shifted"
+    severity: "C"
+    scope: "field-level"
+    field: "StationName, HaulNumber, Year"
+    table: "FA"
+    issue: "In ICES's getDatrasFieldList, three descriptions of the FA (fish attributes) record sit one row below the field they describe."
+    extent: "StationName carries HaulNumber's description ('Sequential numbering of hauls during cruise.'), HaulNumber carries Year's ('Cruise year (YYYY)'), and Year carries SpeciesCodeType's ('Type of species code used for species definition at the record...'). The rows before and after are correct (Survey and SpeciesCode carry their own descriptions). Checked on the live service response of 2026-10-05; opus's cached field-list snapshot shows the same."
+    implication: "A consumer reading field meanings from the field list gets the wrong description for three FA fields, with nothing to signal it. opus serves no FA table, so the archive is unaffected; the defect is in ICES's documentation. Candidate for the IMBUS_FISHMAP#29 batch."
+    discovered: "2026-10-05, comparing the live field list with opus's dictionary"
 
 # Processing directives
 processing:

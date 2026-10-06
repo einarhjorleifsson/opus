@@ -1,6 +1,6 @@
 # Plan: embed the data dictionary in the parquet files, retire `catalog.duckdb`
 
-**Drafted:** 2026-08-29. **Status:** proposal + working mock, nothing shipped.
+**Drafted:** 2026-08-29. **Status:** the opus side was implemented and published the same day (§7); this file is now the design record. Its `[obus]` sections describe an obus design that no longer exists (`dr_translate()`, `dr_settypes()`, `dr_check_types()`); for obus, read `obus/AGENTS.md`.
 **Spans two packages.** The access layer for the raw archive lives in **opus**
 (`op_con()` and the metadata accessors); **obus** consumes it. Sections are
 tagged `[opus]` / `[obus]`.
